@@ -1,10 +1,10 @@
-
+import { Auth } from './pages/Auth.jsx';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-   <h1>Sprouty</h1>
+    <div className="app">
+      <Auth />
+    </div>
   )
 }
 
