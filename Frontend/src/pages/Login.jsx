@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import 'Sprouty/Frontend/src/CSS/Login.css';
+import '../CSS/Login.css';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -9,7 +9,7 @@ function Login() {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (email && password) {
-      alert('Login functionality will be implemented later');
+      alert('Dashboard functionality will be implemented later');
       
     } else {
       alert('Please fill in all fields');

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import 'Sprouty/Frontend/src/CSS/Signup.css';
+import '../CSS/Signup.css';
 
 function Signup() {
   const [name, setName] = useState('');
@@ -15,7 +15,7 @@ function Signup() {
         alert('Passwords do not match');
         return;
       }
-      alert('Signup functionality will be implemented later');
+      alert('Dashboard functionality will be implemented later');
     } else {
       alert('Please fill in all fields');
     }
