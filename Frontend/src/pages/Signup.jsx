@@ -6,6 +6,7 @@ function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -52,7 +53,7 @@ function Signup() {
           <div className="space-y-1">
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
             <input 
-              type="password" 
+              type={showPassword ? 'text' : 'password'} 
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -60,11 +61,14 @@ function Signup() {
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
             />
+            {password && password.length < 8 && (
+              <p className="text-sm text-red-500">Password must be at least 8 characters long.</p>
+            )}
           </div>
           <div className="space-y-1">
             <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700">Confirm Password</label>
             <input 
-              type="password" 
+              type={showPassword ? 'text' : 'password'}
               id="confirm-password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
@@ -72,6 +76,16 @@ function Signup() {
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
             />
+          </div>
+          <div className="flex items-center justify-end space-x-2">
+            <input 
+              type="checkbox"
+              id="showPassword"
+              checked={showPassword}
+              onChange={() => setShowPassword(!showPassword)}
+              className="text-green-600 focus:ring-green-500 w-4 h-4"
+            />
+            <label htmlFor="showPassword" className="text-sm text-gray-700">Show Password</label>
           </div>
           <button 
             type="submit" 
