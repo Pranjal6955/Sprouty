@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { Eye, Plus, Bell, TrendingUp, Zap, Thermometer, Clock } from 'lucide-react';
+import plantPhoto from '../assets/plantPhoto.jpg';
 
 const HomePage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -8,26 +10,26 @@ const HomePage = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Navbar */}
-      <nav className="bg-green-50 shadow-md">
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      {/* Navbar - Modern sticky design */}
+      <nav className="sticky top-0 z-50 bg-white shadow-sm backdrop-blur-md bg-opacity-90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0 flex items-center">
-                <span className="text-green-600 font-bold text-2xl">Sprouty</span>
+                <span className="text-teal-600 font-bold text-2xl">Sprouty</span>
               </div>
-              <div className="hidden md:ml-6 md:flex md:space-x-8">
-                <a href="#home" className="text-green-900 hover:text-green-700 px-3 py-2 font-medium">Home</a>
-                <a href="#features" className="text-green-900 hover:text-green-700 px-3 py-2 font-medium">Features</a>
-                <a href="#about" className="text-green-900 hover:text-green-700 px-3 py-2 font-medium">About Us</a>
+              <div className="hidden md:ml-8 md:flex md:space-x-10">
+                <a href="#home" className="text-gray-700 hover:text-teal-600 px-3 py-2 text-sm font-medium transition duration-150">Home</a>
+                <a href="#features" className="text-gray-700 hover:text-teal-600 px-3 py-2 text-sm font-medium transition duration-150">Features</a>
+                <a href="#about" className="text-gray-700 hover:text-teal-600 px-3 py-2 text-sm font-medium transition duration-150">About Us</a>
               </div>
             </div>
-            <div className="hidden md:flex items-center">
-              <button className="bg-white hover:bg-gray-100 text-green-700 font-semibold py-2 px-4 border border-green-500 rounded mr-2">
+            <div className="hidden md:flex items-center space-x-4">
+              <button className="text-teal-600 font-medium hover:text-teal-800 transition duration-150">
                 Login
               </button>
-              <button className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 border border-green-600 rounded">
+              <button className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-5 rounded-full transition duration-150">
                 Sign Up
               </button>
             </div>
@@ -41,20 +43,20 @@ const HomePage = () => {
           </div>
         </div>
         
-        {/* Mobile menu */}
+        {/* Mobile menu - Slide down animation */}
         {isMenuOpen && (
-          <div className="md:hidden">
-            <div className="pt-2 pb-3 space-y-1">
-              <a href="#home" className="block px-3 py-2 text-green-900 font-medium hover:bg-green-100">Home</a>
-              <a href="#features" className="block px-3 py-2 text-green-900 font-medium hover:bg-green-100">Features</a>
-              <a href="#about" className="block px-3 py-2 text-green-900 font-medium hover:bg-green-100">About Us</a>
+          <div className="md:hidden animate-slideDown">
+            <div className="pt-2 pb-3 space-y-1 px-2">
+              <a href="#home" className="block px-3 py-2 text-gray-700 font-medium hover:bg-teal-50 hover:text-teal-600 rounded-lg">Home</a>
+              <a href="#features" className="block px-3 py-2 text-gray-700 font-medium hover:bg-teal-50 hover:text-teal-600 rounded-lg">Features</a>
+              <a href="#about" className="block px-3 py-2 text-gray-700 font-medium hover:bg-teal-50 hover:text-teal-600 rounded-lg">About Us</a>
             </div>
             <div className="pt-4 pb-3 border-t border-gray-200">
-              <div className="flex items-center px-4 space-x-2">
-                <button className="bg-white hover:bg-gray-100 text-green-700 font-semibold py-2 px-4 border border-green-500 rounded">
+              <div className="flex items-center justify-center px-4 space-x-4 py-2">
+                <button className="w-full text-teal-600 font-medium py-2 px-4 rounded-lg border border-teal-600 hover:bg-teal-50">
                   Login
                 </button>
-                <button className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 border border-green-600 rounded">
+                <button className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-lg">
                   Sign Up
                 </button>
               </div>
@@ -63,161 +65,210 @@ const HomePage = () => {
         )}
       </nav>
 
-      {/* Hero Section */}
-      <section id="home" className="bg-green-50 py-12 md:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Hero Section - Modern with gradient */}
+      <section id="home" className="relative py-20 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-teal-50 via-white to-teal-100 z-0"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="flex flex-col md:flex-row items-center">
             <div className="md:w-1/2 md:pr-10">
-              <h1 className="text-4xl md:text-5xl font-bold text-green-800 mb-4">
-                Your Personal Plant Caretaker
+              <div className="inline-block px-3 py-1 text-sm font-medium text-teal-700 bg-teal-100 rounded-full mb-6">
+                Your plant care companion
+              </div>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 leading-tight">
+                Grow Happier, <br/>
+                <span className="text-teal-600">Healthier Plants</span>
               </h1>
-              <p className="text-lg text-gray-700 mb-8">
-                Never forget to water your plants again. Sprouty helps you track, manage, and care for all your plants in one simple app.
+              <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+                Sprouty helps you remember when to water, prune, and care for your plants with timely reminders and personalized advice.
               </p>
-              <button className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1">
-                Get Started
-              </button>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:-translate-y-1">
+                  Get Started Free
+                </button>
+              </div>
             </div>
-            <div className="md:w-1/2 mt-10 md:mt-0">
+            <div className="md:w-1/2 mt-12 md:mt-0 relative">
+              <div className="absolute -top-10 -right-10 w-64 h-64 bg-teal-200 rounded-full opacity-50 filter blur-3xl"></div>
+              <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-emerald-200 rounded-full opacity-50 filter blur-3xl"></div>
               <img 
-                src="/api/placeholder/600/400" 
+                src={plantPhoto} 
                 alt="Plant care illustration" 
-                className="w-full h-auto rounded-lg shadow-xl"
+                className="w-full h-auto rounded-2xl shadow-2xl relative z-10 transform hover:scale-105 transition duration-500"
               />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-16 bg-white">
+      {/* Features Section - Card-based design */}
+      <section id="features" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900">Features</h2>
-            <p className="mt-4 text-xl text-gray-600">Everything you need to keep your plants thriving</p>
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Smart Features for Plant Lovers</h2>
+            <p className="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">Everything you need to become a successful plant parent</p>
           </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Feature 1 */}
-            <div className="bg-green-50 p-6 rounded-lg shadow-md">
-              <div className="text-green-600 mb-4">
-                <svg className="h-10 w-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
+            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100">
+              <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center text-teal-600 mb-6">
+                <Plus className="h-8 w-8" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Add Plants Easily</h3>
-              <p className="text-gray-600">Add new plants manually or identify them instantly through image upload.</p>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Plant Recognition</h3>
+              <p className="text-gray-600 leading-relaxed">Identify any plant instantly with our AI-powered recognition system. Just snap a photo.</p>
             </div>
+            
             {/* Feature 2 */}
-            <div className="bg-green-50 p-6 rounded-lg shadow-md">
-              <div className="text-green-600 mb-4">
-                <svg className="h-10 w-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0018 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
+            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100">
+              <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center text-teal-600 mb-6">
+                <Bell className="h-8 w-8" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Smart Reminders</h3>
-              <p className="text-gray-600">Get timely notifications for watering, feeding, and pruning your plants.</p>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Smart Reminders</h3>
+              <p className="text-gray-600 leading-relaxed">Never forget to water again with intelligent care schedules tailored to each plant's needs.</p>
             </div>
+            
             {/* Feature 3 */}
-            <div className="bg-green-50 p-6 rounded-lg shadow-md">
-              <div className="text-green-600 mb-4">
-                <svg className="h-10 w-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
+            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100">
+              <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center text-teal-600 mb-6">
+                <TrendingUp className="h-8 w-8" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Growth Tracking</h3>
-              <p className="text-gray-600">Monitor your plants' growth and health progress with visual statistics.</p>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Growth Tracking</h3>
+              <p className="text-gray-600 leading-relaxed">Monitor progress with visual growth tracking, celebrating your plant care success.</p>
             </div>
+            
             {/* Feature 4 */}
-            <div className="bg-green-50 p-6 rounded-lg shadow-md">
-              <div className="text-green-600 mb-4">
-                <svg className="h-10 w-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
+            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100">
+              <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center text-teal-600 mb-6">
+                <Zap className="h-8 w-8" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Smart Suggestions</h3>
-              <p className="text-gray-600">Receive personalized plant care tips based on plant type and local weather data.</p>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Care Tips & Guides</h3>
+              <p className="text-gray-600 leading-relaxed">Access plant-specific care guides and expert advice to help your plants thrive.</p>
             </div>
+            
             {/* Feature 5 */}
-            <div className="bg-green-50 p-6 rounded-lg shadow-md">
-              <div className="text-green-600 mb-4">
-                <svg className="h-10 w-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-                </svg>
+            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100">
+              <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center text-teal-600 mb-6">
+                <Thermometer className="h-8 w-8" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Dark Mode</h3>
-              <p className="text-gray-600">Switch between light and dark themes for a comfortable viewing experience.</p>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Light & Temperature</h3>
+              <p className="text-gray-600 leading-relaxed">Get recommendations for optimal light and temperature conditions for each plant type.</p>
             </div>
+            
             {/* Feature 6 */}
-            <div className="bg-green-50 p-6 rounded-lg shadow-md">
-              <div className="text-green-600 mb-4">
-                <svg className="h-10 w-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                </svg>
+            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100">
+              <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center text-teal-600 mb-6">
+                <Clock className="h-8 w-8" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Data Export</h3>
-              <p className="text-gray-600">Download your plant care logs and history in PDF or CSV formats.</p>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">Seasonal Changes</h3>
+              <p className="text-gray-600 leading-relaxed">Adaptive care schedules that change with the seasons for year-round plant health.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* About Us Section */}
-      <section id="about" className="py-16 bg-green-50">
+      {/* About Us Section - Modern two-column design */}
+      <section id="about" className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900">About Us</h2>
-            <p className="mt-4 text-xl text-gray-600">The story behind Sprouty</p>
-          </div>
-          <div className="bg-white p-8 rounded-lg shadow-lg">
-            <p className="text-gray-700 mb-6">
-              Sprouty was born out of a simple problem: we kept forgetting to water our plants. After killing one too many innocent ferns and succulents, we realized there had to be a better way to keep track of plant care routines.
-            </p>
-            <p className="text-gray-700 mb-6">
-              Our mission is to help people build deeper connections with their plants through technology that simplifies care routines and provides valuable knowledge. We believe that thriving plants contribute to happier, healthier living spaces.
-            </p>
-            <p className="text-gray-700">
-              Whether you're a beginner plant parent or an experienced green thumb, Sprouty is designed to adapt to your needs and help you create your own personal urban jungle with confidence.
-            </p>
+          <div className="flex flex-col md:flex-row gap-12 items-center">
+            <div className="md:w-1/2">
+              <img 
+                src="https://images.unsplash.com/photo-1558693168-c370615b54e0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                alt="Team working on plant care app" 
+                className="rounded-2xl shadow-xl w-full h-auto object-cover"
+              />
+            </div>
+            <div className="md:w-1/2">
+              <div className="inline-block px-3 py-1 text-sm font-medium text-teal-700 bg-teal-100 rounded-full mb-6">
+                Our Story
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">A Growing Passion</h2>
+              <p className="text-gray-700 mb-6 leading-relaxed">
+                Sprouty was born when our founder's collection of houseplants kept dying despite their best efforts. We realized that consistent care was the key to thriving plants, and technology could help bridge that gap.
+              </p>
+              <p className="text-gray-700 mb-6 leading-relaxed">
+                Our mission is to empower plant lovers of all experience levels with the tools and knowledge they need to create thriving indoor jungles and outdoor gardens.
+              </p>
+              <p className="text-gray-700 leading-relaxed">
+                Every feature in Sprouty is designed with plant science in mind, built by a team of developers who are also passionate plant parents.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-green-800 text-white py-8 mt-auto">
+      {/* Call to Action */}
+      <section className="py-16 bg-teal-700">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold text-white mb-6">Ready to grow with us?</h2>
+          <p className="text-teal-100 mb-8 text-lg max-w-3xl mx-auto">
+            Join thousands of plant enthusiasts using Sprouty to care for their plants better than ever before.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button className="bg-white text-teal-700 hover:bg-teal-50 font-medium py-3 px-8 rounded-full shadow-lg transition duration-300">
+              Start Free Trial
+            </button>
+            <button className="bg-teal-800 text-white hover:bg-teal-900 font-medium py-3 px-8 rounded-full shadow-lg transition duration-300">
+              Learn More
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer - Modern, cleaner design */}
+      <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between">
-            <div className="mb-6 md:mb-0">
-              <h3 className="text-2xl font-bold">Sprouty</h3>
-              <p className="mt-2 text-green-200">Your personal plant care assistant</p>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="col-span-1 md:col-span-1">
+              <h3 className="text-xl font-bold text-teal-400 mb-4">Sprouty</h3>
+              <p className="text-gray-400 mb-4">Nurturing your green thumb one plant at a time.</p>
+              <div className="flex space-x-4">
+                <a href="#" className="text-gray-400 hover:text-teal-400">
+                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg>
+                </a>
+                <a href="#" className="text-gray-400 hover:text-teal-400">
+                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723 10.054 10.054 0 01-3.127 1.195 4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" /></svg>
+                </a>
+                <a href="#" className="text-gray-400 hover:text-teal-400">
+                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.319 1.347 20.651.935 19.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227-.224.562-.479.96-.899 1.382-.419.419-.824.679-1.38.896-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421-.569-.224-.96-.479-1.379-.899-.421-.419-.69-.824-.9-1.38-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03zm0 3.678c-3.405 0-6.162 2.76-6.162 6.162 0 3.405 2.76 6.162 6.162 6.162 3.405 0 6.162-2.76 6.162-6.162 0-3.405-2.76-6.162-6.162-6.162zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405c0 .795-.646 1.44-1.44 1.44-.795 0-1.44-.646-1.44-1.44 0-.794.646-1.439 1.44-1.439.793-.001 1.44.645 1.44 1.439z" /></svg>
+                </a>
+              </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
-              <div>
-                <h4 className="text-lg font-semibold mb-3">Quick Links</h4>
-                <ul className="space-y-2">
-                  <li><a href="#home" className="text-green-200 hover:text-white">Home</a></li>
-                  <li><a href="#features" className="text-green-200 hover:text-white">Features</a></li>
-                  <li><a href="#about" className="text-green-200 hover:text-white">About Us</a></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold mb-3">Resources</h4>
-                <ul className="space-y-2">
-                  <li><a href="#" className="text-green-200 hover:text-white">Blog</a></li>
-                  <li><a href="#" className="text-green-200 hover:text-white">Help Center</a></li>
-                  <li><a href="#" className="text-green-200 hover:text-white">Contact</a></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold mb-3">Legal</h4>
-                <ul className="space-y-2">
-                  <li><a href="#" className="text-green-200 hover:text-white">Privacy Policy</a></li>
-                  <li><a href="#" className="text-green-200 hover:text-white">Terms of Service</a></li>
-                </ul>
+            <div>
+              <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
+              <ul className="space-y-2">
+                <li><a href="#home" className="text-gray-400 hover:text-teal-400 transition duration-150">Home</a></li>
+                <li><a href="#features" className="text-gray-400 hover:text-teal-400 transition duration-150">Features</a></li>
+                <li><a href="#about" className="text-gray-400 hover:text-teal-400 transition duration-150">About Us</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-teal-400 transition duration-150">Pricing</a></li>
+              </ul>
+            </div>
+            {/* <div>
+              <h4 className="text-lg font-semibold mb-4">Resources</h4>
+              <ul className="space-y-2">
+                <li><a href="#" className="text-gray-400 hover:text-teal-400 transition duration-150">Plant Care Blog</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-teal-400 transition duration-150">Help Center</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-teal-400 transition duration-150">Plant Index</a></li>
+                <li><a href="#" className="text-gray-400 hover:text-teal-400 transition duration-150">Community</a></li>
+              </ul>
+            </div> */}
+            <div>
+              <h4 className="text-lg font-semibold mb-4">Stay Updated</h4>
+              <p className="text-gray-400 mb-4">Subscribe to our newsletter for tips and updates.</p>
+              <div className="flex">
+                <input type="email" placeholder="Your email" className="w-full px-4 py-2 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-teal-400" />
+                <button className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-r-lg transition duration-150">
+                  Subscribe
+                </button>
               </div>
             </div>
           </div>
-          <div className="mt-8 pt-8 border-t border-green-700 text-center md:text-left">
-            <p className="text-green-200">&copy; {new Date().getFullYear()} Sprouty. All rights reserved.</p>
+          <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center">
+            <p className="text-gray-500 mb-4 md:mb-0">&copy; {new Date().getFullYear()} Sprouty. All rights reserved.</p>
+            <div className="flex space-x-6">
+              <a href="#" className="text-gray-500 hover:text-teal-400 transition duration-150">Privacy Policy</a>
+              <a href="#" className="text-gray-500 hover:text-teal-400 transition duration-150">Terms of Service</a>
+              <a href="#" className="text-gray-500 hover:text-teal-400 transition duration-150">Cookie Policy</a>
+            </div>
           </div>
         </div>
       </footer>
