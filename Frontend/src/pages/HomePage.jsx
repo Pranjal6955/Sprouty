@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, Plus, Bell, TrendingUp, Zap, Thermometer, Clock } from 'lucide-react';
 import plantPhoto from '../assets/plantPhoto.jpg';
+import { Link } from 'react-router-dom';
 
 const HomePage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -26,12 +27,12 @@ const HomePage = () => {
               </div>
             </div>
             <div className="hidden md:flex items-center space-x-4">
-              <button className="text-teal-600 font-medium hover:text-teal-800 transition duration-150">
+              <Link to="/" className="text-teal-600 font-medium hover:text-teal-800 transition duration-150">
                 Login
-              </button>
-              <button className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-5 rounded-full transition duration-150">
+              </Link>
+              <Link to="/signup" className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-5 rounded-full transition duration-150">
                 Sign Up
-              </button>
+              </Link>
             </div>
             <div className="flex items-center md:hidden">
               <button onClick={toggleMenu} className="text-gray-700">
@@ -53,12 +54,12 @@ const HomePage = () => {
             </div>
             <div className="pt-4 pb-3 border-t border-gray-200">
               <div className="flex items-center justify-center px-4 space-x-4 py-2">
-                <button className="w-full text-teal-600 font-medium py-2 px-4 rounded-lg border border-teal-600 hover:bg-teal-50">
+                <Link to="/" className="w-full text-teal-600 font-medium py-2 px-4 rounded-lg border border-teal-600 hover:bg-teal-50">
                   Login
-                </button>
-                <button className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-lg">
+                </Link>
+                <Link to="/signup" className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-lg">
                   Sign Up
-                </button>
+                </Link>
               </div>
             </div>
           </div>
@@ -82,9 +83,9 @@ const HomePage = () => {
                 Sprouty helps you remember when to water, prune, and care for your plants with timely reminders and personalized advice.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <button className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:-translate-y-1">
+                <Link to="/signup" className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:-translate-y-1 text-center">
                   Get Started Free
-                </button>
+                </Link>
               </div>
             </div>
             <div className="md:w-1/2 mt-12 md:mt-0 relative">
@@ -204,12 +205,12 @@ const HomePage = () => {
             Join thousands of plant enthusiasts using Sprouty to care for their plants better than ever before.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-white text-teal-700 hover:bg-teal-50 font-medium py-3 px-8 rounded-full shadow-lg transition duration-300">
+            <Link to="/signup" className="bg-white text-teal-700 hover:bg-teal-50 font-medium py-3 px-8 rounded-full shadow-lg transition duration-300">
               Start Free Trial
-            </button>
-            <button className="bg-teal-800 text-white hover:bg-teal-900 font-medium py-3 px-8 rounded-full shadow-lg transition duration-300">
+            </Link>
+            <Link to="/" className="bg-teal-800 text-white hover:bg-teal-900 font-medium py-3 px-8 rounded-full shadow-lg transition duration-300">
               Learn More
-            </button>
+            </Link>
           </div>
         </div>
       </section>
