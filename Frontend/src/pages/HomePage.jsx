@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import plantPhoto from '../assets/plantPhoto.jpg'; // Import the plant image
 
 const HomePage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -81,7 +80,7 @@ const HomePage = () => {
             </div>
             <div className="md:w-1/2 mt-10 md:mt-0">
               <img 
-                src={plantPhoto} 
+                src="/api/placeholder/600/400" 
                 alt="Plant care illustration" 
                 className="w-full h-auto rounded-lg shadow-xl"
               />
