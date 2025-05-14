@@ -27,7 +27,7 @@ const HomePage = () => {
               </div>
             </div>
             <div className="hidden md:flex items-center space-x-4">
-              <Link to="/" className="text-teal-600 font-medium hover:text-teal-800 transition duration-150">
+              <Link to="/Login" className="text-teal-600 font-medium hover:text-teal-800 transition duration-150">
                 Login
               </Link>
               <Link to="/signup" className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-5 rounded-full transition duration-150">
