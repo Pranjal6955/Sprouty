@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, Plus, Bell, TrendingUp, Zap, Thermometer, Clock } from 'lucide-react';
+import { Plus, Bell, TrendingUp, Zap, Thermometer, Clock } from 'lucide-react';
 import plantPhoto from '../assets/plantPhoto.jpg';
 import { Link } from 'react-router-dom';
 
@@ -240,7 +240,7 @@ const HomePage = () => {
                 <li><a href="#home" className="text-gray-400 hover:text-teal-400 transition duration-150">Home</a></li>
                 <li><a href="#features" className="text-gray-400 hover:text-teal-400 transition duration-150">Features</a></li>
                 <li><a href="#about" className="text-gray-400 hover:text-teal-400 transition duration-150">About Us</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-teal-400 transition duration-150">Pricing</a></li>
+                {/* <li><a href="#" className="text-gray-400 hover:text-teal-400 transition duration-150">Pricing</a></li> */}
               </ul>
             </div>
             {/* <div>
