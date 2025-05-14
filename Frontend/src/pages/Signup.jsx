@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
 import { createUserWithEmailAndPassword, updateProfile, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import {FcGoogle} from 'react-icons/fc';
 
 function Signup() {
   const [name, setName] = useState('');
@@ -153,18 +154,9 @@ function Signup() {
           type="button"
           onClick={handleGoogleSignUp}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 mb-2 text-gray-700 font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm"
+          className={`w-full flex items-center justify-center gap-2 px-4 py-3 mb-2 text-gray-700 font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm transform hover:-translate-y-0.5 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
         >
-          {/* Google G Icon */}
-          <svg className="w-5 h-5" viewBox="0 0 32 32" fill="none">
-            <g>
-              <path d="M16.318 13.714v3.484h7.844c-.318 2.016-2.36 5.924-7.844 5.924-4.72 0-8.56-3.908-8.56-8.714s3.84-8.714 8.56-8.714c2.688 0 4.492 1.072 5.528 1.992l3.772-3.66C23.06 2.6 19.92 1 16.318 1 8.732 1 2.318 7.414 2.318 15s6.414 14 14 14c8.06 0 13.38-5.66 13.38-13.624 0-.916-.1-1.616-.224-2.286H16.318z" fill="#4285F4"/>
-              <path d="M16.318 29c5.66 0 10.4-3.74 12.08-8.924l-4.96-4.06c-.9 2.36-3.08 4.06-7.12 4.06-4.72 0-8.56-3.908-8.56-8.714s3.84-8.714 8.56-8.714c2.688 0 4.492 1.072 5.528 1.992l3.772-3.66C23.06 2.6 19.92 1 16.318 1 8.732 1 2.318 7.414 2.318 15s6.414 14 14 14z" fill="#34A853"/>
-              <path d="M29.318 15c0-.916-.1-1.616-.224-2.286H16.318v3.484h7.844c-.318 2.016-2.36 5.924-7.844 5.924-4.72 0-8.56-3.908-8.56-8.714s3.84-8.714 8.56-8.714c2.688 0 4.492 1.072 5.528 1.992l3.772-3.66C23.06 2.6 19.92 1 16.318 1 8.732 1 2.318 7.414 2.318 15s6.414 14 14 14c8.06 0 13.38-5.66 13.38-13.624z" fill="#FBBC05"/>
-              <path d="M16.318 1c3.602 0 6.742 1.6 8.78 4.312l-3.772 3.66C20.81 6.072 19.006 5 16.318 5c-4.72 0-8.56 3.908-8.56 8.714s3.84 8.714 8.56 8.714c4.04 0 6.22-1.7 7.12-4.06l4.96 4.06C26.718 25.26 21.978 29 16.318 29c-7.586 0-14-6.414-14-14S8.732 1 16.318 1z" fill="#EA4335"/>
-            </g>
-          </svg>
-          Sign up with Google
+        <FcGoogle className='text-xl mr-2'/>Sign up with Google
         </button>
         <p className="text-center text-sm text-gray-600">
           Already have an account? <Link to="/Login" className="text-emerald-600 font-medium hover:text-emerald-700 transition-colors duration-200">Login</Link>
