@@ -32,10 +32,12 @@ function Login() {
       navigate('/dashboard'); // Redirect to dashboard after successful login
     } catch (error) {
       setLoading(false);
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        setError('Invalid email or password');
+      if (error.code === 'auth/user-not-found' || 
+          error.code === 'auth/wrong-password' || 
+          error.code === 'auth/invalid-credential') {
+        setError('Incorrect email or password');
       } else {
-        setError('Failed to sign in: ' + error.message);
+        setError('Login failed. Please try again.');
       }
     }
   };
