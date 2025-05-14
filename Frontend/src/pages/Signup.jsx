@@ -95,7 +95,7 @@ function Signup() {
           </button>
         </form>
         <p className="text-center text-sm text-gray-600">
-          Already have an account? <Link to="/" className="text-emerald-600 font-medium hover:text-emerald-700 transition-colors duration-200">Login</Link>
+          Already have an account? <Link to="/Login" className="text-emerald-600 font-medium hover:text-emerald-700 transition-colors duration-200">Login</Link>
         </p>
       </div>
     </div>
