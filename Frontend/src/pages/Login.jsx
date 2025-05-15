@@ -162,9 +162,6 @@ function Login() {
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
-        <p className="text-center text-sm text-gray-600">
-          Don't have an account? <Link to="/signup" className="text-emerald-600 font-medium hover:text-emerald-700 transition-colors duration-200">Sign Up</Link>
-        </p>
 
         {/* Google Auth Button */}
         <button
@@ -175,6 +172,9 @@ function Login() {
         >
           <FcGoogle className='text-xl mr-2'/>Continue with Google
         </button>
+        <p className="text-center text-sm text-gray-600">
+          Don't have an account? <Link to="/signup" className="text-emerald-600 font-medium hover:text-emerald-700 transition-colors duration-200">Sign Up</Link>
+        </p>
       </div>
 
       {/* Password Reset Modal */}
