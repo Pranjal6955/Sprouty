@@ -13,7 +13,7 @@ const HomePage = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Navbar - Modern sticky design */}
-      <nav className="sticky top-0 z-50 bg-white shadow-sm backdrop-blur-md bg-opacity-90">
+    <nav className="sticky top-0 z-50 mx-auto w-[75%] shadow-sm backdrop-blur-md bg-opacity-90 rounded-[100px]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
