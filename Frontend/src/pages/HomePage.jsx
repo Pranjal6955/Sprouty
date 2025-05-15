@@ -11,9 +11,9 @@ const HomePage = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      {/* Navbar - Modern sticky design */}
-    <nav className="sticky top-0 z-50 mx-auto w-[75%] shadow-sm backdrop-blur-md bg-opacity-90 rounded-[100px]">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
+      {/* Navbar - Updated with consistent styling */}
+      <nav className="sticky top-0 z-50 mx-auto w-[75%] bg-white/90 backdrop-blur-sm border border-green-100 shadow-lg rounded-[100px] mt-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -66,9 +66,9 @@ const HomePage = () => {
         )}
       </nav>
 
-      {/* Hero Section - Modern with gradient */}
+      {/* Hero Section - Updated gradient */}
       <section id="home" className="relative py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-teal-50 via-white to-teal-100 z-0"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 z-0"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="flex flex-col md:flex-row items-center">
             <div className="md:w-1/2 md:pr-10">
@@ -101,8 +101,8 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Features Section - Card-based design */}
-      <section id="features" className="py-20 bg-white">
+      {/* Features Section - Updated card styling */}
+      <section id="features" className="py-20 bg-white/90 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Smart Features for Plant Lovers</h2>
@@ -111,7 +111,7 @@ const HomePage = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Feature 1 */}
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100">
+            <div className="bg-white/90 backdrop-blur-sm p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-green-100">
               <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center text-teal-600 mb-6">
                 <Plus className="h-8 w-8" />
               </div>
@@ -120,7 +120,7 @@ const HomePage = () => {
             </div>
             
             {/* Feature 2 */}
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100">
+            <div className="bg-white/90 backdrop-blur-sm p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-green-100">
               <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center text-teal-600 mb-6">
                 <Bell className="h-8 w-8" />
               </div>
@@ -129,7 +129,7 @@ const HomePage = () => {
             </div>
             
             {/* Feature 3 */}
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100">
+            <div className="bg-white/90 backdrop-blur-sm p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-green-100">
               <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center text-teal-600 mb-6">
                 <TrendingUp className="h-8 w-8" />
               </div>
@@ -138,7 +138,7 @@ const HomePage = () => {
             </div>
             
             {/* Feature 4 */}
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100">
+            <div className="bg-white/90 backdrop-blur-sm p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-green-100">
               <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center text-teal-600 mb-6">
                 <Zap className="h-8 w-8" />
               </div>
@@ -147,7 +147,7 @@ const HomePage = () => {
             </div>
             
             {/* Feature 5 */}
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100">
+            <div className="bg-white/90 backdrop-blur-sm p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-green-100">
               <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center text-teal-600 mb-6">
                 <Thermometer className="h-8 w-8" />
               </div>
@@ -156,7 +156,7 @@ const HomePage = () => {
             </div>
             
             {/* Feature 6 */}
-            <div className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition duration-300 border border-gray-100">
+            <div className="bg-white/90 backdrop-blur-sm p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-green-100">
               <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center text-teal-600 mb-6">
                 <Clock className="h-8 w-8" />
               </div>
@@ -167,8 +167,8 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* About Us Section - Modern two-column design */}
-      <section id="about" className="py-20 bg-gray-50">
+      {/* About Us Section - Updated styling */}
+      <section id="about" className="py-20 bg-white/90 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row gap-12 items-center">
             <div className="md:w-1/2">
@@ -197,26 +197,26 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Call to Action */}
-      <section className="py-16 bg-teal-700">
+      {/* Call to Action - Updated gradient */}
+      <section className="py-16 bg-gradient-to-r from-green-600 to-emerald-700">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-white mb-6">Ready to grow with us?</h2>
           <p className="text-teal-100 mb-8 text-lg max-w-3xl mx-auto">
             Join thousands of plant enthusiasts using Sprouty to care for their plants better than ever before.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/signup" className="bg-white text-teal-700 hover:bg-teal-50 font-medium py-3 px-8 rounded-full shadow-lg transition duration-300">
+            <Link to="/signup" className="bg-white text-emerald-700 hover:bg-emerald-50 font-medium py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:-translate-y-1">
               Start Free Trial
             </Link>
-            <Link to="/" className="bg-teal-800 text-white hover:bg-teal-900 font-medium py-3 px-8 rounded-full shadow-lg transition duration-300">
+            <Link to="/" className="bg-emerald-800 text-white hover:bg-emerald-900 font-medium py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:-translate-y-1">
               Learn More
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Footer - Modern, cleaner design */}
-      <footer className="bg-gray-900 text-white py-12">
+      {/* Footer - Updated styling */}
+      <footer className="bg-gradient-to-br from-gray-900 to-emerald-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-1 md:col-span-1">
@@ -256,8 +256,8 @@ const HomePage = () => {
               <h4 className="text-lg font-semibold mb-4">Stay Updated</h4>
               <p className="text-gray-400 mb-4">Subscribe to our newsletter for tips and updates.</p>
               <div className="flex">
-                <input type="email" placeholder="Your email" className="w-full px-4 py-2 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-teal-400" />
-                <button className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-r-lg transition duration-150">
+                <input type="email" placeholder="Your email" className="w-full px-4 py-3 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
+                <button className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white px-6 py-3 rounded-r-lg transition duration-300">
                   Subscribe
                 </button>
               </div>
