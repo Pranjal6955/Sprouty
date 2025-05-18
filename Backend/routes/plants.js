@@ -10,11 +10,11 @@ const {
   addGrowthMilestone
 } = require('../controllers/plantController');
 
-// Import auth middleware
-const auth = require('../middleware/auth');
+// Import auth middleware - FIX: Import the destructured protect function
+const { protect } = require('../middleware/auth');
 
 // Set auth middleware for all routes
-router.use(auth);
+router.use(protect);
 
 // Routes for /api/plants
 router.route('/')

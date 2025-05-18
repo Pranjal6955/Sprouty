@@ -50,5 +50,4 @@ exports.protect = async (req, res, next) => {
   }
 };
 
-// Alias for backwards compatibility
-module.exports = exports.protect;
+// We're keeping the exports object as is

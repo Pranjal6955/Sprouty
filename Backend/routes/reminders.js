@@ -10,11 +10,11 @@ const {
   completeReminder
 } = require('../controllers/reminderController');
 
-// Import auth middleware
-const auth = require('../middleware/auth');
+// Import auth middleware - FIX: Import the destructured protect function
+const { protect } = require('../middleware/auth');
 
 // Set auth middleware for all routes
-router.use(auth);
+router.use(protect);
 
 // Routes for /api/reminders
 router.route('/')
