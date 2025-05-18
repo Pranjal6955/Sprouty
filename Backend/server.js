@@ -9,6 +9,7 @@ const userRoutes = require('./routes/users');
 const reminderRoutes = require('./routes/reminders');
 const weatherRoutes = require('./routes/weather');
 const initCronJobs = require('./services/cronService');
+const firebase = require('./config/firebase'); // Initialize Firebase Admin SDK
 require('dotenv').config();
 
 // Initialize Express app
@@ -16,6 +17,9 @@ const app = express();
 
 // Connect to MongoDB
 connectDB();
+
+// Initialize Firebase Admin (already done via import)
+console.log('Firebase Admin SDK initialized');
 
 // Initialize cron jobs for reminders
 if (typeof initCronJobs === 'function') {

@@ -1,4 +1,5 @@
 const Plant = require('../models/Plant');
+const axios = require('axios');
 
 // @desc    Create new plant
 // @route   POST /api/plants
@@ -213,5 +214,59 @@ exports.addGrowthMilestone = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ success: false, error: 'Server Error' });
+  }
+};
+
+// @desc    Identify plant using plant.id API
+// @route   POST /api/plants/identify
+// @access  Private
+exports.identifyPlant = async (req, res, next) => {
+  try {
+    const { imageUrl } = req.body;
+    
+    if (!imageUrl) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Please provide an image URL for identification' 
+      });
+    }
+    
+    // Configure plant.id API request
+    // Replace with your actual API key and parameters
+    const plantIdApiKey = process.env.PLANT_ID_API_KEY;
+    
+    if (!plantIdApiKey) {
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Plant identification service not configured' 
+      });
+    }
+    
+    const requestData = {
+      api_key: plantIdApiKey,
+      images: [imageUrl],
+      modifiers: ["crops_fast", "similar_images"],
+      plant_language: "en",
+      plant_details: ["common_names", "url", "wiki_description", "taxonomy", "synonyms"]
+    };
+    
+    // Make request to plant.id API
+    const response = await axios.post(
+      'https://api.plant.id/v2/identify',
+      requestData
+    );
+    
+    // Return the identification results
+    res.status(200).json({
+      success: true,
+      data: response.data
+    });
+    
+  } catch (err) {
+    console.error('Plant identification error:', err.message);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error identifying plant' 
+    });
   }
 };
