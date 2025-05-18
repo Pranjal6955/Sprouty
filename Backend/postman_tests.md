@@ -54,6 +54,40 @@ curl -X POST http://localhost:5000/api/auth/login \
 }
 ```
 
+### Important: Using the Authentication Token
+
+After registering or logging in, you'll receive a JWT token. Copy this token value and use it to replace `YOUR_TOKEN` in the authenticated requests below.
+
+Example:
+```bash
+# If your token is eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYwZDVmOGI3N2QyMTNlM2EyY2FlZjJiMyIsImlhdCI6MTYyMzg1NzQ1NiwiZXhwIjoxNjI2NDQ5NDU2fQ.F3gm4bIZE8F4UxLu5OVH9AUzWDm_rF4DJW-WlNTJNxQ
+
+# Then your request should look like:
+curl -X GET http://localhost:5000/api/auth/me \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjYwZDVmOGI3N2QyMTNlM2EyY2FlZjJiMyIsImlhdCI6MTYyMzg1NzQ1NiwiZXhwIjoxNjI2NDQ5NDU2fQ.F3gm4bIZE8F4UxLu5OVH9AUzWDm_rF4DJW-WlNTJNxQ"
+```
+
+### Verify Token
+Use this endpoint to check if your token is valid:
+
+```bash
+curl -X GET http://localhost:5000/api/auth/verify-token \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+**Expected Response:**
+```json
+{
+  "success": true,
+  "message": "Token is valid",
+  "user": {
+    "id": "60d5f8b77d213e3a2caef2b3",
+    "name": "Test User",
+    "email": "test@example.com"
+  }
+}
+```
+
 ### Get Current User
 ```bash
 curl -X GET http://localhost:5000/api/auth/me \

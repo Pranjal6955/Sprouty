@@ -3,6 +3,14 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
+// Sign JWT and return
+const signToken = (id) => {
+  // Fix: Use string format for expiresIn ('30d' instead of just 30d or similar incorrect format)
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: '30d' // Changed to proper string format representing 30 days
+  });
+};
+
 // @desc    Register user
 // @route   POST /api/auth/register
 // @access  Public
@@ -10,36 +18,102 @@ exports.register = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
 
+    // Log complete request body for debugging (excluding password)
+    const debugBody = { ...req.body };
+    if (debugBody.password) debugBody.password = '****';
+    console.log('Registration request body:', JSON.stringify(debugBody));
+
+    // Validate required fields
+    if (!name || !email || !password) {
+      console.log('Registration failed: Missing required fields');
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Please provide name, email and password',
+        missing: {
+          name: !name,
+          email: !email,
+          password: !password
+        }
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+    if (!emailRegex.test(email)) {
+      console.log(`Registration failed: Invalid email format for ${email}`);
+      return res.status(400).json({
+        success: false,
+        error: 'Please provide a valid email address'
+      });
+    }
+
+    // Check password length
+    if (password.length < 6) {
+      console.log('Registration failed: Password too short');
+      return res.status(400).json({
+        success: false,
+        error: 'Password must be at least 6 characters long'
+      });
+    }
+
     // Check if user already exists
     let user = await User.findOne({ email });
     if (user) {
-      return res.status(400).json({ success: false, error: 'User already exists' });
+      console.log(`Registration failed: User ${email} already exists`);
+      return res.status(400).json({ 
+        success: false, 
+        error: 'User already exists with this email address'
+      });
     }
 
-    // Create user
-    user = new User({
-      name,
-      email,
-      password
-    });
+    try {
+      // Create user
+      user = new User({
+        name,
+        email,
+        password
+      });
 
-    await user.save();
+      await user.save();
+      console.log(`User registered successfully: ${email}`);
 
-    // Generate JWT
-    const token = user.getSignedJwtToken();
+      // Generate JWT
+      const token = signToken(user._id);
 
-    res.status(201).json({
-      success: true,
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email
-      }
-    });
+      res.status(201).json({
+        success: true,
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email
+        }
+      });
+    } catch (dbError) {
+      console.error('Database error during registration:', dbError);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Database error during registration',
+        details: process.env.NODE_ENV === 'development' ? dbError.message : undefined
+      });
+    }
   } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ success: false, error: 'Server Error' });
+    console.error('Registration error:', err);
+    
+    // Check for specific error types
+    if (err.name === 'ValidationError') {
+      const messages = Object.values(err.errors).map(val => val.message);
+      return res.status(400).json({
+        success: false,
+        error: messages.join(', ')
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      error: 'Server Error',
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 };
 
@@ -68,7 +142,7 @@ exports.login = async (req, res, next) => {
     }
 
     // Generate JWT
-    const token = user.getSignedJwtToken();
+    const token = signToken(user._id);
 
     res.status(200).json({
       success: true,
@@ -168,12 +242,33 @@ exports.resetPassword = async (req, res, next) => {
     await user.save();
 
     // Return token
-    const token = user.getSignedJwtToken();
+    const token = signToken(user._id);
 
     res.status(200).json({
       success: true,
       token,
       message: 'Password reset successful'
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ success: false, error: 'Server Error' });
+  }
+};
+
+// @desc    Verify user token
+// @route   GET /api/auth/verify-token
+// @access  Private
+exports.verifyToken = async (req, res, next) => {
+  try {
+    // If we reach here, the token is valid and the user is authenticated
+    res.status(200).json({
+      success: true,
+      message: 'Token is valid',
+      user: {
+        id: req.user._id,
+        name: req.user.name,
+        email: req.user.email
+      }
     });
   } catch (err) {
     console.error(err.message);
