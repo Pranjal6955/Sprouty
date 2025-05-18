@@ -1,14 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Menu, Plus, Sun, Wind, Thermometer, MapPin, Camera, LogOut, Settings, User, Home, Book, Bell } from 'lucide-react';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
+import Webcam from 'react-webcam';
 
 const Dashboard = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [weatherData, setWeatherData] = useState(null);
   const [plants, setPlants] = useState([]);
   const [funFact, setFunFact] = useState('');
+  const [showCamera, setShowCamera] = useState(false);
+  const [capturedImage, setCapturedImage] = useState(null);
+  const webcamRef = useRef(null);
   const navigate = useNavigate();
 
   const funFacts = [
@@ -42,16 +46,43 @@ const Dashboard = () => {
     }
   };
 
+  const handleCapture = async () => {
+    const imageSrc = webcamRef.current.getScreenshot();
+    setCapturedImage(imageSrc);
+    setShowCamera(false);
+
+    // Convert base64 to blob
+    const response = await fetch(imageSrc);
+    const blob = await response.blob();
+
+    // Create form data
+    const formData = new FormData();
+    formData.append('image', blob, 'plant-image.jpg');
+
+    try {
+      // Replace with your actual API endpoint
+      const response = await fetch('YOUR_API_ENDPOINT/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+
+      // Add new plant with the uploaded image URL
+      const newPlant = {
+        id: plants.length + 1,
+        name: "New Plant",
+        image: data.imageUrl, // Use the URL from your server response
+        health: "Good",
+        lastWatered: "Today"
+      };
+      setPlants([...plants, newPlant]);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    }
+  };
+
   const handleAddPlant = () => {
-    // Mock adding a plant - replace with actual camera/upload functionality
-    const newPlant = {
-      id: plants.length + 1,
-      name: "New Plant",
-      image: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=300",
-      health: "Good",
-      lastWatered: "Today"
-    };
-    setPlants([...plants, newPlant]);
+    setShowCamera(true);
   };
 
   return (
@@ -183,6 +214,33 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Camera Modal */}
+      {showCamera && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg">
+            <Webcam
+              ref={webcamRef}
+              screenshotFormat="image/jpeg"
+              className="rounded-lg"
+            />
+            <div className="flex justify-center mt-4 space-x-4">
+              <button
+                onClick={handleCapture}
+                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+              >
+                Capture
+              </button>
+              <button
+                onClick={() => setShowCamera(false)}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
