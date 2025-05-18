@@ -1,14 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, Plus, Sun, Wind, Thermometer, MapPin, Camera, LogOut, Settings, User, Home, Book, Bell } from 'lucide-react';
+import { Menu, Plus, Sun, Wind, Thermometer, MapPin, Camera, LogOut, Settings, User, Home, Book, Bell, Droplets, Search, ChevronDown } from 'lucide-react';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
+import { fetchWeatherByLocation, searchLocations, calculateSearchRelevance } from '../services/weatherApi';
 
 const Dashboard = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [weatherData, setWeatherData] = useState(null);
   const [plants, setPlants] = useState([]);
   const [funFact, setFunFact] = useState('');
+  const [error, setError] = useState(null);
+  const [location, setLocation] = useState('');
+  const [showLocationInput, setShowLocationInput] = useState(true);
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
 
   const funFacts = [
@@ -20,17 +26,20 @@ const Dashboard = () => {
   ];
 
   useEffect(() => {
-    // Set random fun fact
+    const initializeWeather = async () => {
+      try {
+        const data = await fetchWeatherByLocation('Bangkok');
+        setWeatherData(data);
+        setError(null);
+      } catch (error) {
+        console.error('Weather API Error:', error);
+        setError(error.message);
+      }
+    };
+
+    initializeWeather();
     const randomFact = funFacts[Math.floor(Math.random() * funFacts.length)];
     setFunFact(randomFact);
-
-    // Mock weather data - replace with actual API call
-    setWeatherData({
-      location: "Bangkok, Thailand",
-      temperature: "32°C",
-      windSpeed: "12 km/h",
-      sunlight: "High"
-    });
   }, []);
 
   const handleLogout = async () => {
@@ -43,7 +52,6 @@ const Dashboard = () => {
   };
 
   const handleAddPlant = () => {
-    // Mock adding a plant - replace with actual camera/upload functionality
     const newPlant = {
       id: plants.length + 1,
       name: "New Plant",
@@ -52,6 +60,54 @@ const Dashboard = () => {
       lastWatered: "Today"
     };
     setPlants([...plants, newPlant]);
+  };
+
+  const handleLocationSearch = async (searchTerm) => {
+    setLocation(searchTerm);
+    if (searchTerm.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    try {
+      const locations = await searchLocations(searchTerm);
+      const processedResults = locations
+        .map(result => ({
+          ...result,
+          relevance: calculateSearchRelevance(searchTerm, result.name)
+        }))
+        .filter(result => result.relevance > 0)
+        .sort((a, b) => b.relevance - a.relevance)
+        .slice(0, 15);
+
+      setSearchResults(processedResults);
+    } catch (error) {
+      console.error('Location search error:', error);
+    }
+  };
+
+  const handleLocationSelect = (selectedLocation) => {
+    setLocation(selectedLocation.fullName);
+    setSearchResults([]);
+    handleLocationSubmit(null, `${selectedLocation.lat},${selectedLocation.lon}`);
+  };
+
+  const handleLocationSubmit = async (e, locationUrl) => {
+    if (e) e.preventDefault();
+    if (!location && !locationUrl) return;
+    
+    setIsSearching(true);
+    try {
+      const data = await fetchWeatherByLocation(locationUrl || location);
+      setWeatherData(data);
+      setShowLocationInput(false);
+      setError(null);
+    } catch (error) {
+      console.error('Weather API Error:', error);
+      setError(error.message);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   return (
@@ -151,29 +207,119 @@ const Dashboard = () => {
           {/* Right Column - Weather and Fun Facts */}
           <div className="space-y-6">
             {/* Weather Widget */}
-            {weatherData && (
-              <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-md border border-green-100">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Current Conditions</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center text-gray-600">
-                    <MapPin size={20} className="mr-2" />
-                    <span>{weatherData.location}</span>
-                  </div>
-                  <div className="flex items-center text-gray-600">
-                    <Thermometer size={20} className="mr-2" />
-                    <span>{weatherData.temperature}</span>
-                  </div>
-                  <div className="flex items-center text-gray-600">
-                    <Wind size={20} className="mr-2" />
-                    <span>{weatherData.windSpeed}</span>
-                  </div>
-                  <div className="flex items-center text-gray-600">
-                    <Sun size={20} className="mr-2" />
-                    <span>{weatherData.sunlight}</span>
-                  </div>
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-md border border-green-100">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Weather Information</h3>
+              {error && (
+                <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-4">
+                  {error}
                 </div>
-              </div>
-            )}
+              )}
+              {showLocationInput ? (
+                <div className="relative">
+                  <form onSubmit={handleLocationSubmit} className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <div className="relative flex-1">
+                        <input
+                          type="text"
+                          value={location}
+                          onChange={(e) => handleLocationSearch(e.target.value)}
+                          placeholder="Search city or country..."
+                          className="w-full p-2 pl-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        />
+                        <MapPin size={16} className="absolute left-2 top-3 text-gray-400" />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={isSearching}
+                        className="p-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors disabled:bg-emerald-300"
+                      >
+                        {isSearching ? (
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                        ) : (
+                          <Search size={20} />
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                  
+                  {searchResults.length > 0 && (
+                    <div className="absolute w-full mt-1 bg-white rounded-lg shadow-lg border border-gray-100 z-50 max-h-96 overflow-auto">
+                      {searchResults.map((result) => (
+                        <button
+                          key={result.id}
+                          onClick={() => handleLocationSelect(result)}
+                          className="w-full px-4 py-2 text-left hover:bg-emerald-50 flex items-center space-x-2"
+                        >
+                          <MapPin size={16} className="text-gray-400" />
+                          <div>
+                            <span className="font-medium">{result.name}</span>
+                            <span className="text-gray-500 text-sm ml-1">{result.region && `${result.region},`} {result.country}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
+                      <MapPin size={20} className="text-emerald-600" />
+                      <span className="font-medium text-gray-800">{weatherData.location}</span>
+                    </div>
+                    <button
+                      onClick={() => setShowLocationInput(true)}
+                      className="text-sm text-emerald-600 hover:text-emerald-700 flex items-center space-x-1"
+                    >
+                      <span>Change</span>
+                      <ChevronDown size={16} />
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-emerald-50/50 p-4 rounded-lg">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <Thermometer size={16} className="text-emerald-600" />
+                        <span className="text-sm text-gray-600">Temperature</span>
+                      </div>
+                      <span className="text-2xl font-semibold text-gray-800">{weatherData.temperature}</span>
+                    </div>
+                    
+                    <div className="bg-emerald-50/50 p-4 rounded-lg">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <Droplets size={16} className="text-emerald-600" />
+                        <span className="text-sm text-gray-600">Humidity</span>
+                      </div>
+                      <span className="text-2xl font-semibold text-gray-800">{weatherData.humidity}</span>
+                    </div>
+                    
+                    <div className="bg-emerald-50/50 p-4 rounded-lg">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <Wind size={16} className="text-emerald-600" />
+                        <span className="text-sm text-gray-600">Wind Speed</span>
+                      </div>
+                      <span className="text-2xl font-semibold text-gray-800">{weatherData.windSpeed}</span>
+                    </div>
+                    
+                    <div className="bg-emerald-50/50 p-4 rounded-lg">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <Sun size={16} className="text-emerald-600" />
+                        <span className="text-sm text-gray-600">UV Index</span>
+                      </div>
+                      <span className="text-2xl font-semibold text-gray-800">{weatherData.uv}</span>
+                    </div>
+                  </div>
+                  
+                  {weatherData.icon && (
+                    <div className="flex items-center justify-center space-x-2 mt-4 p-4 bg-emerald-50/50 rounded-lg">
+                      <img src={weatherData.icon} alt={weatherData.condition} className="w-10 h-10" />
+                      <span className="text-gray-700">{weatherData.condition}</span>
+                      <span className="text-gray-500 text-sm">({weatherData.localTime})</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Fun Fact Widget */}
             <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 shadow-md border border-green-100">
