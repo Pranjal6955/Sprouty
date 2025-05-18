@@ -12,6 +12,7 @@ const Dashboard = () => {
   const [funFact, setFunFact] = useState('');
   const [showCamera, setShowCamera] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
+  const [plantName, setPlantName] = useState("");
   const webcamRef = useRef(null);
   const navigate = useNavigate();
 
@@ -49,36 +50,19 @@ const Dashboard = () => {
   const handleCapture = async () => {
     const imageSrc = webcamRef.current.getScreenshot();
     setCapturedImage(imageSrc);
+    
+    // Create new plant with captured image
+    const newPlant = {
+      id: plants.length + 1,
+      name: plantName || `Plant ${plants.length + 1}`,
+      image: imageSrc, // Directly use the captured image
+      health: "Good",
+      lastWatered: new Date().toLocaleDateString()
+    };
+    
+    setPlants([...plants, newPlant]);
     setShowCamera(false);
-
-    // Convert base64 to blob
-    const response = await fetch(imageSrc);
-    const blob = await response.blob();
-
-    // Create form data
-    const formData = new FormData();
-    formData.append('image', blob, 'plant-image.jpg');
-
-    try {
-      // Replace with your actual API endpoint
-      const response = await fetch('YOUR_API_ENDPOINT/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await response.json();
-
-      // Add new plant with the uploaded image URL
-      const newPlant = {
-        id: plants.length + 1,
-        name: "New Plant",
-        image: data.imageUrl, // Use the URL from your server response
-        health: "Good",
-        lastWatered: "Today"
-      };
-      setPlants([...plants, newPlant]);
-    } catch (error) {
-      console.error('Error uploading image:', error);
-    }
+    setPlantName(""); // Reset plant name
   };
 
   const handleAddPlant = () => {
@@ -218,21 +202,33 @@ const Dashboard = () => {
       {/* Camera Modal */}
       {showCamera && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-4 rounded-lg">
+          <div className="bg-white p-4 rounded-lg max-w-lg w-full">
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="Enter plant name"
+                value={plantName}
+                onChange={(e) => setPlantName(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-lg"
+              />
+            </div>
             <Webcam
               ref={webcamRef}
               screenshotFormat="image/jpeg"
-              className="rounded-lg"
+              className="rounded-lg w-full"
             />
             <div className="flex justify-center mt-4 space-x-4">
               <button
                 onClick={handleCapture}
                 className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
               >
-                Capture
+                Capture & Save
               </button>
               <button
-                onClick={() => setShowCamera(false)}
+                onClick={() => {
+                  setShowCamera(false);
+                  setPlantName("");
+                }}
                 className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
               >
                 Cancel
