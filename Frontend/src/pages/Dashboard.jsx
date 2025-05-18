@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Menu, Plus, Sun, Wind, Thermometer, MapPin, Camera, LogOut, Settings, User, Home, Book, Bell } from 'lucide-react';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
+import Webcam from 'react-webcam';
 
 const Dashboard = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [weatherData, setWeatherData] = useState(null);
   const [plants, setPlants] = useState([]);
   const [funFact, setFunFact] = useState('');
+  const [showCamera, setShowCamera] = useState(false);
+  const [capturedImage, setCapturedImage] = useState(null);
+  const [plantName, setPlantName] = useState("");
+  const webcamRef = useRef(null);
   const navigate = useNavigate();
 
   const funFacts = [
@@ -42,16 +47,26 @@ const Dashboard = () => {
     }
   };
 
-  const handleAddPlant = () => {
-    // Mock adding a plant - replace with actual camera/upload functionality
+  const handleCapture = async () => {
+    const imageSrc = webcamRef.current.getScreenshot();
+    setCapturedImage(imageSrc);
+    
+    // Create new plant with captured image
     const newPlant = {
       id: plants.length + 1,
-      name: "New Plant",
-      image: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=300",
+      name: plantName || `Plant ${plants.length + 1}`,
+      image: imageSrc, // Directly use the captured image
       health: "Good",
-      lastWatered: "Today"
+      lastWatered: new Date().toLocaleDateString()
     };
+    
     setPlants([...plants, newPlant]);
+    setShowCamera(false);
+    setPlantName(""); // Reset plant name
+  };
+
+  const handleAddPlant = () => {
+    setShowCamera(true);
   };
 
   return (
@@ -183,6 +198,45 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Camera Modal */}
+      {showCamera && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg max-w-lg w-full">
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="Enter plant name"
+                value={plantName}
+                onChange={(e) => setPlantName(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-lg"
+              />
+            </div>
+            <Webcam
+              ref={webcamRef}
+              screenshotFormat="image/jpeg"
+              className="rounded-lg w-full"
+            />
+            <div className="flex justify-center mt-4 space-x-4">
+              <button
+                onClick={handleCapture}
+                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+              >
+                Capture & Save
+              </button>
+              <button
+                onClick={() => {
+                  setShowCamera(false);
+                  setPlantName("");
+                }}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
