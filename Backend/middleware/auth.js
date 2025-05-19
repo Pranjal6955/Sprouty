@@ -1,8 +1,8 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
 
 // Protect routes
-exports.protect = async (req, res, next) => {
+export const protect = async (req, res, next) => {
   try {
     let token;
 
@@ -74,10 +74,11 @@ exports.protect = async (req, res, next) => {
 
 // If you're refreshing tokens or creating tokens in the middleware
 // Make sure the expiresIn format is correct here too
-const refreshToken = (user) => {
+export const refreshToken = (user) => {
   return jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
     expiresIn: '30d' // Proper string format
   });
 };
 
-// We're keeping the exports object as is
+// Default export for compatibility
+export default { protect, refreshToken };
