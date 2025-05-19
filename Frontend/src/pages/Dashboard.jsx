@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Plus, Sun, Wind, Thermometer, MapPin, Camera, Cloud, 
-  Umbrella, ArrowRight, AlertCircle, Droplets
+  Umbrella, ArrowRight, AlertCircle, Droplets, ChevronDown // Add ChevronDown here
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import { auth } from '../firebase';
