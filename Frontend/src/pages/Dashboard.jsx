@@ -7,12 +7,14 @@ import {
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import Webcam from 'react-webcam';
+// Remove Webcam import since it's now in AddPlant
 import {
   fetchWeatherByLocation,
   searchLocations,
   calculateSearchRelevance
 } from '../services/weatherApi';
+// Import AddPlant component
+import AddPlant from '../components/AddPlant';
 
 const Dashboard = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -23,12 +25,11 @@ const Dashboard = () => {
   const [showLocationInput, setShowLocationInput] = useState(true);
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [showCamera, setShowCamera] = useState(false);
-  // removed unused capturedImage state
+  const [showAddPlant, setShowAddPlant] = useState(false); // Replace showCamera state
   const [plantName, setPlantName] = useState("");
   const [activeNavItem, setActiveNavItem] = useState('Home');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const webcamRef = useRef(null);
+  // Remove webcamRef since it's now in AddPlant
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -55,25 +56,16 @@ const Dashboard = () => {
     }
   };
 
-  const handleCapture = () => {
-    const imageSrc = webcamRef.current.getScreenshot();
-    // setCapturedImage(imageSrc); // removed unused capturedImage
-
-    const newPlant = {
-      id: plants.length + 1,
-      name: plantName || `Plant ${plants.length + 1}`,
-      image: imageSrc,
-      health: "Good",
-      lastWatered: new Date().toLocaleDateString()
-    };
-
-    setPlants([...plants, newPlant]);
-    setShowCamera(false);
-    setPlantName("");
+  const handleAddPlant = () => {
+    setShowAddPlant(true); // Update to use showAddPlant instead of showCamera
   };
 
-  const handleAddPlant = () => {
-    setShowCamera(true);
+  // New function to handle the plant data from AddPlant
+  const handleSavePlant = (newPlant) => {
+    // Add the new plant to the plants array
+    setPlants([...plants, newPlant]);
+    // Hide the AddPlant component
+    setShowAddPlant(false);
   };
 
   const handleLocationSearch = async (searchTerm) => {
@@ -396,41 +388,12 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Camera Modal */}
-      {showCamera && (
-        <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex flex-col items-center justify-center space-y-4 p-4 animate-fadeIn">
-          <div className="bg-white p-5 rounded-xl shadow-lg w-full max-w-md">
-            <h3 className="text-xl font-semibold mb-4 text-center text-gray-800">Add a New Plant</h3>
-            <Webcam
-              audio={false}
-              ref={webcamRef}
-              screenshotFormat="image/jpeg"
-              className="w-full rounded-lg shadow-lg mb-4"
-              videoConstraints={{facingMode: 'environment'}}
-            />
-            <input
-              type="text"
-              placeholder="Enter plant name"
-              value={plantName}
-              onChange={(e) => setPlantName(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg shadow-sm border mb-4 focus:ring-2 focus:ring-green-200 outline-none transition-all"
-            />
-            <div className="flex space-x-3">
-              <button
-                onClick={handleCapture}
-                className="flex-1 bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-lg transition-colors shadow-sm"
-              >
-                Capture & Save
-              </button>
-              <button
-                onClick={() => setShowCamera(false)}
-                className="px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Replace Camera Modal with AddPlant Component */}
+      {showAddPlant && (
+        <AddPlant 
+          onAddPlant={handleSavePlant} 
+          onCancel={() => setShowAddPlant(false)} 
+        />
       )}
     </div>
   );

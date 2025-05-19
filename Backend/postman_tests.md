@@ -521,33 +521,65 @@ curl -X POST http://localhost:5000/api/plants/identify \
   }'
 ```
 
+# Alternative way to identify with base64 image
+```bash
+curl -X POST http://localhost:5000/api/plants/identify \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "base64Image": "BASE64_ENCODED_IMAGE_DATA"
+  }'
+```
+
 **Expected Response:**
 ```json
 {
   "success": true,
   "data": {
-    "id": 456789,
-    "suggestions": [
-      {
-        "id": 123,
-        "plant_name": "Monstera deliciosa",
-        "probability": 0.95,
-        "plant_details": {
-          "common_names": ["Swiss cheese plant", "Split-leaf philodendron"],
-          "wiki_description": {
-            "value": "Monstera deliciosa is a species of flowering plant native to tropical forests of southern Mexico, south to Panama."
-          },
-          "taxonomy": {
-            "class": "Liliopsida",
-            "family": "Araceae",
-            "genus": "Monstera"
-          },
-          "url": "https://en.wikipedia.org/wiki/Monstera_deliciosa"
+    "result": {
+      "classification": {
+        "suggestions": [
+          {
+            "id": "123",
+            "name": "Monstera deliciosa",
+            "probability": 0.95,
+            "details": {
+              "common_names": ["Swiss cheese plant", "Split-leaf philodendron"],
+              "description": "Monstera deliciosa is a species of flowering plant native to tropical forests of southern Mexico, south to Panama.",
+              "taxonomy": {
+                "class": "Liliopsida",
+                "family": "Araceae",
+                "genus": "Monstera"
+              },
+              "url": "https://en.wikipedia.org/wiki/Monstera_deliciosa"
+            }
+          }
+        ]
+      },
+      "is_plant": {
+        "probability": 0.99,
+        "binary": true
+      },
+      "health_assessment": {
+        "is_healthy": {
+          "probability": 0.95,
+          "binary": true
         }
       }
-    ],
-    "is_plant": true,
-    "is_healthy": true
+    }
+  },
+  "simplifiedData": {
+    "scientificName": "Monstera deliciosa",
+    "commonName": "Swiss cheese plant",
+    "allCommonNames": ["Swiss cheese plant", "Split-leaf philodendron"],
+    "confidence": 0.95,
+    "description": "Monstera deliciosa is a species of flowering plant native to tropical forests of southern Mexico, south to Panama.",
+    "taxonomy": {
+      "class": "Liliopsida",
+      "family": "Araceae",
+      "genus": "Monstera"
+    },
+    "wikiUrl": "https://en.wikipedia.org/wiki/Monstera_deliciosa"
   }
 }
 ```

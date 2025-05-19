@@ -7,7 +7,8 @@ const {
   updatePlant,
   deletePlant,
   updateCareHistory,
-  addGrowthMilestone
+  addGrowthMilestone,
+  identifyPlant
 } = require('../controllers/plantController');
 
 // Import auth middleware - FIX: Import the destructured protect function
@@ -20,6 +21,10 @@ router.use(protect);
 router.route('/')
   .get(getPlants)
   .post(createPlant);
+
+// Plant identification route
+router.route('/identify')
+  .post(identifyPlant);
 
 // Routes for /api/plants/:id
 router.route('/:id')

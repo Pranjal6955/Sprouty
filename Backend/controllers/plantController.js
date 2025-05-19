@@ -1,5 +1,6 @@
 const Plant = require('../models/Plant');
 const axios = require('axios');
+const plantIdentification = require('../services/plantIdentification');
 
 // @desc    Create new plant
 // @route   POST /api/plants
@@ -222,51 +223,64 @@ exports.addGrowthMilestone = async (req, res, next) => {
 // @access  Private
 exports.identifyPlant = async (req, res, next) => {
   try {
-    const { imageUrl } = req.body;
+    const { imageUrl, base64Image } = req.body;
     
-    if (!imageUrl) {
+    if (!imageUrl && !base64Image) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Please provide an image URL for identification' 
+        error: 'Please provide either an image URL or base64 image for identification' 
       });
     }
     
-    // Configure plant.id API request
-    // Replace with your actual API key and parameters
-    const plantIdApiKey = process.env.PLANT_ID_API_KEY;
+    console.log('Attempting to identify plant with image:', imageUrl ? 'URL provided' : 'Base64 image provided');
     
-    if (!plantIdApiKey) {
-      return res.status(500).json({ 
-        success: false, 
-        error: 'Plant identification service not configured' 
-      });
+    let identificationResults;
+    
+    if (imageUrl) {
+      // Identify using image URL
+      identificationResults = await plantIdentification.identifyPlantByUrl(imageUrl);
+    } else if (base64Image) {
+      // Identify using base64 image
+      identificationResults = await plantIdentification.identifyPlantByBase64(base64Image);
     }
     
-    const requestData = {
-      api_key: plantIdApiKey,
-      images: [imageUrl],
-      modifiers: ["crops_fast", "similar_images"],
-      plant_language: "en",
-      plant_details: ["common_names", "url", "wiki_description", "taxonomy", "synonyms"]
-    };
+    console.log('Plant identification successful, processing results');
     
-    // Make request to plant.id API
-    const response = await axios.post(
-      'https://api.plant.id/v2/identify',
-      requestData
-    );
+    // Extract simplified plant data, with emphasis on common name
+    const simplifiedData = plantIdentification.extractPlantData(identificationResults);
+    
+    // Ensure common name is used instead of scientific name
+    if (simplifiedData && simplifiedData.suggestions && simplifiedData.suggestions.length > 0) {
+      // Prioritize common name display for each suggestion
+      simplifiedData.suggestions = simplifiedData.suggestions.map(suggestion => {
+        return {
+          ...suggestion,
+          plant_name: suggestion.plant_common_names && suggestion.plant_common_names.length > 0 
+            ? suggestion.plant_common_names[0] 
+            : suggestion.plant_name // fallback to whatever name is available
+        };
+      });
+    }
     
     // Return the identification results
     res.status(200).json({
       success: true,
-      data: response.data
+      data: identificationResults,
+      simplifiedData
     });
     
   } catch (err) {
     console.error('Plant identification error:', err.message);
+    // Log more details if available
+    if (err.response) {
+      console.error('Response status:', err.response.status);
+      console.error('Response data:', err.response.data);
+    }
+    
     res.status(500).json({ 
       success: false, 
-      error: 'Error identifying plant' 
+      error: 'Error identifying plant',
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
   }
 };
