@@ -13,6 +13,7 @@ import {
   calculateSearchRelevance
 } from '../services/weatherApi';
 import AddPlant from '../components/AddPlant';
+import LogoOJT from '../assets/LogoOJT.png';
 
 const Dashboard = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -191,8 +192,12 @@ const Dashboard = () => {
               <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
                 <Cloud size={22} className="text-blue-500 mr-2" />
                 Weather
+                <img 
+                src={LogoOJT} 
+                alt="Sprouty Logo" 
+                className="h-12 w-13 absolute right-5"
+              />
               </h2>
-              
               {/* Weather & Location Section */}
               <div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-xl shadow-sm p-5 mb-6 transition-all hover:shadow-md">
                 {showLocationInput ? (

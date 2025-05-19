@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Bell, TrendingUp, Zap, Thermometer, Clock } from 'lucide-react';
 import plantPhoto from '../assets/plantPhoto.jpg';
 import { Link } from 'react-router-dom';
+import LogoOJT from '../assets/LogoOJT.png';
 
 const HomePage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -18,7 +19,12 @@ const HomePage = () => {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0 flex items-center">
-                <span className="text-teal-600 font-bold text-2xl">Sprouty</span>
+                <img 
+                  src={LogoOJT} 
+                  alt="Sprouty Logo" 
+                  className="h-12 w-13"
+                />
+                <span className="text-teal-600 font-bold text-2xl ml-2">Sprouty</span>
               </div>
               <div className="hidden md:ml-8 md:flex md:space-x-10">
                 <a href="#home" className="text-gray-700 hover:text-teal-600 px-3 py-2 text-sm font-medium transition duration-150">Home</a>
