@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
 import { createUserWithEmailAndPassword, updateProfile, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import {FcGoogle} from 'react-icons/fc';
+import { authAPI } from '../services/api';
 
 function Signup() {
   const [name, setName] = useState('');
@@ -31,16 +32,57 @@ function Signup() {
       
       try {
         setLoading(true);
-        // Create user with email and password
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         
-        // Update profile with name
-        await updateProfile(userCredential.user, {
+        // Firebase Authentication
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const firebaseUser = userCredential.user;
+        
+        // Update Firebase profile with name
+        await updateProfile(firebaseUser, {
           displayName: name
         });
         
-        setLoading(false);
-        navigate('/dashboard'); // Redirect to dashboard after successful signup
+        // Backend Registration
+        try {
+          const backendAuth = await authAPI.register({
+            name,
+            email,
+            password,
+            firebaseUid: firebaseUser.uid
+          });
+          
+          // Store the backend token
+          localStorage.setItem('authToken', backendAuth.token);
+          
+          // Store user information
+          localStorage.setItem('user', JSON.stringify({
+            id: backendAuth.user.id,
+            name: backendAuth.user.name,
+            email: backendAuth.user.email,
+            firebaseUid: firebaseUser.uid
+          }));
+          
+          setLoading(false);
+          navigate('/dashboard'); // Redirect to dashboard after successful signup
+        } catch (backendError) {
+          console.error('Backend registration failed:', backendError);
+          
+          // If backend registration fails, delete the Firebase user
+          try {
+            await firebaseUser.delete();
+          } catch (deleteError) {
+            console.error('Failed to delete Firebase user after backend registration failure:', deleteError);
+          }
+          
+          setLoading(false);
+          
+          if (backendError.response && backendError.response.data) {
+            setError(backendError.response.data.error || 'Failed to register on server');
+          } else {
+            setError('Failed to register account on server');
+          }
+        }
+        
       } catch (error) {
         setLoading(false);
         if (error.code === 'auth/email-already-in-use') {
@@ -60,9 +102,43 @@ function Signup() {
     setLoading(true);
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
-      setLoading(false);
-      navigate('/dashboard');
+      // Firebase Google Auth
+      const result = await signInWithPopup(auth, provider);
+      const firebaseUser = result.user;
+      
+      // After Firebase auth succeeds, register with the backend
+      try {
+        const backendAuth = await authAPI.register({
+          name: firebaseUser.displayName || 'Google User',
+          email: firebaseUser.email,
+          password: crypto.randomUUID(), // Generate random password for OAuth users
+          oAuthProvider: 'google',
+          oAuthToken: await firebaseUser.getIdToken(),
+          firebaseUid: firebaseUser.uid
+        });
+        
+        // Store the backend token
+        localStorage.setItem('authToken', backendAuth.token);
+        
+        // Store user information
+        localStorage.setItem('user', JSON.stringify({
+          id: backendAuth.user.id,
+          name: backendAuth.user.name || firebaseUser.displayName,
+          email: backendAuth.user.email || firebaseUser.email,
+          firebaseUid: firebaseUser.uid
+        }));
+        
+        setLoading(false);
+        navigate('/dashboard');
+      } catch (backendError) {
+        console.error('Backend registration failed after Google sign-up:', backendError);
+        
+        // If backend registration fails, log the user out of firebase
+        await auth.signOut();
+        
+        setLoading(false);
+        setError('Google sign-up failed on server. Please try again.');
+      }
     } catch (error) {
       setLoading(false);
       setError('Google sign-up failed: ' + error.message);

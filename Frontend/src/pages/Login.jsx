@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
 import { signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import {FcGoogle} from 'react-icons/fc';
+import { authAPI } from '../services/api';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -27,9 +28,39 @@ function Login() {
     
     try {
       setLoading(true);
-      await signInWithEmailAndPassword(auth, email, password);
-      setLoading(false);
-      navigate('/dashboard'); // Redirect to dashboard after successful login
+      
+      // Firebase Authentication
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+      
+      // Backend Authentication
+      try {
+        const backendAuth = await authAPI.login({
+          email,
+          password
+        });
+        
+        // Store the backend token
+        localStorage.setItem('authToken', backendAuth.token);
+        
+        // Store user information
+        localStorage.setItem('user', JSON.stringify({
+          id: backendAuth.user.id,
+          name: backendAuth.user.name,
+          email: backendAuth.user.email,
+          firebaseUid: firebaseUser.uid
+        }));
+        
+        setLoading(false);
+        navigate('/dashboard');
+      } catch (backendError) {
+        console.error('Backend auth failed:', backendError);
+        // If backend auth fails but firebase succeeds, log the user out of firebase
+        await auth.signOut();
+        
+        setLoading(false);
+        setError('Login failed. Please ensure your account exists on the server.');
+      }
     } catch (error) {
       setLoading(false);
       if (error.code === 'auth/user-not-found' || 
@@ -53,12 +84,24 @@ function Login() {
 
     try {
       setResetLoading(true);
+      
+      // Firebase password reset
       await sendPasswordResetEmail(auth, resetEmail);
+      
+      // Backend password reset
+      try {
+        await authAPI.forgotPassword(resetEmail);
+      } catch (backendError) {
+        console.error('Backend password reset failed:', backendError);
+        // Continue even if backend fails, as Firebase reset may still work
+      }
+      
       setResetLoading(false);
       setResetMessage({ 
         type: 'success', 
         text: 'Password reset link sent! Check your email inbox.' 
       });
+      
       // Clear the form after 3 seconds and close the modal
       setTimeout(() => {
         setResetEmail('');
@@ -88,9 +131,58 @@ function Login() {
     setLoading(true);
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
-      setLoading(false);
-      navigate('/dashboard');
+      // Firebase Google Auth
+      const result = await signInWithPopup(auth, provider);
+      const firebaseUser = result.user;
+      
+      // After Firebase auth succeeds, register or login with the backend
+      try {
+        // Try login first (for existing users)
+        let backendAuth;
+        try {
+          backendAuth = await authAPI.login({
+            email: firebaseUser.email,
+            // Special case for OAuth users - backend should handle this
+            oAuthProvider: 'google',
+            oAuthToken: await firebaseUser.getIdToken()
+          });
+        } catch (loginErr) {
+          // If login fails, try registering the user
+          if (loginErr.response && loginErr.response.status === 401) {
+            backendAuth = await authAPI.register({
+              name: firebaseUser.displayName || 'Google User',
+              email: firebaseUser.email,
+              password: crypto.randomUUID(), // Generate random password for OAuth users
+              oAuthProvider: 'google',
+              oAuthToken: await firebaseUser.getIdToken()
+            });
+          } else {
+            // If it's not a 401 error, rethrow
+            throw loginErr;
+          }
+        }
+        
+        // Store the backend token
+        localStorage.setItem('authToken', backendAuth.token);
+        
+        // Store user information
+        localStorage.setItem('user', JSON.stringify({
+          id: backendAuth.user.id,
+          name: backendAuth.user.name || firebaseUser.displayName,
+          email: backendAuth.user.email || firebaseUser.email,
+          firebaseUid: firebaseUser.uid
+        }));
+        
+        setLoading(false);
+        navigate('/dashboard');
+      } catch (backendError) {
+        console.error('Backend auth failed after Google sign-in:', backendError);
+        // If backend auth fails, log the user out of firebase
+        await auth.signOut();
+        
+        setLoading(false);
+        setError('Google sign-in failed on server. Please try again.');
+      }
     } catch (error) {
       setLoading(false);
       setError('Google sign-in failed: ' + error.message);
