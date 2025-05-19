@@ -119,19 +119,11 @@ const Dashboard = () => {
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
-      <div 
-        className={`bg-white h-full shadow-lg transition-all duration-300 ease-in-out ${
-          isMenuOpen ? 'w-64' : 'w-20'
-        } flex flex-col border-r border-gray-100 z-10`}
-      >
-        <div className="p-4 flex justify-between items-center">
-          {isMenuOpen ? (
-            <h2 className="font-bold text-green-600 text-xl">Sprouty</h2>
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-bold">
-              S
-            </div>
-          )}
+      <div className={`bg-white h-full shadow-lg transition-all duration-300 ease-in-out ${
+        isMenuOpen ? 'w-64' : 'w-16'
+      } flex flex-col border-r border-gray-100`}>
+        {/* Hamburger Menu */}
+        <div className="p-4 flex justify-center">
           <button 
             onClick={() => setIsMenuOpen(!isMenuOpen)} 
             className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -139,52 +131,55 @@ const Dashboard = () => {
             <Menu size={22} className="text-gray-600" />
           </button>
         </div>
-        <div className="flex-1 px-4 py-4">
-          <div className="space-y-4">
-            <NavItem 
-              icon={<Home size={20} />} 
-              label="Home" 
-              isOpen={isMenuOpen} 
-              isActive={activeNavItem === 'Home'} 
-              onClick={() => setActiveNavItem('Home')}
-            />
-            <NavItem 
-              icon={<Book size={20} />} 
-              label="Garden Log" 
-              isOpen={isMenuOpen} 
-              isActive={activeNavItem === 'Garden Log'} 
-              onClick={() => setActiveNavItem('Garden Log')}
-            />
-            <NavItem 
-              icon={<Bell size={20} />} 
-              label="Reminders" 
-              isOpen={isMenuOpen} 
-              isActive={activeNavItem === 'Reminders'} 
-              onClick={() => setActiveNavItem('Reminders')}
-            />
-            <NavItem 
-              icon={<User size={20} />} 
-              label="Profile" 
-              isOpen={isMenuOpen} 
-              isActive={activeNavItem === 'Profile'} 
-              onClick={() => setActiveNavItem('Profile')}
-            />
-            <NavItem 
-              icon={<Settings size={20} />} 
-              label="Settings" 
-              isOpen={isMenuOpen} 
-              isActive={activeNavItem === 'Settings'} 
-              onClick={() => setActiveNavItem('Settings')}
-            />
-          </div>
+
+        {/* Navigation Items - Only show when menu is open */}
+        <div className="flex-1 px-2">
+          {isMenuOpen && (
+            <div className="space-y-4 mt-4">
+              <NavItem 
+                icon={<Home size={20} />} 
+                label="Home" 
+                isActive={activeNavItem === 'Home'} 
+                onClick={() => setActiveNavItem('Home')}
+              />
+              <NavItem 
+                icon={<Book size={20} />} 
+                label="Garden Log" 
+                isActive={activeNavItem === 'Garden Log'} 
+                onClick={() => setActiveNavItem('Garden Log')}
+              />
+              <NavItem 
+                icon={<Bell size={20} />} 
+                label="Reminders" 
+                isActive={activeNavItem === 'Reminders'} 
+                onClick={() => setActiveNavItem('Reminders')}
+              />
+              <NavItem 
+                icon={<User size={20} />} 
+                label="Profile" 
+                isActive={activeNavItem === 'Profile'} 
+                onClick={() => setActiveNavItem('Profile')}
+              />
+              <NavItem 
+                icon={<Settings size={20} />} 
+                label="Settings" 
+                isActive={activeNavItem === 'Settings'} 
+                onClick={() => setActiveNavItem('Settings')}
+              />
+            </div>
+          )}
         </div>
-        <div className="p-4 border-t border-gray-100">
+
+        {/* Logout Button - Always visible */}
+        <div className="p-2 border-t border-gray-100">
           <button 
             onClick={handleLogout} 
-            className="flex items-center space-x-2 text-red-500 hover:bg-red-50 rounded-lg p-2.5 w-full transition-colors"
+            className={`flex items-center justify-center w-full p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors ${
+              isMenuOpen ? 'justify-start px-4' : 'justify-center'
+            }`}
           >
             <LogOut size={20} />
-            {isMenuOpen && <span className="font-medium">Log Out</span>}
+            {isMenuOpen && <span className="ml-3 font-medium">Log Out</span>}
           </button>
         </div>
       </div>
@@ -399,8 +394,8 @@ const Dashboard = () => {
   );
 };
 
-// Helper components
-const NavItem = ({ icon, label, isOpen, isActive, onClick }) => (
+// Update NavItem component to remove isOpen prop since it's controlled by parent visibility
+const NavItem = ({ icon, label, isActive, onClick }) => (
   <div 
     onClick={onClick}
     className={`flex items-center space-x-4 p-2.5 rounded-lg cursor-pointer transition-colors ${
@@ -410,8 +405,7 @@ const NavItem = ({ icon, label, isOpen, isActive, onClick }) => (
     }`}
   >
     <div className={isActive ? 'text-green-600' : 'text-gray-500'}>{icon}</div>
-    {isOpen && <span className={`${isActive ? 'font-medium' : ''} transition-all`}>{label}</span>}
-    {!isOpen && isActive && <div className="absolute left-0 w-1 h-8 bg-green-500 rounded-r-full"></div>}
+    <span className={`${isActive ? 'font-medium' : ''} transition-all`}>{label}</span>
   </div>
 );
 
