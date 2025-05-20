@@ -2,7 +2,7 @@ const admin = require('firebase-admin');
 const path = require('path');
 
 // Path to service account file
-const serviceAccount = require('./serviceaccounct.json'); // Fixed spelling to match actual filename
+const serviceAccount = require('./serviceaccount.json'); 
 
 // Initialize Firebase Admin
 const firebaseAdmin = admin.initializeApp({
