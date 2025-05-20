@@ -30,6 +30,24 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen, activeNavItem, setActiveNavItem })
     }
   };
 
+  const handleNavigation = (item) => {
+    setActiveNavItem(item);
+    switch(item) {
+      case 'Home':
+        navigate('/dashboard');
+        break;
+      case 'Reminders':
+        navigate('/reminder');
+        break;
+      case 'Profile':
+        navigate('/profile');
+        break;
+      // Add other navigation cases as needed
+      default:
+        break;
+    }
+  };
+
   return (
     <div className={`bg-white h-full shadow-lg transition-all duration-300 ease-in-out ${
       isMenuOpen ? 'w-64' : 'w-16'
@@ -52,7 +70,7 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen, activeNavItem, setActiveNavItem })
               icon={<Home size={20} />} 
               label="Home" 
               isActive={activeNavItem === 'Home'} 
-              onClick={() => setActiveNavItem('Home')}
+              onClick={() => handleNavigation('Home')}
             />
             <NavItem 
               icon={<Book size={20} />} 
@@ -64,13 +82,13 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen, activeNavItem, setActiveNavItem })
               icon={<Bell size={20} />} 
               label="Reminders" 
               isActive={activeNavItem === 'Reminders'} 
-              onClick={() => setActiveNavItem('Reminders')}
+              onClick={() => handleNavigation('Reminders')}
             />
             <NavItem 
               icon={<User size={20} />} 
               label="Profile" 
               isActive={activeNavItem === 'Profile'} 
-              onClick={() => setActiveNavItem('Profile')}
+              onClick={() => handleNavigation('Profile')}
             />
             <NavItem 
               icon={<Settings size={20} />} 
