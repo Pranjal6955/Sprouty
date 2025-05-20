@@ -14,6 +14,7 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
   const [plantDetails, setPlantDetails] = useState(null);
   const [error, setError] = useState(null);
   const [showMoreInfo, setShowMoreInfo] = useState(true); // Changed to true to show by default
+  const [showImagePreview, setShowImagePreview] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const webcamRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -36,7 +37,7 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
         const imageData = e.target.result;
         setCapturedImage(imageData);
         
-        // Immediately start plant identification process
+        // Now identify the plant using the uploaded image
         await identifyPlantFromImage(imageData);
       } catch (err) {
         console.error('Error processing uploaded image:', err);
@@ -114,7 +115,7 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
           }
           
           // Automatically show image preview when identification is successful
-          setShowMoreInfo(true);
+          setShowImagePreview(true);
         } else {
           setError("The plant couldn't be identified clearly. Please enter details manually or try another image.");
         }
@@ -143,7 +144,7 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
       const imageSrc = webcamRef.current.getScreenshot();
       setCapturedImage(imageSrc);
       
-      // Immediately start plant identification process
+      // Start plant identification process
       await identifyPlantFromImage(imageSrc);
     } catch (err) {
       console.error('Camera capture error:', err);
@@ -212,51 +213,31 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
     setShowMoreInfo(false);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     
     if (!plantName || !capturedImage) return;
     
-    try {
-      // Show processing state
-      setIsIdentifying(true);
-      
-      const newPlant = {
-        name: plantName,
-        species: plantDetails?.scientificName || plantType || "Unknown",
-        nickname: plantName,
-        mainImage: capturedImage, // Use mainImage field as per backend model
-        notes: notes,
-        status: "Healthy",
-        // Additional data from plant details if available
-        scientificDetails: plantDetails ? {
-          scientificName: plantDetails.scientificName,
-          commonNames: plantDetails.allCommonNames,
-          confidence: plantDetails.confidence,
-          taxonomy: plantDetails.taxonomy,
-          wikiUrl: plantDetails.wikiUrl
-        } : null
-      };
-      
-      // First add plant to database
-      const savedPlant = await plantAPI.createPlant(newPlant);
-      console.log("Plant saved to database:", savedPlant);
-      
-      // Then pass the complete plant data to parent component
-      onAddPlant({
-        ...savedPlant.data,
-        id: savedPlant.data._id, // Map MongoDB _id to id for frontend
-        image: capturedImage,
-        lastWatered: new Date().toLocaleDateString(),
-        dateAdded: new Date().toLocaleDateString(),
-        health: "Good"
-      });
-    } catch (err) {
-      console.error("Error saving plant:", err);
-      setError("Failed to save plant. Please try again.");
-    } finally {
-      setIsIdentifying(false);
-    }
+    const newPlant = {
+      id: Date.now(), // Simple unique ID
+      name: plantName,
+      species: plantDetails?.scientificName || plantType || "Unknown",
+      nickname: plantName,
+      image: capturedImage,
+      notes: notes,
+      health: "Good",
+      lastWatered: new Date().toLocaleDateString(),
+      dateAdded: new Date().toLocaleDateString(),
+      scientificDetails: plantDetails ? {
+        scientificName: plantDetails.scientificName,
+        commonNames: plantDetails.allCommonNames,
+        confidence: plantDetails.confidence,
+        taxonomy: plantDetails.taxonomy,
+        wikiUrl: plantDetails.wikiUrl
+      } : null
+    };
+    
+    onAddPlant(newPlant);
   };
 
   // Enhanced debugging info display
@@ -361,32 +342,53 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              {/* Small thumbnail of captured image */}
-              <div className="relative w-full h-32">
+            <div className="relative">
+              <div className="group relative">
                 <img 
                   src={capturedImage} 
                   alt="Captured plant" 
-                  className="w-full h-full object-cover rounded-lg" 
+                  className="w-full h-64 object-cover rounded-lg shadow-md cursor-pointer" 
+                  onClick={() => setShowImagePreview(true)}
                 />
-                <button
-                  type="button"
-                  onClick={handleRetake}
-                  className="absolute top-2 right-2 bg-black bg-opacity-50 p-1.5 rounded-full hover:bg-opacity-70 transition-colors"
-                >
-                  <X size={18} className="text-white" />
-                </button>
-              </div>
-
-              {/* Plant Details Section */}
-              {isIdentifying ? (
-                <div className="text-center p-4">
-                  <Loader size={32} className="mx-auto animate-spin mb-2" />
-                  <p>Identifying plant...</p>
+                <div className="absolute inset-0 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setShowImagePreview(true)}
+                    className="bg-white p-2 rounded-full hover:bg-gray-100 transition-colors"
+                  >
+                    <Maximize size={20} className="text-gray-700" />
+                  </button>
                 </div>
-              ) : plantDetails && (
-                <div className="bg-green-50 p-4 rounded-lg">
-                  {/* Plant identification details */}
+              </div>
+              
+              <button
+                type="button"
+                onClick={handleRetake}
+                className="absolute top-2 right-2 bg-black bg-opacity-50 p-1.5 rounded-full hover:bg-opacity-70 transition-colors"
+              >
+                <X size={18} className="text-white" />
+              </button>
+              
+              {isIdentifying && (
+                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
+                  <div className="text-center text-white">
+                    <Loader size={32} className="mx-auto animate-spin mb-2" />
+                    <p>Identifying plant...</p>
+                  </div>
+                </div>
+              )}
+              
+              {error && (
+                <div className="mt-2 text-red-600 text-sm bg-red-50 p-2 rounded-md">
+                  {error}
+                </div>
+              )}
+              
+              {/* Uncomment this for debugging */}
+              {/* {renderDebugInfo()} */}
+              
+              {plantDetails && (
+                <div className="mt-2 bg-green-50 p-3 rounded-md">
                   <div className="flex items-center justify-between">
                     <p className="text-green-800 text-sm font-medium">
                       Identified as <span className="italic">{plantDetails.scientificName}</span> ({(plantDetails.confidence * 100).toFixed(1)}% confidence)
@@ -566,6 +568,52 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
           </div>
         </form>
       </div>
+
+      {/* Fullscreen image preview modal */}
+      {showImagePreview && capturedImage && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-90 z-[60] flex items-center justify-center animate-fadeIn"
+          onClick={() => setShowImagePreview(false)}
+        >
+          <div className="relative w-full h-full flex flex-col items-center justify-center" onClick={e => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => setShowImagePreview(false)}
+              className="absolute top-4 right-4 bg-black bg-opacity-50 p-2 rounded-full hover:bg-opacity-70 transition-colors z-10"
+            >
+              <X size={24} className="text-white" />
+            </button>
+            
+            <div className="relative w-[90%] h-[80%] flex items-center justify-center">
+              <img 
+                src={capturedImage} 
+                alt="Plant preview" 
+                className="max-w-full max-h-full object-contain" 
+              />
+            </div>
+            
+            {plantDetails && (
+              <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white p-4">
+                <p className="text-xl font-semibold">{plantDetails.commonName || plantName}</p>
+                <p className="text-sm italic">{plantDetails.scientificName}</p>
+                
+                {/* Add a button to view plant details */}
+                <button
+                  onClick={() => setShowImagePreview(false)}
+                  className="mt-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full text-sm transition-colors"
+                >
+                  View Plant Details
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
+      {/* Uncomment the debug info during development */}
+      {isIdentifying && <div className="fixed bottom-4 right-4 bg-white p-2 rounded-md shadow-md text-xs">
+        Processing plant image...
+      </div>}
     </div>
   );
 };
