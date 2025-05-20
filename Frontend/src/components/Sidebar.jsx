@@ -39,6 +39,9 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen, activeNavItem, setActiveNavItem })
       case 'Reminders':
         navigate('/reminder');
         break;
+      case 'Profile':
+        navigate('/profile');
+        break;
       // Add other navigation cases as needed
       default:
         break;
@@ -85,7 +88,7 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen, activeNavItem, setActiveNavItem })
               icon={<User size={20} />} 
               label="Profile" 
               isActive={activeNavItem === 'Profile'} 
-              onClick={() => setActiveNavItem('Profile')}
+              onClick={() => handleNavigation('Profile')}
             />
             <NavItem 
               icon={<Settings size={20} />} 
