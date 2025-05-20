@@ -156,6 +156,11 @@ const Dashboard = () => {
           {/* Left Side Content */}
           <div className="flex-1 p-6 overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
+            <img 
+                src={LogoOJT} 
+                alt="Sprouty Logo" 
+                className="h-17 w-16"
+              />
               <h1 className="text-2xl font-bold text-gray-800">My Garden Dashboard</h1>
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-gray-500">
@@ -219,11 +224,6 @@ const Dashboard = () => {
               <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
                 <Cloud size={22} className="text-blue-500 mr-2" />
                 Weather
-                <img 
-                src={LogoOJT} 
-                alt="Sprouty Logo" 
-                className="h-12 w-13 absolute right-5"
-              />
               </h2>
               {/* Weather & Location Section */}
               <div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-xl shadow-sm p-5 mb-6 transition-all hover:shadow-md">
