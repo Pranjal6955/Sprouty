@@ -5,9 +5,8 @@ const crypto = require('crypto');
 
 // Sign JWT and return
 const signToken = (id) => {
-  // Fix: Use string format for expiresIn ('30d' instead of just 30d or similar incorrect format)
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d' // Changed to proper string format representing 30 days
+    expiresIn: '30d' 
   });
 };
 
@@ -18,7 +17,6 @@ exports.register = async (req, res, next) => {
   try {
     const { name, email, password, firebaseUid, oAuthProvider, oAuthToken } = req.body;
 
-    // Log complete request body for debugging (excluding password)
     const debugBody = { ...req.body };
     if (debugBody.password) debugBody.password = '****';
     if (debugBody.oAuthToken) debugBody.oAuthToken = '****';

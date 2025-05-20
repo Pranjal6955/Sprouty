@@ -12,15 +12,15 @@ const connectDB = async () => {
 
     // Connection options - removed deprecated options
     const options = {
-      serverSelectionTimeoutMS: 5000, // Timeout after 5 seconds
-      maxPoolSize: 10 // Maintain up to 10 socket connections
+      serverSelectionTimeoutMS: 5000,
+      maxPoolSize: 10
     };
 
     await mongoose.connect(mongoURI, options);
     
     console.log('MongoDB Connected...');
   } catch (err) {
-    // Enhanced error handling
+    //Error handling
     if (err.name === 'MongoServerSelectionError') {
       console.error('Unable to connect to MongoDB server. Please check your connection string and make sure your MongoDB server is running.');
     } else if (err.message.includes('bad auth')) {
@@ -29,8 +29,6 @@ const connectDB = async () => {
     } else {
       console.error('Database connection error:', err.message);
     }
-    
-    // Exit process with failure
     process.exit(1);
   }
 };
