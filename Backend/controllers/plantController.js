@@ -10,14 +10,48 @@ exports.createPlant = async (req, res, next) => {
     // Add user to req.body
     req.body.user = req.user.id;
     
-    const plant = await Plant.create(req.body);
+    // Handle image uploads
+    const { mainImage, scientificDetails } = req.body;
+    
+    // Create a new plant document
+    let plantData = {
+      ...req.body,
+      user: req.user.id
+    };
+    
+    // If there's a mainImage but no images array yet
+    if (mainImage && (!req.body.images || req.body.images.length === 0)) {
+      plantData.images = [{ url: mainImage }];
+    }
+    
+    // If scientific details exist, store them as notes if notes are empty
+    if (scientificDetails && !req.body.notes) {
+      let scientificNotes = '';
+      
+      if (scientificDetails.commonNames && scientificDetails.commonNames.length > 0) {
+        scientificNotes += `Common names: ${scientificDetails.commonNames.join(', ')}\n\n`;
+      }
+      
+      if (scientificDetails.description) {
+        scientificNotes += `Description: ${scientificDetails.description}\n\n`;
+      }
+      
+      if (scientificDetails.wikiUrl) {
+        scientificNotes += `More info: ${scientificDetails.wikiUrl}`;
+      }
+      
+      plantData.notes = scientificNotes;
+    }
+    
+    console.log("Creating plant with data:", JSON.stringify(plantData, null, 2));
+    const plant = await Plant.create(plantData);
     
     res.status(201).json({
       success: true,
       data: plant
     });
   } catch (err) {
-    console.error(err.message);
+    console.error('Error creating plant:', err.message);
     res.status(500).json({ success: false, error: 'Server Error' });
   }
 };

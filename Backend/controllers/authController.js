@@ -16,11 +16,12 @@ const signToken = (id) => {
 // @access  Public
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, firebaseUid, oAuthProvider, oAuthToken } = req.body;
 
     // Log complete request body for debugging (excluding password)
     const debugBody = { ...req.body };
     if (debugBody.password) debugBody.password = '****';
+    if (debugBody.oAuthToken) debugBody.oAuthToken = '****';
     console.log('Registration request body:', JSON.stringify(debugBody));
 
     // Validate required fields
@@ -56,8 +57,35 @@ exports.register = async (req, res, next) => {
       });
     }
 
-    // Check if user already exists
+    // Check if user already exists by email
     let user = await User.findOne({ email });
+    
+    // If user exists but no firebaseUid is registered, we can link accounts
+    if (user && firebaseUid && !user.firebaseUid) {
+      console.log(`Linking existing account ${email} with Firebase UID`);
+      user.firebaseUid = firebaseUid;
+      if (oAuthProvider) {
+        user.authProvider = oAuthProvider;
+      }
+      await user.save();
+      
+      // Generate JWT
+      const token = signToken(user._id);
+
+      return res.status(200).json({
+        success: true,
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          firebaseUid: user.firebaseUid
+        },
+        message: "Accounts linked successfully"
+      });
+    }
+    
+    // If user already exists and can't be linked, return error
     if (user) {
       console.log(`Registration failed: User ${email} already exists`);
       return res.status(400).json({ 
@@ -67,11 +95,13 @@ exports.register = async (req, res, next) => {
     }
 
     try {
-      // Create user
+      // Create user with additional Firebase data if available
       user = new User({
         name,
         email,
-        password
+        password,
+        firebaseUid: firebaseUid || undefined,
+        authProvider: oAuthProvider || 'local'
       });
 
       await user.save();
@@ -86,7 +116,8 @@ exports.register = async (req, res, next) => {
         user: {
           id: user._id,
           name: user.name,
-          email: user.email
+          email: user.email,
+          firebaseUid: user.firebaseUid
         }
       });
     } catch (dbError) {
@@ -122,8 +153,53 @@ exports.register = async (req, res, next) => {
 // @access  Public
 exports.login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, firebaseUid, oAuthProvider, oAuthToken } = req.body;
 
+    // OAuth login case
+    if (oAuthProvider && (oAuthToken || firebaseUid)) {
+      // Find user by email or firebaseUid
+      let user;
+      
+      if (firebaseUid) {
+        user = await User.findOne({ firebaseUid });
+      }
+      
+      if (!user && email) {
+        user = await User.findOne({ email });
+      }
+      
+      // If user doesn't exist, return error - they need to register first
+      if (!user) {
+        return res.status(401).json({ 
+          success: false, 
+          error: 'User not found. Please register first.',
+          needsRegistration: true
+        });
+      }
+      
+      // If user found but doesn't have firebaseUid set, update it
+      if (user && firebaseUid && !user.firebaseUid) {
+        user.firebaseUid = firebaseUid;
+        user.authProvider = oAuthProvider;
+        await user.save();
+      }
+      
+      // Generate JWT
+      const token = signToken(user._id);
+
+      return res.status(200).json({
+        success: true,
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          firebaseUid: user.firebaseUid
+        }
+      });
+    }
+
+    // Standard email/password login
     // Validate email & password
     if (!email || !password) {
       return res.status(400).json({ success: false, error: 'Please provide email and password' });
@@ -150,7 +226,8 @@ exports.login = async (req, res, next) => {
       user: {
         id: user._id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        firebaseUid: user.firebaseUid
       }
     });
   } catch (err) {
@@ -269,6 +346,50 @@ exports.verifyToken = async (req, res, next) => {
         name: req.user.name,
         email: req.user.email
       }
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ success: false, error: 'Server Error' });
+  }
+};
+
+// @desc    Link Firebase account with existing backend account
+// @route   POST /api/auth/link-accounts
+// @access  Private
+exports.linkAccounts = async (req, res, next) => {
+  try {
+    const { firebaseUid } = req.body;
+    
+    if (!firebaseUid) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Firebase UID is required' 
+      });
+    }
+    
+    // Update the user's record with the Firebase UID
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { firebaseUid },
+      { new: true }
+    );
+    
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'User not found' 
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        firebaseUid: user.firebaseUid
+      },
+      message: 'Accounts linked successfully'
     });
   } catch (err) {
     console.error(err.message);

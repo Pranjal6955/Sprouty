@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Plus, Sun, Wind, Thermometer, MapPin, Camera, Cloud, 
-  Umbrella, ArrowRight, AlertCircle, Droplets, ChevronDown // Add ChevronDown here
+  Umbrella, ArrowRight, AlertCircle, Droplets, ChevronDown
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import { auth } from '../firebase';
@@ -14,6 +14,7 @@ import {
 } from '../services/weatherApi';
 import AddPlant from '../components/AddPlant';
 import LogoOJT from '../assets/LogoOJT.png';
+import { plantAPI } from '../services/api'; // Add this import for plantAPI
 
 const Dashboard = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -31,6 +32,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Fetch weather data
     const initializeWeather = async () => {
       try {
         const data = await fetchWeatherByLocation('Bangkok');
@@ -42,7 +44,32 @@ const Dashboard = () => {
       }
     };
 
+    // Fetch plants from database
+    const fetchPlants = async () => {
+      try {
+        const response = await plantAPI.getPlants();
+        if (response && response.data) {
+          // Format plants from database to match frontend structure
+          const formattedPlants = response.data.map(plant => ({
+            id: plant._id,
+            name: plant.name,
+            species: plant.species,
+            nickname: plant.nickname || plant.name,
+            image: plant.mainImage,
+            notes: plant.notes,
+            health: plant.status,
+            lastWatered: plant.lastWatered ? new Date(plant.lastWatered).toLocaleDateString() : 'Not yet watered',
+            dateAdded: new Date(plant.dateAdded || plant.createdAt).toLocaleDateString()
+          }));
+          setPlants(formattedPlants);
+        }
+      } catch (error) {
+        console.error('Error fetching plants:', error);
+      }
+    };
+
     initializeWeather();
+    fetchPlants();
   }, []);
 
   const handleLogout = async () => {
@@ -58,10 +85,10 @@ const Dashboard = () => {
     setShowAddPlant(true); 
   };
 
-  // New function to handle the plant data from AddPlant
+  // Updated to handle the newly saved plant from database
   const handleSavePlant = (newPlant) => {
-    // Add the new plant to the plants array
-    setPlants([...plants, newPlant]);
+    // Add the new plant to the plants array (it's already saved to database in AddPlant)
+    setPlants(prevPlants => [...prevPlants, newPlant]);
     // Hide the AddPlant component
     setShowAddPlant(false);
   };

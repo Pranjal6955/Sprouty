@@ -213,31 +213,51 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
     setShowMoreInfo(false);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!plantName || !capturedImage) return;
     
-    const newPlant = {
-      id: Date.now(), // Simple unique ID
-      name: plantName,
-      species: plantDetails?.scientificName || plantType || "Unknown",
-      nickname: plantName,
-      image: capturedImage,
-      notes: notes,
-      health: "Good",
-      lastWatered: new Date().toLocaleDateString(),
-      dateAdded: new Date().toLocaleDateString(),
-      scientificDetails: plantDetails ? {
-        scientificName: plantDetails.scientificName,
-        commonNames: plantDetails.allCommonNames,
-        confidence: plantDetails.confidence,
-        taxonomy: plantDetails.taxonomy,
-        wikiUrl: plantDetails.wikiUrl
-      } : null
-    };
-    
-    onAddPlant(newPlant);
+    try {
+      // Show processing state
+      setIsIdentifying(true);
+      
+      const newPlant = {
+        name: plantName,
+        species: plantDetails?.scientificName || plantType || "Unknown",
+        nickname: plantName,
+        mainImage: capturedImage, // Use mainImage field as per backend model
+        notes: notes,
+        status: "Healthy",
+        // Additional data from plant details if available
+        scientificDetails: plantDetails ? {
+          scientificName: plantDetails.scientificName,
+          commonNames: plantDetails.allCommonNames,
+          confidence: plantDetails.confidence,
+          taxonomy: plantDetails.taxonomy,
+          wikiUrl: plantDetails.wikiUrl
+        } : null
+      };
+      
+      // First add plant to database
+      const savedPlant = await plantAPI.createPlant(newPlant);
+      console.log("Plant saved to database:", savedPlant);
+      
+      // Then pass the complete plant data to parent component
+      onAddPlant({
+        ...savedPlant.data,
+        id: savedPlant.data._id, // Map MongoDB _id to id for frontend
+        image: capturedImage,
+        lastWatered: new Date().toLocaleDateString(),
+        dateAdded: new Date().toLocaleDateString(),
+        health: "Good"
+      });
+    } catch (err) {
+      console.error("Error saving plant:", err);
+      setError("Failed to save plant. Please try again.");
+    } finally {
+      setIsIdentifying(false);
+    }
   };
 
   // Enhanced debugging info display

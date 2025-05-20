@@ -24,6 +24,18 @@ const UserSchema = new mongoose.Schema({
     minlength: 6,
     select: false
   },
+  // Add Firebase UID to link Firebase auth with our database
+  firebaseUid: {
+    type: String,
+    sparse: true, // Allows null values but enforces uniqueness when present
+    index: true   // Improves query performance
+  },
+  // Track authentication provider
+  authProvider: {
+    type: String,
+    enum: ['local', 'google', 'facebook', 'apple', null],
+    default: 'local'
+  },
   location: {
     type: String,
     default: ''

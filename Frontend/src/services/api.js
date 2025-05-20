@@ -81,11 +81,21 @@ const getAuthHeader = () => {
 // Auth Services
 export const authAPI = {
   register: async (userData) => {
+    // Include Firebase UID if available to link accounts
+    if (userData.firebaseUid) {
+      console.log(`Including Firebase UID in registration: ${userData.firebaseUid}`);
+    }
+    
     const response = await api.post('/auth/register', userData);
     return response.data;
   },
   
   login: async (credentials) => {
+    // Support both standard and OAuth logins
+    if (credentials.oAuthProvider) {
+      console.log(`Login with ${credentials.oAuthProvider} OAuth`);
+    }
+    
     const response = await api.post('/auth/login', credentials);
     return response.data;
   },
@@ -102,6 +112,12 @@ export const authAPI = {
   
   resetPassword: async (resetToken, password) => {
     const response = await api.put(`/auth/resetpassword/${resetToken}`, { password });
+    return response.data;
+  },
+
+  // New method to link Firebase and backend accounts if needed
+  linkAccounts: async (firebaseUid) => {
+    const response = await api.post('/auth/link-accounts', { firebaseUid });
     return response.data;
   }
 };
@@ -143,9 +159,29 @@ export const plantAPI = {
     return response.data;
   },
   
-  // Create a new plant
+  // Create a new plant with proper image handling
   createPlant: async (plantData) => {
-    const response = await api.post('/plants', plantData);
+    // Check if we need to upload the image to Cloudinary first
+    let processedData = { ...plantData };
+    
+    // If mainImage is a base64 or data URL, upload to Cloudinary
+    if (plantData.mainImage && typeof plantData.mainImage === 'string' && 
+        (plantData.mainImage.startsWith('data:') || plantData.mainImage.startsWith('base64'))) {
+      try {
+        console.log("Uploading plant image to Cloudinary...");
+        const imageUrl = await uploadToCloudinary(plantData.mainImage);
+        processedData.mainImage = imageUrl;
+        
+        // Also add to images array as per backend model
+        processedData.images = [{ url: imageUrl }];
+      } catch (err) {
+        console.error("Error uploading image:", err);
+        throw new Error("Failed to upload plant image");
+      }
+    }
+    
+    console.log("Creating plant with processed data:", processedData);
+    const response = await api.post('/plants', processedData);
     return response.data;
   },
   
