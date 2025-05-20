@@ -287,7 +287,7 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
-      <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md max-h-[90vh] overflow-hidden">
         <div className="flex justify-between items-center mb-4">
           <button 
             onClick={onCancel}
