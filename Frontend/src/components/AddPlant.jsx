@@ -213,31 +213,50 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
     setShowMoreInfo(false);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!plantName || !capturedImage) return;
     
-    const newPlant = {
-      id: Date.now(), // Simple unique ID
-      name: plantName,
-      species: plantDetails?.scientificName || plantType || "Unknown",
-      nickname: plantName,
-      image: capturedImage,
-      notes: notes,
-      health: "Good",
-      lastWatered: new Date().toLocaleDateString(),
-      dateAdded: new Date().toLocaleDateString(),
-      scientificDetails: plantDetails ? {
-        scientificName: plantDetails.scientificName,
-        commonNames: plantDetails.allCommonNames,
-        confidence: plantDetails.confidence,
-        taxonomy: plantDetails.taxonomy,
-        wikiUrl: plantDetails.wikiUrl
-      } : null
-    };
-    
-    onAddPlant(newPlant);
+    try {
+      // Prepare plant data for saving to database
+      const plantData = {
+        name: plantName,
+        species: plantDetails?.scientificName || plantType || "Unknown",
+        nickname: plantName,
+        mainImage: capturedImage,
+        notes: notes,
+        status: "Healthy",
+        scientificDetails: plantDetails ? {
+          scientificName: plantDetails.scientificName,
+          commonNames: plantDetails.allCommonNames,
+          confidence: plantDetails.confidence,
+          taxonomy: plantDetails.taxonomy,
+          wikiUrl: plantDetails.wikiUrl
+        } : null
+      };
+      
+      // Save to database via API
+      const response = await plantAPI.createPlant(plantData);
+      
+      // Get the saved plant with proper MongoDB _id and pass it back
+      const savedPlant = {
+        id: response._id,
+        name: response.name,
+        species: response.species,
+        nickname: response.nickname,
+        image: response.mainImage,
+        notes: response.notes,
+        health: response.status,
+        lastWatered: response.lastWatered ? new Date(response.lastWatered).toLocaleDateString() : 'Not yet watered',
+        dateAdded: new Date(response.dateAdded || response.createdAt).toLocaleDateString()
+      };
+      
+      onAddPlant(savedPlant);
+    } catch (error) {
+      console.error("Error saving plant to database:", error);
+      setError("Failed to save plant. Please try again.");
+    }
   };
 
   // Enhanced debugging info display

@@ -86,9 +86,10 @@ const Dashboard = () => {
   };
 
   // Updated to handle the newly saved plant from database
-  const handleSavePlant = (newPlant) => {
-    // Add the new plant to the plants array (it's already saved to database in AddPlant)
-    setPlants(prevPlants => [...prevPlants, newPlant]);
+  const handleSavePlant = (savedPlant) => {
+    // The plant is already saved to the database in AddPlant component
+    // Just add it to the local state
+    setPlants(prevPlants => [...prevPlants, savedPlant]);
     // Hide the AddPlant component
     setShowAddPlant(false);
   };

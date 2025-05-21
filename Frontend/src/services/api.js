@@ -230,43 +230,35 @@ export const plantAPI = {
       let base64Data = imageData;
       if (typeof imageData === 'string' && imageData.startsWith('data:image')) {
         // Image is already in proper format
+        base64Data = imageData.split(',')[1]; // Extract the base64 part
       } else if (typeof imageData === 'string' && imageData.startsWith('http')) {
-        // If it's a URL, you'll need to fetch and convert it to base64
-        console.log("URLs aren't directly supported by this implementation, please provide base64 image data");
-        throw new Error("Image URLs not supported directly");
+        // Send the URL directly to backend for processing
+        const response = await api.post('/plants/identify', { imageUrl: imageData });
+        return response.data;
       } else if (typeof imageData === 'string') {
-        // If it's base64 without the prefix, add it
-        base64Data = `data:image/jpeg;base64,${imageData}`;
+        // If it's base64 without the prefix, use as is
+        base64Data = imageData;
       }
       
-      // Create payload according to plant.id API
+      // Create payload according to plant.id API format
       const payload = {
-        images: [base64Data],
+        images: [`data:image/jpeg;base64,${base64Data}`],
         latitude: null,  // Optional: add actual coordinates if available
         longitude: null,
         similar_images: true
       };
       
-      console.log("Sending plant identification request to Plant.id API");
+      console.log("Sending plant identification request to backend");
       
-      // Explicitly include Api-Key header instead of Bearer token
-      const config = {
-        headers: {
-          'Content-Type': 'application/json',
-          'Api-Key': plantIdApiKey
-        }
-      };
+      // Send to backend for identification instead of directly to Plant.id
+      const response = await api.post('/plants/identify', { base64Image: base64Data });
       
-      // Make the API call to plant.id directly
-      const response = await axios.post('https://plant.id/api/v3/identification', payload, config);
-      
-      return response;
+      return response.data;
     } catch (err) {
       console.error("Plant identification error:", err);
       if (err.response) {
         console.log("Error response data:", err.response.data);
         console.log("Error response status:", err.response.status);
-        console.log("Error response headers:", err.response.headers);
       }
       throw err;
     }
