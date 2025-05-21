@@ -12,8 +12,8 @@ const connectDB = async () => {
 
     // Connection options - removed deprecated options
     const options = {
-      serverSelectionTimeoutMS: 5000, // Timeout after 5 seconds
-      maxPoolSize: 10 // Maintain up to 10 socket connections
+      serverSelectionTimeoutMS: 5000,
+      maxPoolSize: 10 
     };
 
     await mongoose.connect(mongoURI, options);
