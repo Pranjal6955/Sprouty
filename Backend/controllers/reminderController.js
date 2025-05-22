@@ -9,6 +9,28 @@ exports.createReminder = async (req, res, next) => {
     // Add user to req.body
     req.body.user = req.user.id;
     
+    // Validate required dates
+    if (!req.body.scheduledDate) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'scheduledDate is required' 
+      });
+    }
+    
+    // Validate date format
+    const scheduledDate = new Date(req.body.scheduledDate);
+    if (isNaN(scheduledDate.getTime())) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid scheduledDate format' 
+      });
+    }
+    
+    // Set nextReminder to scheduledDate for recurring reminders
+    if (req.body.recurring !== false) { // Default to true if not specified
+      req.body.nextReminder = scheduledDate;
+    }
+    
     // Check if plant exists and belongs to user
     const plant = await Plant.findById(req.body.plant);
     
@@ -28,7 +50,13 @@ exports.createReminder = async (req, res, next) => {
       data: reminder
     });
   } catch (err) {
-    console.error(err.message);
+    console.error('Error creating reminder:', err.message);
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({ 
+        success: false, 
+        error: err.message 
+      });
+    }
     res.status(500).json({ success: false, error: 'Server Error' });
   }
 };
@@ -199,11 +227,15 @@ exports.completeReminder = async (req, res, next) => {
     }
     
     reminder.completed = true;
-    reminder.completedDate = Date.now();
+    reminder.completedDate = new Date();
     
     // If recurring reminder, reschedule it
     if (reminder.recurring) {
-      reminder.reschedule();
+      const rescheduled = reminder.reschedule();
+      if (!rescheduled) {
+        console.warn(`Failed to reschedule reminder ${reminder._id}, marking as non-recurring`);
+        reminder.recurring = false;
+      }
     }
     
     await reminder.save();
@@ -213,7 +245,7 @@ exports.completeReminder = async (req, res, next) => {
       data: reminder
     });
   } catch (err) {
-    console.error(err.message);
+    console.error('Error completing reminder:', err.message);
     res.status(500).json({ success: false, error: 'Server Error' });
   }
 };
