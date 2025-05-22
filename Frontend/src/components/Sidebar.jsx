@@ -53,7 +53,7 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen, activeNavItem, setActiveNavItem })
       isMenuOpen ? 'w-64' : 'w-16'
     } flex flex-col border-r border-gray-100`}>
       {/* Hamburger Menu */}
-      <div className="p-4 flex justify-center">
+      <div className="p-4 flex justify-start">  {/* Changed justify-center to justify-start */}
         <button 
           onClick={() => setIsMenuOpen(!isMenuOpen)} 
           className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
