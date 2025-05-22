@@ -3,11 +3,25 @@ import {
   Sun, Wind, Thermometer, MapPin, Cloud, 
   Umbrella, ArrowRight, AlertCircle, Droplets, ChevronDown
 } from 'lucide-react';
-import {
-  fetchWeatherByLocation,
-  searchLocations,
-  calculateSearchRelevance
-} from '../services/weatherApi';
+
+// Mock weather data to replace API calls
+const mockWeatherData = {
+  location: "Bangkok",
+  localTime: "Monday, 3:30 PM",
+  condition: "Partly Cloudy",
+  icon: "https://cdn.weatherapi.com/weather/64x64/day/116.png", // placeholder icon
+  temperature: "32°C / 89°F",
+  windSpeed: "15 km/h",
+  humidity: "70%",
+  uv: "6"
+};
+
+// Mock search locations data
+const mockSearchLocations = [
+  { id: 1, name: "Bangkok", region: "Bangkok", country: "Thailand", fullName: "Bangkok, Thailand", lat: 13.75, lon: 100.52 },
+  { id: 2, name: "Barcelona", region: "Catalonia", country: "Spain", fullName: "Barcelona, Spain", lat: 41.39, lon: 2.16 },
+  { id: 3, name: "Berlin", region: "Berlin", country: "Germany", fullName: "Berlin, Germany", lat: 52.52, lon: 13.4 }
+];
 
 const Weather = () => {
   const [weatherData, setWeatherData] = useState(null);
@@ -19,19 +33,9 @@ const Weather = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   useEffect(() => {
-    // Fetch weather data on component mount
-    const initializeWeather = async () => {
-      try {
-        const data = await fetchWeatherByLocation('Bangkok');
-        setWeatherData(data);
-        setError(null);
-      } catch (error) {
-        console.error('Weather API Error:', error);
-        setError(error.message);
-      }
-    };
-
-    initializeWeather();
+    // Use mock data instead of API call
+    setWeatherData(mockWeatherData);
+    setError(null);
   }, []);
 
   const handleLocationSearch = async (searchTerm) => {
@@ -41,21 +45,11 @@ const Weather = () => {
       return;
     }
 
-    try {
-      const locations = await searchLocations(searchTerm);
-      const processedResults = locations
-        .map(result => ({
-          ...result,
-          relevance: calculateSearchRelevance(searchTerm, result.name)
-        }))
-        .filter(result => result.relevance > 0)
-        .sort((a, b) => b.relevance - a.relevance)
-        .slice(0, 15);
-
-      setSearchResults(processedResults);
-    } catch (error) {
-      console.error('Location search error:', error);
-    }
+    // Filter mock locations instead of API call
+    const filteredLocations = mockSearchLocations.filter(
+      location => location.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setSearchResults(filteredLocations);
   };
 
   const handleLocationSelect = (selectedLocation) => {
@@ -70,13 +64,19 @@ const Weather = () => {
 
     setIsSearching(true);
     try {
-      const data = await fetchWeatherByLocation(locationUrl || location);
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+      // Use mock data with slight modification to show different location
+      const data = {
+        ...mockWeatherData,
+        location: locationUrl ? "Selected Location" : location
+      };
       setWeatherData(data);
       setShowLocationInput(false);
       setError(null);
     } catch (error) {
-      console.error('Weather API Error:', error);
-      setError(error.message);
+      console.error('Weather Error:', error);
+      setError("Could not load weather data");
     } finally {
       setIsSearching(false);
     }
