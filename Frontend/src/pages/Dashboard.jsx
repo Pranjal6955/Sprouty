@@ -102,7 +102,7 @@ const Dashboard = () => {
                 <h2 className="text-xl font-semibold text-gray-800">My Plants</h2>
                 <button 
                   onClick={handleAddPlant}
-                  className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-sm"
+                  className="bg-sprouty-green-500 hover:bg-sprouty-green-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-sm"
                 >
                   <Plus size={20} className="mr-1" /> Add Plant
                 </button>
@@ -129,7 +129,7 @@ const Dashboard = () => {
                         <h3 className="font-semibold text-lg text-gray-800">{plant.name}</h3>
                         <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
                           <div className="flex items-center">
-                            <div className="h-2 w-2 rounded-full bg-green-500 mr-2"></div>
+                            <div className="h-2 w-2 rounded-full bg-sprouty-green-500 mr-2"></div>
                             <span className="text-gray-600">Health: {plant.health}</span>
                           </div>
                           <div className="flex items-center">

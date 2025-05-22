@@ -3,80 +3,89 @@ import {
   Sun, Wind, Thermometer, MapPin, Cloud, 
   Umbrella, ArrowRight, AlertCircle, Droplets, ChevronDown
 } from 'lucide-react';
-
-// Mock weather data to replace API calls
-const mockWeatherData = {
-  location: "Bangkok",
-  localTime: "Monday, 3:30 PM",
-  condition: "Partly Cloudy",
-  icon: "https://cdn.weatherapi.com/weather/64x64/day/116.png", // placeholder icon
-  temperature: "32°C / 89°F",
-  windSpeed: "15 km/h",
-  humidity: "70%",
-  uv: "6"
-};
-
-// Mock search locations data
-const mockSearchLocations = [
-  { id: 1, name: "Bangkok", region: "Bangkok", country: "Thailand", fullName: "Bangkok, Thailand", lat: 13.75, lon: 100.52 },
-  { id: 2, name: "Barcelona", region: "Catalonia", country: "Spain", fullName: "Barcelona, Spain", lat: 41.39, lon: 2.16 },
-  { id: 3, name: "Berlin", region: "Berlin", country: "Germany", fullName: "Berlin, Germany", lat: 52.52, lon: 13.4 }
-];
+import { weatherAPI } from '../services/api';
 
 const Weather = () => {
   const [weatherData, setWeatherData] = useState(null);
+  const [recommendations, setRecommendations] = useState(null);
   const [error, setError] = useState(null);
   const [location, setLocation] = useState('');
   const [showLocationInput, setShowLocationInput] = useState(true);
-  const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isUsingMockData, setIsUsingMockData] = useState(false);
 
   useEffect(() => {
-    // Use mock data instead of API call
-    setWeatherData(mockWeatherData);
-    setError(null);
+    // Load weather data for default location on component mount
+    loadWeatherData();
   }, []);
 
-  const handleLocationSearch = async (searchTerm) => {
-    setLocation(searchTerm);
-    if (searchTerm.length < 2) {
-      setSearchResults([]);
-      return;
+  const loadWeatherData = async (searchLocation = null) => {
+    try {
+      setError(null);
+      setIsUsingMockData(false);
+      
+      const weatherResponse = await weatherAPI.getCurrentWeather(searchLocation);
+      
+      if (weatherResponse.success) {
+        const data = weatherResponse.data;
+        
+        // Check if using mock data
+        if (weatherResponse.note) {
+          setIsUsingMockData(true);
+          console.warn('Weather API Note:', weatherResponse.note);
+        }
+        
+        // Format weather data for display
+        const formattedWeather = {
+          location: data.location,
+          country: data.country,
+          localTime: new Date().toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            hour: 'numeric', 
+            minute: '2-digit' 
+          }),
+          condition: data.description,
+          icon: data.icon.startsWith('//') ? `https:${data.icon}` : data.icon, // Handle WeatherAPI icon format
+          temperature: `${Math.round(data.temperature)}°C / ${Math.round(data.temperature * 9/5 + 32)}°F`,
+          windSpeed: `${data.wind_speed} km/h`,
+          humidity: `${data.humidity}%`,
+          uv: data.uv || "6",
+          pressure: data.pressure ? `${data.pressure} mb` : "N/A",
+          visibility: data.visibility ? `${data.visibility} km` : "N/A"
+        };
+        
+        setWeatherData(formattedWeather);
+        
+        // Load recommendations
+        try {
+          const recResponse = await weatherAPI.getWeatherRecommendations(searchLocation);
+          if (recResponse.success) {
+            setRecommendations(recResponse.data.recommendations);
+          }
+        } catch (recError) {
+          console.warn('Could not load weather recommendations:', recError.message);
+          // Don't show error for recommendations failure
+        }
+        
+        setShowLocationInput(false);
+      }
+    } catch (error) {
+      console.error('Weather Error:', error);
+      setError("Could not load weather data. Please check your internet connection and try again.");
+      setIsUsingMockData(false);
     }
-
-    // Filter mock locations instead of API call
-    const filteredLocations = mockSearchLocations.filter(
-      location => location.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setSearchResults(filteredLocations);
   };
 
-  const handleLocationSelect = (selectedLocation) => {
-    setLocation(selectedLocation.fullName);
-    setSearchResults([]);
-    handleLocationSubmit(null, `${selectedLocation.lat},${selectedLocation.lon}`);
-  };
-
-  const handleLocationSubmit = async (e, locationUrl) => {
+  const handleLocationSubmit = async (e) => {
     if (e) e.preventDefault();
-    if (!location && !locationUrl) return;
+    if (!location) return;
 
     setIsSearching(true);
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      // Use mock data with slight modification to show different location
-      const data = {
-        ...mockWeatherData,
-        location: locationUrl ? "Selected Location" : location
-      };
-      setWeatherData(data);
-      setShowLocationInput(false);
-      setError(null);
+      await loadWeatherData(location);
     } catch (error) {
-      console.error('Weather Error:', error);
-      setError("Could not load weather data");
+      setError("Could not find weather data for this location.");
     } finally {
       setIsSearching(false);
     }
@@ -85,31 +94,37 @@ const Weather = () => {
   return (
     <div className="sticky top-0 p-6">
       <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-        <Cloud size={22} className="text-blue-500 mr-2" />
+        <Cloud size={22} className="text-sprouty-green-500 mr-2" />
         Weather
+        {isUsingMockData && (
+          <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+            Demo
+          </span>
+        )}
       </h2>
-      {/* Weather & Location Section */}
-      <div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-xl shadow-sm p-5 mb-6 transition-all hover:shadow-md">
+      
+      <div className="bg-gradient-to-br from-sprouty-green-50 to-blue-50 rounded-xl shadow-sm p-5 mb-6 transition-all hover:shadow-md">
         {showLocationInput ? (
           <div className="mb-4">
             <h3 className="text-lg font-semibold mb-3 text-gray-800">Where's your garden located?</h3>
             <form onSubmit={handleLocationSubmit} className="relative">
               <div className="flex items-center">
-                <div className={`relative flex-1 ${isSearchFocused ? 'ring-2 ring-green-200' : ''} rounded-lg transition-all`}>
+                <div className={`relative flex-1 ${isSearchFocused ? 'ring-2 ring-sprouty-green-200' : ''} rounded-lg transition-all`}>
                   <input
                     type="text"
                     value={location}
-                    onChange={(e) => handleLocationSearch(e.target.value)}
+                    onChange={(e) => setLocation(e.target.value)}
                     onFocus={() => setIsSearchFocused(true)}
-                    onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
+                    onBlur={() => setIsSearchFocused(false)}
                     className="w-full px-4 py-3 border rounded-lg outline-none transition-colors"
-                    placeholder="Search for a city..."
+                    placeholder="Enter city name..."
+                    required
                   />
                   <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                 </div>
                 <button 
                   type="submit" 
-                  className={`ml-3 bg-green-500 text-white p-3 rounded-lg hover:bg-green-600 transition-colors ${
+                  className={`ml-3 bg-sprouty-green-500 text-white p-3 rounded-lg hover:bg-sprouty-green-600 transition-colors ${
                     isSearching ? 'opacity-70 cursor-not-allowed' : ''
                   }`}
                   disabled={isSearching}
@@ -121,32 +136,27 @@ const Weather = () => {
                   )}
                 </button>
               </div>
-              
-              {searchResults.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {searchResults.map((result) => (
-                    <div 
-                      key={result.id}
-                      onClick={() => handleLocationSelect(result)}
-                      className="px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-100 last:border-b-0 flex items-center"
-                    >
-                      <MapPin size={16} className="text-gray-400 mr-2 flex-shrink-0" />
-                      <div>
-                        <div className="font-medium">{result.name}</div>
-                        <div className="text-sm text-gray-500">{result.region}, {result.country}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </form>
-            {error && <p className="text-red-500 mt-2 flex items-center"><AlertCircle size={16} className="mr-1" /> {error}</p>}
+            {error && (
+              <div className="mt-2 text-red-500 text-sm flex items-center">
+                <AlertCircle size={16} className="mr-1" />
+                {error}
+                {isUsingMockData && (
+                  <span className="ml-2 text-yellow-600">(Showing demo data)</span>
+                )}
+              </div>
+            )}
           </div>
         ) : weatherData && (
           <div className="flex flex-col items-center text-center">
             <div className="flex items-center mb-1">
-              <MapPin size={18} className="text-green-500 mr-1" />
+              <MapPin size={18} className="text-sprouty-green-500 mr-1" />
               <h3 className="text-lg font-semibold text-gray-800">{weatherData.location}</h3>
+              {isUsingMockData && (
+                <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                  Demo
+                </span>
+              )}
             </div>
             <p className="text-gray-500 mb-4 text-sm">{weatherData.localTime}</p>
             
@@ -180,7 +190,7 @@ const Weather = () => {
             
             <button 
               onClick={() => setShowLocationInput(true)}
-              className="mt-4 text-green-600 text-sm font-medium flex items-center justify-center hover:text-green-700 transition-colors bg-white py-1.5 px-3 rounded-full shadow-sm"
+              className="mt-4 text-sprouty-green-600 text-sm font-medium flex items-center justify-center hover:text-sprouty-green-700 transition-colors bg-white py-1.5 px-3 rounded-full shadow-sm"
             >
               Change location <ChevronDown size={14} className="ml-1" />
             </button>
@@ -189,25 +199,22 @@ const Weather = () => {
       </div>
       
       {/* Plant Care Tips Based on Weather */}
-      {weatherData && !showLocationInput && (
+      {weatherData && !showLocationInput && recommendations && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
           <h3 className="text-lg font-semibold mb-3 text-gray-800 flex items-center">
-            <Umbrella size={18} className="text-green-500 mr-2" /> 
+            <Umbrella size={18} className="text-sprouty-green-500 mr-2" /> 
             Care Tips
+            {isUsingMockData && (
+              <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                Demo
+              </span>
+            )}
           </h3>
           <div className="text-gray-700 text-sm space-y-3">
-            <p>• {weatherData.temperature.includes("high") ? 
-              "Water your plants more frequently due to high temperatures." : 
-              "Maintain regular watering schedule in these conditions."}
-            </p>
-            <p>• {weatherData.condition.toLowerCase().includes("rain") ? 
-              "Hold off on watering today - rain is providing natural hydration." : 
-              "Ensure proper drainage for your potted plants."}
-            </p>
-            <p>• {parseInt(weatherData.uv) > 5 ? 
-              "Consider moving sensitive plants to partial shade today." : 
-              "Good light conditions for most plants today."}
-            </p>
+            {recommendations.watering && <p>• {recommendations.watering}</p>}
+            {recommendations.sunlight && <p>• {recommendations.sunlight}</p>}
+            {recommendations.general && <p>• {recommendations.general}</p>}
+            {recommendations.protection && <p>• {recommendations.protection}</p>}
           </div>
         </div>
       )}

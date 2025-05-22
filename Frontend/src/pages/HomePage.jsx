@@ -14,7 +14,7 @@ const HomePage = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
       {/* Navbar - Updated with consistent styling */}
-      <nav className="sticky top-0 z-50 mx-auto w-[75%] bg-white/90 backdrop-blur-sm border border-green-100 shadow-lg rounded-[100px] mt-4">
+      <nav className="sticky top-0 z-50 mx-auto w-[75%] bg-white/90 backdrop-blur-sm border border-sprouty-green-100 shadow-lg rounded-[100px] mt-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -24,19 +24,19 @@ const HomePage = () => {
                   alt="Sprouty Logo" 
                   className="h-12 w-13"
                 />
-                <span className="text-teal-600 font-bold text-2xl ml-2">Sprouty</span>
+                <span className="text-sprouty-green-600 font-bold text-2xl ml-2">Sprouty</span>
               </div>
               <div className="hidden md:ml-8 md:flex md:space-x-10">
-                <a href="#home" className="text-gray-700 hover:text-teal-600 px-3 py-2 text-sm font-medium transition duration-150">Home</a>
-                <a href="#features" className="text-gray-700 hover:text-teal-600 px-3 py-2 text-sm font-medium transition duration-150">Features</a>
-                <a href="#about" className="text-gray-700 hover:text-teal-600 px-3 py-2 text-sm font-medium transition duration-150">About Us</a>
+                <a href="#home" className="text-gray-700 hover:text-sprouty-green-600 px-3 py-2 text-sm font-medium transition duration-150">Home</a>
+                <a href="#features" className="text-gray-700 hover:text-sprouty-green-600 px-3 py-2 text-sm font-medium transition duration-150">Features</a>
+                <a href="#about" className="text-gray-700 hover:text-sprouty-green-600 px-3 py-2 text-sm font-medium transition duration-150">About Us</a>
               </div>
             </div>
             <div className="hidden md:flex items-center space-x-4">
-              <Link to="/Login" className="text-teal-600 font-medium hover:text-teal-800 transition duration-150">
+              <Link to="/Login" className="text-sprouty-green-600 font-medium hover:text-sprouty-green-800 transition duration-150">
                 Login
               </Link>
-              <Link to="/signup" className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-5 rounded-full transition duration-150">
+              <Link to="/signup" className="bg-sprouty-green-600 hover:bg-sprouty-green-700 text-white font-medium py-2 px-5 rounded-full transition duration-150">
                 Sign Up
               </Link>
             </div>
@@ -54,16 +54,16 @@ const HomePage = () => {
         {isMenuOpen && (
           <div className="md:hidden animate-slideDown">
             <div className="pt-2 pb-3 space-y-1 px-2">
-              <a href="#home" className="block px-3 py-2 text-gray-700 font-medium hover:bg-teal-50 hover:text-teal-600 rounded-lg">Home</a>
-              <a href="#features" className="block px-3 py-2 text-gray-700 font-medium hover:bg-teal-50 hover:text-teal-600 rounded-lg">Features</a>
-              <a href="#about" className="block px-3 py-2 text-gray-700 font-medium hover:bg-teal-50 hover:text-teal-600 rounded-lg">About Us</a>
+              <a href="#home" className="block px-3 py-2 text-gray-700 font-medium hover:bg-sprouty-green-50 hover:text-sprouty-green-600 rounded-lg">Home</a>
+              <a href="#features" className="block px-3 py-2 text-gray-700 font-medium hover:bg-sprouty-green-50 hover:text-sprouty-green-600 rounded-lg">Features</a>
+              <a href="#about" className="block px-3 py-2 text-gray-700 font-medium hover:bg-sprouty-green-50 hover:text-sprouty-green-600 rounded-lg">About Us</a>
             </div>
             <div className="pt-4 pb-3 border-t border-gray-200">
               <div className="flex items-center justify-center px-4 space-x-4 py-2">
-                <Link to="/" className="w-full text-teal-600 font-medium py-2 px-4 rounded-lg border border-teal-600 hover:bg-teal-50">
+                <Link to="/" className="w-full text-sprouty-green-600 font-medium py-2 px-4 rounded-lg border border-sprouty-green-600 hover:bg-sprouty-green-50">
                   Login
                 </Link>
-                <Link to="/signup" className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-lg">
+                <Link to="/signup" className="w-full bg-sprouty-green-600 hover:bg-sprouty-green-700 text-white font-medium py-2 px-4 rounded-lg">
                   Sign Up
                 </Link>
               </div>
@@ -78,18 +78,18 @@ const HomePage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="flex flex-col md:flex-row items-center">
             <div className="md:w-1/2 md:pr-10">
-              <div className="inline-block px-3 py-1 text-sm font-medium text-teal-700 bg-teal-100 rounded-full mb-6">
+              <div className="inline-block px-3 py-1 text-sm font-medium text-sprouty-green-700 bg-sprouty-green-100 rounded-full mb-6">
                 Your plant care companion
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 leading-tight">
                 Grow Happier, <br/>
-                <span className="text-teal-600">Healthier Plants</span>
+                <span className="text-sprouty-green-600">Healthier Plants</span>
               </h1>
               <p className="text-lg text-gray-600 mb-8 leading-relaxed">
                 Sprouty helps you remember when to water, prune, and care for your plants with timely reminders and personalized advice.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link to="/signup" className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:-translate-y-1 text-center">
+                <Link to="/signup" className="bg-sprouty-green-600 hover:bg-sprouty-green-700 text-white font-medium py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:-translate-y-1 text-center">
                   Get Started Free
                 </Link>
               </div>

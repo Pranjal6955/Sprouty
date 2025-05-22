@@ -265,4 +265,76 @@ export const plantAPI = {
   }
 };
 
+// Weather API endpoints
+export const weatherAPI = {
+  getCurrentWeather: async (location) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const params = location ? `?location=${encodeURIComponent(location)}` : '';
+      const response = await fetch(`${API_URL}/weather${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Weather API error: ${response.statusText}`);
+      }
+      
+      return response.json();
+    } catch (error) {
+      console.error('Weather API Error:', error);
+      throw error;
+    }
+  },
+
+  getWeatherRecommendations: async (location) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const params = location ? `?location=${encodeURIComponent(location)}` : '';
+      const response = await fetch(`${API_URL}/weather/recommendations${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Weather recommendations error: ${response.statusText}`);
+      }
+      
+      return response.json();
+    } catch (error) {
+      console.error('Weather Recommendations API Error:', error);
+      throw error;
+    }
+  },
+
+  getWeatherForecast: async (location) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const params = location ? `?location=${encodeURIComponent(location)}` : '';
+      const response = await fetch(`${API_URL}/weather/forecast${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Weather forecast error: ${response.statusText}`);
+      }
+      
+      return response.json();
+    } catch (error) {
+      console.error('Weather Forecast API Error:', error);
+      throw error;
+    }
+  }
+};
+
 export default api;
