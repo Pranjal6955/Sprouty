@@ -17,8 +17,6 @@ exports.getWeatherData = async (req, res, next) => {
     // Get location from query, user profile, or default
     const location = req.query.location || user.location || 'New York';
     
-    console.log(`Fetching weather data for: ${location}`);
-    
     try {
       const weatherData = await weatherService.getCurrentWeather(location);
       
@@ -28,8 +26,6 @@ exports.getWeatherData = async (req, res, next) => {
       });
       
     } catch (apiError) {
-      console.error('Weather API Error:', apiError.message);
-      
       // Return mock data as fallback when API fails
       const mockWeatherData = {
         location: location,
@@ -57,7 +53,6 @@ exports.getWeatherData = async (req, res, next) => {
     }
     
   } catch (err) {
-    console.error('Weather Controller Error:', err.message);
     res.status(500).json({ success: false, error: 'Failed to fetch weather data' });
   }
 };
@@ -75,8 +70,6 @@ exports.getWeatherRecommendations = async (req, res, next) => {
       const user = await User.findById(req.user.id);
       location = user.location || 'New York';
     }
-    
-    console.log(`Fetching weather recommendations for: ${location}`);
     
     try {
       const weatherData = await weatherService.getCurrentWeather(location);
@@ -99,8 +92,6 @@ exports.getWeatherRecommendations = async (req, res, next) => {
       });
       
     } catch (apiError) {
-      console.error('Weather API Error for recommendations:', apiError.message);
-      
       // Use mock data as fallback
       const mockWeatherData = {
         temperature: 22,
@@ -123,7 +114,6 @@ exports.getWeatherRecommendations = async (req, res, next) => {
     }
     
   } catch (err) {
-    console.error('Weather Recommendations Error:', err.message);
     res.status(500).json({ success: false, error: 'Failed to generate weather recommendations' });
   }
 };
@@ -139,8 +129,6 @@ exports.getWeatherForecast = async (req, res, next) => {
     const location = req.query.location || user.location || 'New York';
     const days = parseInt(req.query.days) || 3;
     
-    console.log(`Fetching weather forecast for: ${location}, days: ${days}`);
-    
     try {
       const forecastData = await weatherService.getWeatherForecast(location, days);
       
@@ -152,8 +140,6 @@ exports.getWeatherForecast = async (req, res, next) => {
       });
       
     } catch (apiError) {
-      console.error('Weather Forecast API Error:', apiError.message);
-      
       // Return mock forecast as fallback
       const mockForecast = [
         { time: new Date().toISOString().slice(0, 19).replace('T', ' '), temperature: 22, humidity: 65, conditions: "Partly cloudy", icon: "//cdn.weatherapi.com/weather/64x64/day/116.png" },
@@ -173,7 +159,6 @@ exports.getWeatherForecast = async (req, res, next) => {
     }
     
   } catch (err) {
-    console.error('Weather Forecast Error:', err.message);
     res.status(500).json({ success: false, error: 'Failed to fetch weather forecast' });
   }
 };
@@ -192,8 +177,6 @@ exports.searchLocations = async (req, res, next) => {
       });
     }
     
-    console.log(`Searching for locations matching: ${query}`);
-    
     try {
       const suggestions = await weatherService.searchLocations(query);
       
@@ -203,8 +186,6 @@ exports.searchLocations = async (req, res, next) => {
       });
       
     } catch (apiError) {
-      console.error('Location Search API Error:', apiError.message);
-      
       // Return mock suggestions as fallback
       const mockSuggestions = [
         { 
@@ -225,7 +206,6 @@ exports.searchLocations = async (req, res, next) => {
     }
     
   } catch (err) {
-    console.error('Location Search Error:', err.message);
     res.status(500).json({ success: false, error: 'Failed to search locations' });
   }
 };

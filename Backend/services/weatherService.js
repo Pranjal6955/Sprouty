@@ -43,10 +43,6 @@ exports.getCurrentWeather = async (location) => {
       localtime: data.location.localtime
     };
   } catch (error) {
-    console.error('WeatherAPI Error:', error.message);
-    if (error.response) {
-      console.error('WeatherAPI Response:', error.response.data);
-    }
     throw error;
   }
 };
@@ -120,10 +116,6 @@ exports.getWeatherForecast = async (location, days = 3) => {
       forecast
     };
   } catch (error) {
-    console.error('WeatherAPI Forecast Error:', error.message);
-    if (error.response) {
-      console.error('WeatherAPI Forecast Response:', error.response.data);
-    }
     throw error;
   }
 };
@@ -230,8 +222,6 @@ exports.searchLocations = async (query) => {
       lon: location.lon
     }));
   } catch (error) {
-    console.error('WeatherAPI Search Error:', error.message);
-    
     // Return mock suggestions as fallback
     const mockSuggestions = [
       { name: query, region: 'Unknown', country: 'Unknown', displayName: `${query}, Unknown, Unknown`, lat: 0, lon: 0 }

@@ -20,10 +20,7 @@ const Weather = () => {
   const searchTimeoutRef = useRef(null);
   const suggestionsRef = useRef(null);
 
-  useEffect(() => {
-    // Load weather data for default location on component mount
-    loadWeatherData();
-  }, []);
+  // Remove automatic loading on component mount
 
   // Handle location input changes with debounced search
   useEffect(() => {
@@ -58,7 +55,6 @@ const Weather = () => {
         setSelectedSuggestionIndex(-1);
       }
     } catch (error) {
-      console.error('Location search error:', error);
       setSuggestions([]);
       setShowSuggestions(false);
     }
@@ -77,7 +73,6 @@ const Weather = () => {
         // Check if using mock data
         if (weatherResponse.note) {
           setIsUsingMockData(true);
-          console.warn('Weather API Note:', weatherResponse.note);
         }
         
         // Format weather data for display
@@ -108,14 +103,12 @@ const Weather = () => {
             setRecommendations(recResponse.data.recommendations);
           }
         } catch (recError) {
-          console.warn('Could not load weather recommendations:', recError.message);
           // Don't show error for recommendations failure
         }
         
         setShowLocationInput(false);
       }
     } catch (error) {
-      console.error('Weather Error:', error);
       setError("Could not load weather data. Please check your internet connection and try again.");
       setIsUsingMockData(false);
     }
