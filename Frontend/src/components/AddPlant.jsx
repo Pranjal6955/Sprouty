@@ -320,7 +320,7 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
                     className="bg-white p-4 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
                     disabled={isUploading}
                   >
-                    <Camera size={24} className="text-green-600" />
+                    <Camera size={24} className="text-sprouty-green-600" />
                   </button>
                   
                   <button
@@ -534,7 +534,7 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
                   placeholder="E.g., Peace Lily"
                   value={plantName}
                   onChange={(e) => setPlantName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-lg shadow-sm border focus:ring-2 focus:ring-green-200 outline-none transition-all"
+                  className="w-full px-4 py-2.5 rounded-lg shadow-sm border focus:ring-2 focus:ring-sprouty-green-200 outline-none transition-all"
                   required
                 />
               </div>
@@ -546,7 +546,7 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
                   placeholder="E.g., Indoor/Flowering"
                   value={plantType}
                   onChange={(e) => setPlantType(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-lg shadow-sm border focus:ring-2 focus:ring-green-200 outline-none transition-all"
+                  className="w-full px-4 py-2.5 rounded-lg shadow-sm border focus:ring-2 focus:ring-sprouty-green-200 outline-none transition-all"
                 />
               </div>
               
@@ -557,7 +557,7 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows="4"
-                  className="w-full px-4 py-2.5 rounded-lg shadow-sm border focus:ring-2 focus:ring-green-200 outline-none transition-all"
+                  className="w-full px-4 py-2.5 rounded-lg shadow-sm border focus:ring-2 focus:ring-sprouty-green-200 outline-none transition-all"
                 />
               </div>
             </div>
@@ -573,8 +573,8 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
               <button
                 type="submit"
                 disabled={!capturedImage || !plantName || isIdentifying}
-                className={`flex-1 bg-green-500 text-white px-4 py-3 rounded-lg transition-colors shadow-sm font-medium flex items-center justify-center ${
-                  !capturedImage || !plantName || isIdentifying ? 'opacity-60 cursor-not-allowed' : 'hover:bg-green-600'
+                className={`flex-1 bg-sprouty-green-500 text-white px-4 py-3 rounded-lg transition-colors shadow-sm font-medium flex items-center justify-center ${
+                  !capturedImage || !plantName || isIdentifying ? 'opacity-60 cursor-not-allowed' : 'hover:bg-sprouty-green-600'
                 }`}
               >
                 {isIdentifying ? (
@@ -623,7 +623,7 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
                 {/* Add a button to view plant details */}
                 <button
                   onClick={() => setShowImagePreview(false)}
-                  className="mt-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-full text-sm transition-colors"
+                  className="mt-2 bg-sprouty-green-600 hover:bg-sprouty-green-700 text-white px-4 py-2 rounded-full text-sm transition-colors"
                 >
                   View Plant Details
                 </button>

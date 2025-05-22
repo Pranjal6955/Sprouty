@@ -1,7 +1,7 @@
 const cron = require('node-cron');
-const Reminder = require('../models/Reminder'); // Adjust path if different
-const User = require('../models/User'); // Adjust path if different
-const { sendEmail } = require('./emailService'); // Adjust path if needed
+const Reminder = require('../models/Reminder');
+const User = require('../models/User');
+const { sendReminderEmail } = require('./emailService');
 
 /**
  * Initializes all cron jobs for plant care reminders
@@ -9,65 +9,141 @@ const { sendEmail } = require('./emailService'); // Adjust path if needed
 const initCronJobs = () => {
   console.log('Initializing reminder cron jobs...');
   
-  // Run every hour to check for due reminders
-  cron.schedule('0 * * * *', async () => {
-    try {
-      const currentTime = new Date();
-      // Find reminders that are due
-      const dueReminders = await Reminder.find({
-        nextReminder: { $lte: currentTime },
-        active: true
-      }).populate('plant').populate('user');
-      
-      // Process each reminder
-      for (const reminder of dueReminders) {
-        // Send notification to user
-        if (reminder.user && reminder.user.email) {
-          await sendEmail(
-            reminder.user.email,
-            `Time to care for your ${reminder.plant.name}!`,
-            `Don't forget to ${reminder.type} your plant.`
-          );
+  // Validate that we can create a cron job first
+  try {
+    // Test cron pattern validity
+    if (!cron.validate('0 * * * *')) {
+      console.error('Invalid cron pattern detected');
+      return;
+    }
+    
+    // Run every hour to check for due reminders
+    cron.schedule('0 * * * *', async () => {
+      try {
+        console.log('Running reminder check...');
+        const currentTime = new Date();
+        
+        // Find reminders that are due - with proper date validation
+        const dueReminders = await Reminder.find({
+          nextReminder: { 
+            $lte: currentTime,
+            $ne: null // Exclude null dates
+          },
+          active: true,
+          completed: false
+        }).populate('plant').populate('user');
+        
+        console.log(`Found ${dueReminders.length} due reminders`);
+        
+        // Process each reminder
+        for (const reminder of dueReminders) {
+          try {
+            // Validate reminder has required data
+            if (!reminder.user || !reminder.plant) {
+              console.warn(`Skipping reminder ${reminder._id} - missing user or plant data`);
+              continue;
+            }
+            
+            // Send notification to user
+            if (reminder.user.email) {
+              await sendReminderEmail(
+                reminder.user.email,
+                reminder,
+                reminder.plant
+              );
+              console.log(`Sent reminder email to ${reminder.user.email} for plant: ${reminder.plant.name}`);
+            }
+            
+            // Update next reminder date based on frequency
+            const nextDate = calculateNextReminderDate(reminder);
+            if (nextDate && !isNaN(nextDate.getTime())) {
+              reminder.nextReminder = nextDate;
+              reminder.notificationSent = true;
+              await reminder.save();
+              console.log(`Rescheduled reminder for ${reminder.plant.name} to ${nextDate}`);
+            } else {
+              console.warn(`Invalid next date calculated for reminder ${reminder._id}, disabling reminder`);
+              reminder.active = false;
+              await reminder.save();
+            }
+            
+          } catch (reminderError) {
+            console.error(`Error processing individual reminder ${reminder._id}:`, reminderError.message);
+          }
         }
         
-        // Update next reminder date based on frequency
-        reminder.nextReminder = calculateNextReminderDate(reminder);
-        await reminder.save();
+        console.log(`Processed ${dueReminders.length} reminders successfully`);
+      } catch (error) {
+        console.error('Error in reminder cron job:', error.message);
       }
-      
-      console.log(`Processed ${dueReminders.length} reminders`);
-    } catch (error) {
-      console.error('Error processing reminders:', error);
-    }
-  });
+    }, {
+      scheduled: true,
+      timezone: "UTC"
+    });
+    
+    console.log('✅ Reminder cron jobs initialized successfully');
+    
+  } catch (error) {
+    console.error('❌ Failed to initialize cron jobs:', error.message);
+  }
 };
 
 /**
  * Calculate the next reminder date based on reminder frequency
+ * @param {Object} reminder - The reminder object
+ * @returns {Date|null} - The next reminder date or null if invalid
  */
 const calculateNextReminderDate = (reminder) => {
-  const nextDate = new Date(reminder.nextReminder);
-  
-  switch (reminder.frequency) {
-    case 'daily':
-      nextDate.setDate(nextDate.getDate() + 1);
-      break;
-    case 'weekly':
-      nextDate.setDate(nextDate.getDate() + 7);
-      break;
-    case 'biweekly':
-      nextDate.setDate(nextDate.getDate() + 14);
-      break;
-    case 'monthly':
-      nextDate.setMonth(nextDate.getMonth() + 1);
-      break;
-    default:
-      // For custom frequencies (stored in days)
-      const days = parseInt(reminder.frequency) || 3;
-      nextDate.setDate(nextDate.getDate() + days);
+  try {
+    // Use scheduledDate as base if nextReminder is invalid
+    let baseDate = reminder.nextReminder;
+    if (!baseDate || isNaN(new Date(baseDate).getTime())) {
+      baseDate = reminder.scheduledDate;
+    }
+    
+    // If both dates are invalid, use current time
+    if (!baseDate || isNaN(new Date(baseDate).getTime())) {
+      baseDate = new Date();
+    }
+    
+    const nextDate = new Date(baseDate);
+    
+    // Validate the base date
+    if (isNaN(nextDate.getTime())) {
+      console.error('Invalid base date for reminder calculation');
+      return null;
+    }
+    
+    switch (reminder.frequency) {
+      case 'daily':
+        nextDate.setDate(nextDate.getDate() + 1);
+        break;
+      case 'weekly':
+        nextDate.setDate(nextDate.getDate() + 7);
+        break;
+      case 'biweekly':
+        nextDate.setDate(nextDate.getDate() + 14);
+        break;
+      case 'monthly':
+        nextDate.setMonth(nextDate.getMonth() + 1);
+        break;
+      default:
+        // For custom frequencies (stored in days)
+        const days = parseInt(reminder.frequency) || 7; // Default to 7 days
+        nextDate.setDate(nextDate.getDate() + days);
+    }
+    
+    // Validate the calculated date
+    if (isNaN(nextDate.getTime())) {
+      console.error('Calculated date is invalid');
+      return null;
+    }
+    
+    return nextDate;
+  } catch (error) {
+    console.error('Error calculating next reminder date:', error.message);
+    return null;
   }
-  
-  return nextDate;
 };
 
 // Export the initCronJobs function

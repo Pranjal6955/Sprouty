@@ -144,7 +144,19 @@ const Reminder = () => {
                       className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                       value={newReminder.plantName}
                       onChange={(e) => setNewReminder({...newReminder, plantName: e.target.value})}
+                      placeholder="Enter plant name or search..."
+                      list="plants-list"
                     />
+                    <datalist id="plants-list">
+                      <option value="Snake Plant" />
+                      <option value="Monstera Deliciosa" />
+                      <option value="Peace Lily" />
+                      <option value="Rubber Plant" />
+                      <option value="Pothos" />
+                      <option value="Spider Plant" />
+                      <option value="Aloe Vera" />
+                      <option value="Fiddle Leaf Fig" />
+                    </datalist>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Type</label>

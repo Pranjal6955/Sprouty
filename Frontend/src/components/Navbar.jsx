@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
+import LogoOJT from '../assets/LogoOJT.png';
 
 const Navbar = () => {
   const [user, setUser] = useState(null);
@@ -66,8 +67,13 @@ const Navbar = () => {
   return (
     <nav className="bg-white shadow-sm p-4">
       <div className="container mx-auto flex justify-between items-center">
-        <Link to={user ? '/dashboard' : '/'} className="logo text-xl font-bold text-emerald-600">
-          Sprouty
+        <Link to={user ? '/dashboard' : '/'} className="flex items-center space-x-2">
+          <img 
+            src={LogoOJT} 
+            alt="Sprouty Logo" 
+            className="h-10 w-10"
+          />
+          <span className="text-xl font-bold text-emerald-600">Sprouty</span>
         </Link>
         
         <div className="flex space-x-4 items-center">

@@ -18,15 +18,75 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
+// Database cleanup function for invalid reminder dates
+const cleanupInvalidReminders = async () => {
+  try {
+    const Reminder = require('./models/Reminder');
+    
+    // Find and fix reminders with invalid dates
+    const invalidReminders = await Reminder.find({
+      $or: [
+        { nextReminder: { $type: "string" } }, // String dates that should be Date objects
+        { scheduledDate: { $type: "string" } }
+      ]
+    });
+    
+    console.log(`Found ${invalidReminders.length} reminders with invalid dates, fixing...`);
+    
+    for (const reminder of invalidReminders) {
+      try {
+        // Fix scheduledDate if it's a string
+        if (typeof reminder.scheduledDate === 'string') {
+          const validDate = new Date(reminder.scheduledDate);
+          if (!isNaN(validDate.getTime())) {
+            reminder.scheduledDate = validDate;
+          } else {
+            // If can't parse, disable the reminder
+            reminder.active = false;
+            console.warn(`Disabled reminder ${reminder._id} due to invalid scheduledDate`);
+          }
+        }
+        
+        // Fix nextReminder if it's a string
+        if (typeof reminder.nextReminder === 'string') {
+          const validDate = new Date(reminder.nextReminder);
+          if (!isNaN(validDate.getTime())) {
+            reminder.nextReminder = validDate;
+          } else {
+            // Set to scheduledDate if valid, otherwise disable
+            if (reminder.scheduledDate && !isNaN(new Date(reminder.scheduledDate).getTime())) {
+              reminder.nextReminder = reminder.scheduledDate;
+            } else {
+              reminder.active = false;
+              console.warn(`Disabled reminder ${reminder._id} due to invalid nextReminder`);
+            }
+          }
+        }
+        
+        await reminder.save();
+      } catch (err) {
+        console.error(`Error fixing reminder ${reminder._id}:`, err.message);
+      }
+    }
+    
+    console.log('✅ Reminder cleanup completed');
+  } catch (error) {
+    console.error('❌ Error during reminder cleanup:', error.message);
+  }
+};
+
+// Run cleanup before initializing cron jobs
+cleanupInvalidReminders().then(() => {
+  // Initialize cron jobs for reminders
+  if (typeof initCronJobs === 'function') {
+    initCronJobs();
+  } else {
+    console.error('Warning: initCronJobs is not a function. Cron jobs not initialized.');
+  }
+});
+
 // Initialize Firebase Admin (already done via import)
 console.log('Firebase Admin SDK initialized');
-
-// Initialize cron jobs for reminders
-if (typeof initCronJobs === 'function') {
-  initCronJobs();
-} else {
-  console.error('Warning: initCronJobs is not a function. Cron jobs not initialized.');
-}
 
 // Middleware
 app.use(cors());

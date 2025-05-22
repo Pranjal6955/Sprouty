@@ -4,6 +4,7 @@ import { auth } from '../firebase';
 import { signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import {FcGoogle} from 'react-icons/fc';
 import { authAPI } from '../services/api';
+import LogoOJT from '../assets/LogoOJT.png';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -192,7 +193,18 @@ function Login() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
       <div className="w-full max-w-md p-8 space-y-6 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-green-100">
-        <h1 className="text-3xl font-extrabold text-center bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">Sprouty</h1>
+        {/* Logo Header */}
+        <div className="text-center">
+          <img 
+            src={LogoOJT} 
+            alt="Sprouty Logo" 
+            className="h-16 w-16 mx-auto mb-4"
+          />
+          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">
+            Welcome Back
+          </h1>
+          <p className="text-sm text-gray-600 mt-2">Sign in to your Sprouty account</p>
+        </div>
         
         {error && (
           <div className="p-3 text-sm text-red-600 bg-red-100 rounded-lg">

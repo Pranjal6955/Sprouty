@@ -1,86 +1,121 @@
 const axios = require('axios');
 
-// OpenWeatherMap API base URL
-const API_BASE_URL = 'https://api.openweathermap.org/data/2.5';
+const WEATHER_API_KEY = process.env.WEATHER_API_KEY;
+const WEATHER_API_URL = process.env.WEATHER_API_URL || 'https://api.weatherapi.com/v1';
 
 /**
- * Get current weather data for a location
- * @param {string} location - City name or coordinates
- * @param {string} units - Units of measurement (metric, imperial, standard)
- * @returns {Promise<object>} - Weather data
+ * Get current weather data from WeatherAPI.com
+ * @param {string} location - Location to get weather for
+ * @returns {Promise<object>} Weather data
  */
-exports.getCurrentWeather = async (location, units = 'metric') => {
+exports.getCurrentWeather = async (location) => {
   try {
-    const apiKey = process.env.OPENWEATHERMAP_API_KEY;
-    
-    if (!apiKey) {
+    if (!WEATHER_API_KEY) {
       throw new Error('Weather API key not configured');
     }
-    
-    const response = await axios.get(`${API_BASE_URL}/weather`, {
+
+    const response = await axios.get(`${WEATHER_API_URL}/current.json`, {
       params: {
+        key: WEATHER_API_KEY,
         q: location,
-        units,
-        appid: apiKey
+        aqi: 'no'
       }
     });
+
+    const data = response.data;
     
     return {
-      location: response.data.name,
-      country: response.data.sys.country,
-      temperature: response.data.main.temp,
-      feels_like: response.data.main.feels_like,
-      humidity: response.data.main.humidity,
-      description: response.data.weather[0].description,
-      icon: response.data.weather[0].icon,
-      wind_speed: response.data.wind.speed,
-      clouds: response.data.clouds.all,
-      timestamp: new Date().toISOString()
+      location: data.location.name,
+      country: data.location.country,
+      region: data.location.region,
+      temperature: data.current.temp_c,
+      feels_like: data.current.feelslike_c,
+      humidity: data.current.humidity,
+      description: data.current.condition.text,
+      icon: data.current.condition.icon,
+      wind_speed: data.current.wind_kph,
+      wind_direction: data.current.wind_dir,
+      pressure: data.current.pressure_mb,
+      visibility: data.current.vis_km,
+      uv: data.current.uv,
+      clouds: data.current.cloud,
+      timestamp: new Date().toISOString(),
+      localtime: data.location.localtime
     };
   } catch (error) {
-    console.error('Weather service error:', error);
     throw error;
   }
 };
 
 /**
- * Get weather forecast for a location
- * @param {string} location - City name or coordinates
- * @param {string} units - Units of measurement (metric, imperial, standard)
- * @returns {Promise<object>} - Forecast data
+ * Get weather forecast from WeatherAPI.com
+ * @param {string} location - Location to get forecast for
+ * @param {number} days - Number of days to forecast (default: 3)
+ * @returns {Promise<object>} Forecast data
  */
-exports.getForecast = async (location, units = 'metric') => {
+exports.getWeatherForecast = async (location, days = 3) => {
   try {
-    const apiKey = process.env.OPENWEATHERMAP_API_KEY;
-    
-    if (!apiKey) {
+    if (!WEATHER_API_KEY) {
       throw new Error('Weather API key not configured');
     }
-    
-    const response = await axios.get(`${API_BASE_URL}/forecast`, {
+
+    const response = await axios.get(`${WEATHER_API_URL}/forecast.json`, {
       params: {
+        key: WEATHER_API_KEY,
         q: location,
-        units,
-        appid: apiKey
+        days: Math.min(days, 10), // WeatherAPI allows max 10 days
+        aqi: 'no',
+        alerts: 'no'
       }
     });
+
+    const data = response.data;
     
-    // Process and simplify the forecast data
-    const processedForecast = response.data.list.map(item => ({
-      time: item.dt_txt,
-      temperature: item.main.temp,
-      humidity: item.main.humidity,
-      conditions: item.weather[0].description,
-      icon: item.weather[0].icon
-    }));
+    // Process forecast data
+    const forecast = [];
     
+    data.forecast.forecastday.forEach(day => {
+      // Add daily summary
+      forecast.push({
+        date: day.date,
+        time: `${day.date} 12:00:00`,
+        temperature: day.day.avgtemp_c,
+        max_temp: day.day.maxtemp_c,
+        min_temp: day.day.mintemp_c,
+        humidity: day.day.avghumidity,
+        conditions: day.day.condition.text,
+        icon: day.day.condition.icon,
+        chance_of_rain: day.day.chance_of_rain,
+        type: 'daily'
+      });
+      
+      // Add hourly data for today and tomorrow
+      if (forecast.length <= 2) {
+        day.hour.forEach((hour, index) => {
+          // Only include every 3 hours to avoid too much data
+          if (index % 3 === 0) {
+            forecast.push({
+              date: day.date,
+              time: hour.time,
+              temperature: hour.temp_c,
+              humidity: hour.humidity,
+              conditions: hour.condition.text,
+              icon: hour.condition.icon,
+              chance_of_rain: hour.chance_of_rain,
+              type: 'hourly'
+            });
+          }
+        });
+      }
+    });
+
     return {
-      location: response.data.city.name,
-      country: response.data.city.country,
-      forecast: processedForecast
+      location: data.location.name,
+      country: data.location.country,
+      region: data.location.region,
+      forecast
     };
   } catch (error) {
-    console.error('Weather forecast error:', error);
     throw error;
   }
 };
@@ -88,48 +123,110 @@ exports.getForecast = async (location, units = 'metric') => {
 /**
  * Generate plant care recommendations based on weather conditions
  * @param {object} weatherData - Current weather data
- * @returns {object} - Care recommendations
+ * @returns {object} Care recommendations
  */
 exports.generateRecommendations = (weatherData) => {
   const temp = weatherData.temperature;
   const humidity = weatherData.humidity;
   const windSpeed = weatherData.wind_speed;
   const description = weatherData.description.toLowerCase();
+  const uv = weatherData.uv;
   
   let recommendations = {
     watering: null,
     sunlight: null,
-    general: null
+    general: null,
+    protection: null
   };
   
-  // Watering recommendations
-  if (humidity < 30) {
-    recommendations.watering = "The air is very dry. Consider increasing watering frequency and misting your plants.";
+  // Watering recommendations based on humidity and temperature
+  if (humidity < 30 || temp > 30) {
+    recommendations.watering = "The air is dry and/or hot. Consider increasing watering frequency and misting your plants.";
+  } else if (humidity > 80) {
+    recommendations.watering = "The air is very humid. Be careful not to overwater your plants and ensure good air circulation.";
   } else if (humidity > 70) {
-    recommendations.watering = "The air is humid. Be careful not to overwater your plants.";
+    recommendations.watering = "The air is humid. Monitor soil moisture closely and reduce watering if needed.";
   } else {
     recommendations.watering = "Current humidity levels are moderate. Maintain your regular watering schedule.";
   }
   
   // Sunlight recommendations
-  if (description.includes('clear') || description.includes('sunny')) {
-    recommendations.sunlight = "It's sunny today! A good day to give your sun-loving plants some natural light.";
-  } else if (description.includes('cloud') || description.includes('overcast')) {
-    recommendations.sunlight = "It's cloudy today. Your shade plants will be comfortable, but sun-loving plants might need supplemental light.";
+  if (description.includes('sunny') || description.includes('clear')) {
+    if (uv > 7) {
+      recommendations.sunlight = "It's very sunny with high UV! Great for sun-loving plants, but protect sensitive ones from direct afternoon sun.";
+    } else {
+      recommendations.sunlight = "It's sunny today! Perfect conditions for your sun-loving plants.";
+    }
+  } else if (description.includes('partly cloudy') || description.includes('mostly cloudy')) {
+    recommendations.sunlight = "It's partly cloudy. Good diffused light for most plants. Sun-loving plants might need supplemental light.";
+  } else if (description.includes('overcast') || description.includes('cloudy')) {
+    recommendations.sunlight = "It's cloudy today. Your shade plants will be comfortable, but sun-loving plants might need grow lights.";
   } else if (description.includes('rain') || description.includes('drizzle')) {
-    recommendations.sunlight = "It's rainy today. Keep plants that don't like wet leaves away from open windows.";
+    recommendations.sunlight = "It's rainy today. Keep plants away from windows if they don't like wet leaves.";
   }
   
-  // General recommendations
-  if (temp > 30) {
-    recommendations.general = "It's very hot! Keep plants away from hot windows and consider increasing humidity and watering.";
-  } else if (temp < 5) {
-    recommendations.general = "It's cold! Keep plants away from drafty windows and cold spots.";
-  } else if (windSpeed > 8) {
-    recommendations.general = "It's windy today! If you have plants outside, consider moving them to a sheltered location.";
+  // General care recommendations
+  if (temp > 35) {
+    recommendations.general = "It's very hot! Move plants away from hot windows, increase humidity, and ensure adequate watering.";
+  } else if (temp < 0) {
+    recommendations.general = "It's freezing! Bring outdoor plants inside and keep indoor plants away from cold windows.";
+  } else if (temp < 10) {
+    recommendations.general = "It's cold! Keep plants away from drafty windows and consider reducing watering frequency.";
+  } else if (windSpeed > 15) {
+    recommendations.general = "It's very windy today! Secure or move outdoor plants to prevent damage.";
   } else {
     recommendations.general = "Weather conditions are favorable for most plants today.";
   }
   
+  // Protection recommendations
+  if (description.includes('storm') || description.includes('thunder')) {
+    recommendations.protection = "Stormy weather ahead! Bring in outdoor plants and ensure indoor plants are secure.";
+  } else if (description.includes('hail')) {
+    recommendations.protection = "Hail warning! Protect all outdoor plants immediately.";
+  } else if (windSpeed > 25) {
+    recommendations.protection = "Strong winds expected! Secure or relocate vulnerable plants.";
+  }
+  
   return recommendations;
+};
+
+/**
+ * Search for location suggestions
+ * @param {string} query - Search query for location
+ * @returns {Promise<Array>} Array of location suggestions
+ */
+exports.searchLocations = async (query) => {
+  try {
+    if (!WEATHER_API_KEY) {
+      throw new Error('Weather API key not configured');
+    }
+
+    if (!query || query.length < 2) {
+      return [];
+    }
+
+    const response = await axios.get(`${WEATHER_API_URL}/search.json`, {
+      params: {
+        key: WEATHER_API_KEY,
+        q: query
+      }
+    });
+
+    // Format the response data
+    return response.data.map(location => ({
+      name: location.name,
+      region: location.region,
+      country: location.country,
+      displayName: `${location.name}, ${location.region}, ${location.country}`,
+      lat: location.lat,
+      lon: location.lon
+    }));
+  } catch (error) {
+    // Return mock suggestions as fallback
+    const mockSuggestions = [
+      { name: query, region: 'Unknown', country: 'Unknown', displayName: `${query}, Unknown, Unknown`, lat: 0, lon: 0 }
+    ];
+    
+    return mockSuggestions;
+  }
 };
