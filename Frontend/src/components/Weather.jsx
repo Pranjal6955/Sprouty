@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Sun, Wind, Thermometer, MapPin, Cloud, 
   Umbrella, ArrowRight, AlertCircle, Droplets, ChevronDown
@@ -14,11 +14,55 @@ const Weather = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isUsingMockData, setIsUsingMockData] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+  const searchTimeoutRef = useRef(null);
+  const suggestionsRef = useRef(null);
 
   useEffect(() => {
     // Load weather data for default location on component mount
     loadWeatherData();
   }, []);
+
+  // Handle location input changes with debounced search
+  useEffect(() => {
+    if (location.length >= 2) {
+      // Clear previous timeout
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+      
+      // Set new timeout for search
+      searchTimeoutRef.current = setTimeout(() => {
+        searchLocations(location);
+      }, 300);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+    
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [location]);
+
+  const searchLocations = async (query) => {
+    try {
+      const response = await weatherAPI.searchLocations(query);
+      if (response.success) {
+        setSuggestions(response.data);
+        setShowSuggestions(response.data.length > 0);
+        setSelectedSuggestionIndex(-1);
+      }
+    } catch (error) {
+      console.error('Location search error:', error);
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
 
   const loadWeatherData = async (searchLocation = null) => {
     try {
@@ -82,6 +126,7 @@ const Weather = () => {
     if (!location) return;
 
     setIsSearching(true);
+    setShowSuggestions(false);
     try {
       await loadWeatherData(location);
     } catch (error) {
@@ -90,6 +135,59 @@ const Weather = () => {
       setIsSearching(false);
     }
   };
+
+  const handleSuggestionClick = (suggestion) => {
+    setLocation(suggestion.displayName);
+    setShowSuggestions(false);
+    setSelectedSuggestionIndex(-1);
+    // Auto-submit when suggestion is selected
+    setTimeout(() => {
+      loadWeatherData(suggestion.displayName);
+      setIsSearching(true);
+    }, 100);
+  };
+
+  const handleKeyDown = (e) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev => 
+          prev < suggestions.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev => prev > 0 ? prev - 1 : -1);
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedSuggestionIndex >= 0) {
+          handleSuggestionClick(suggestions[selectedSuggestionIndex]);
+        } else {
+          handleLocationSubmit(e);
+        }
+        break;
+      case 'Escape':
+        setShowSuggestions(false);
+        setSelectedSuggestionIndex(-1);
+        break;
+    }
+  };
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+        setSelectedSuggestionIndex(-1);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <div className="sticky top-0 p-6">
@@ -107,20 +205,53 @@ const Weather = () => {
         {showLocationInput ? (
           <div className="mb-4">
             <h3 className="text-lg font-semibold mb-3 text-gray-800">Where's your garden located?</h3>
-            <form onSubmit={handleLocationSubmit} className="relative">
+            <form onSubmit={handleLocationSubmit} className="relative" ref={suggestionsRef}>
               <div className="flex items-center">
                 <div className={`relative flex-1 ${isSearchFocused ? 'ring-2 ring-sprouty-green-200' : ''} rounded-lg transition-all`}>
                   <input
                     type="text"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    onFocus={() => setIsSearchFocused(true)}
+                    onFocus={() => {
+                      setIsSearchFocused(true);
+                      if (suggestions.length > 0) setShowSuggestions(true);
+                    }}
                     onBlur={() => setIsSearchFocused(false)}
+                    onKeyDown={handleKeyDown}
                     className="w-full px-4 py-3 border rounded-lg outline-none transition-colors"
                     placeholder="Enter city name..."
                     required
+                    autoComplete="off"
                   />
                   <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                  
+                  {/* Suggestions Dropdown */}
+                  {showSuggestions && suggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 mt-1 max-h-60 overflow-y-auto">
+                      {suggestions.map((suggestion, index) => (
+                        <div
+                          key={`${suggestion.name}-${suggestion.region}-${index}`}
+                          className={`px-4 py-3 cursor-pointer border-b border-gray-100 last:border-b-0 ${
+                            selectedSuggestionIndex === index 
+                              ? 'bg-sprouty-green-50 text-sprouty-green-700' 
+                              : 'hover:bg-gray-50'
+                          }`}
+                          onClick={() => handleSuggestionClick(suggestion)}
+                          onMouseEnter={() => setSelectedSuggestionIndex(index)}
+                        >
+                          <div className="flex items-center">
+                            <MapPin size={16} className="text-gray-400 mr-2 flex-shrink-0" />
+                            <div>
+                              <div className="font-medium text-gray-800">{suggestion.name}</div>
+                              <div className="text-sm text-gray-500">
+                                {suggestion.region}, {suggestion.country}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <button 
                   type="submit" 

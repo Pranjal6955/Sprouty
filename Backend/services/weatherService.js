@@ -197,3 +197,46 @@ exports.generateRecommendations = (weatherData) => {
   
   return recommendations;
 };
+
+/**
+ * Search for location suggestions
+ * @param {string} query - Search query for location
+ * @returns {Promise<Array>} Array of location suggestions
+ */
+exports.searchLocations = async (query) => {
+  try {
+    if (!WEATHER_API_KEY) {
+      throw new Error('Weather API key not configured');
+    }
+
+    if (!query || query.length < 2) {
+      return [];
+    }
+
+    const response = await axios.get(`${WEATHER_API_URL}/search.json`, {
+      params: {
+        key: WEATHER_API_KEY,
+        q: query
+      }
+    });
+
+    // Format the response data
+    return response.data.map(location => ({
+      name: location.name,
+      region: location.region,
+      country: location.country,
+      displayName: `${location.name}, ${location.region}, ${location.country}`,
+      lat: location.lat,
+      lon: location.lon
+    }));
+  } catch (error) {
+    console.error('WeatherAPI Search Error:', error.message);
+    
+    // Return mock suggestions as fallback
+    const mockSuggestions = [
+      { name: query, region: 'Unknown', country: 'Unknown', displayName: `${query}, Unknown, Unknown`, lat: 0, lon: 0 }
+    ];
+    
+    return mockSuggestions;
+  }
+};

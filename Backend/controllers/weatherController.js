@@ -177,3 +177,55 @@ exports.getWeatherForecast = async (req, res, next) => {
     res.status(500).json({ success: false, error: 'Failed to fetch weather forecast' });
   }
 };
+
+// @desc    Search for location suggestions
+// @route   GET /api/weather/search
+// @access  Private
+exports.searchLocations = async (req, res, next) => {
+  try {
+    const query = req.query.q;
+    
+    if (!query || query.length < 2) {
+      return res.status(200).json({
+        success: true,
+        data: []
+      });
+    }
+    
+    console.log(`Searching for locations matching: ${query}`);
+    
+    try {
+      const suggestions = await weatherService.searchLocations(query);
+      
+      res.status(200).json({
+        success: true,
+        data: suggestions
+      });
+      
+    } catch (apiError) {
+      console.error('Location Search API Error:', apiError.message);
+      
+      // Return mock suggestions as fallback
+      const mockSuggestions = [
+        { 
+          name: query, 
+          region: 'Unknown', 
+          country: 'Unknown', 
+          displayName: `${query}, Unknown, Unknown`,
+          lat: 0,
+          lon: 0
+        }
+      ];
+      
+      res.status(200).json({
+        success: true,
+        data: mockSuggestions,
+        note: "Using mock data - Weather API temporarily unavailable"
+      });
+    }
+    
+  } catch (err) {
+    console.error('Location Search Error:', err.message);
+    res.status(500).json({ success: false, error: 'Failed to search locations' });
+  }
+};

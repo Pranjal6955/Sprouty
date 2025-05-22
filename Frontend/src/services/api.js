@@ -334,6 +334,29 @@ export const weatherAPI = {
       console.error('Weather Forecast API Error:', error);
       throw error;
     }
+  },
+
+  searchLocations: async (query) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const params = query ? `?q=${encodeURIComponent(query)}` : '';
+      const response = await fetch(`${API_URL}/weather/search${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Location search error: ${response.statusText}`);
+      }
+      
+      return response.json();
+    } catch (error) {
+      console.error('Location Search API Error:', error);
+      throw error;
+    }
   }
 };
 
