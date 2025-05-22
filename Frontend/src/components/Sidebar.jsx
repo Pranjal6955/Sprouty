@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, LogOut, Settings, User, Home, Book, Bell } from 'lucide-react';
+import { Menu, LogOut, User, Home, Book, Bell } from 'lucide-react'; // Removed Settings import
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
@@ -89,12 +89,6 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen, activeNavItem, setActiveNavItem })
               label="Profile" 
               isActive={activeNavItem === 'Profile'} 
               onClick={() => handleNavigation('Profile')}
-            />
-            <NavItem 
-              icon={<Settings size={20} />} 
-              label="Settings" 
-              isActive={activeNavItem === 'Settings'} 
-              onClick={() => setActiveNavItem('Settings')}
             />
           </div>
         )}
