@@ -90,8 +90,10 @@ console.log('Firebase Admin SDK initialized');
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '50mb' })); // For image uploads
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Body parser with increased limit for image uploads
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
 // Debug each router
 console.log('authRoutes type:', typeof authRoutes);
