@@ -7,15 +7,11 @@ import Sidebar from '../components/Sidebar';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import {
-  fetchWeatherByLocation,
-  searchLocations,
-  calculateSearchRelevance
-} from '../services/weatherApi';
+import { weatherAPI } from '../services/api';
 import AddPlant from '../components/AddPlant';
 import LogoOJT from '../assets/LogoOJT.png';
-import { plantAPI } from '../services/api'; // Add this import for plantAPI
-import { DarkModeToggle } from '../components/ThemeProvider'; // Add this import
+import { plantAPI } from '../services/api';
+import { DarkModeToggle } from '../components/ThemeProvider';
 
 const Dashboard = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -36,8 +32,24 @@ const Dashboard = () => {
     // Fetch weather data
     const initializeWeather = async () => {
       try {
-        const data = await fetchWeatherByLocation('Bangkok');
-        setWeatherData(data);
+        const data = await weatherAPI.getCurrentWeather('Bangkok');
+        if (data.success) {
+          const formattedWeather = {
+            location: data.data.location,
+            localTime: new Date().toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              month: 'short', 
+              day: 'numeric' 
+            }),
+            condition: data.data.description,
+            icon: data.data.icon.startsWith('//') ? `https:${data.data.icon}` : data.data.icon,
+            temperature: `${Math.round(data.data.temperature)}°C`,
+            windSpeed: `${data.data.wind_speed} km/h`,
+            humidity: `${data.data.humidity}%`,
+            uv: data.data.uv || "6"
+          };
+          setWeatherData(formattedWeather);
+        }
         setError(null);
       } catch (error) {
         console.error('Weather API Error:', error);
@@ -103,37 +115,46 @@ const Dashboard = () => {
     }
 
     try {
-      const locations = await searchLocations(searchTerm);
-      const processedResults = locations
-        .map(result => ({
-          ...result,
-          relevance: calculateSearchRelevance(searchTerm, result.name)
-        }))
-        .filter(result => result.relevance > 0)
-        .sort((a, b) => b.relevance - a.relevance)
-        .slice(0, 15);
-
-      setSearchResults(processedResults);
+      const response = await weatherAPI.searchLocations(searchTerm);
+      if (response.success) {
+        setSearchResults(response.data.slice(0, 15));
+      }
     } catch (error) {
       console.error('Location search error:', error);
     }
   };
 
   const handleLocationSelect = (selectedLocation) => {
-    setLocation(selectedLocation.fullName);
+    setLocation(selectedLocation.name);
     setSearchResults([]);
-    handleLocationSubmit(null, `${selectedLocation.lat},${selectedLocation.lon}`);
+    handleLocationSubmit(null, selectedLocation.name);
   };
 
-  const handleLocationSubmit = async (e, locationUrl) => {
+  const handleLocationSubmit = async (e, locationName) => {
     if (e) e.preventDefault();
-    if (!location && !locationUrl) return;
+    if (!location && !locationName) return;
 
     setIsSearching(true);
     try {
-      const data = await fetchWeatherByLocation(locationUrl || location);
-      setWeatherData(data);
-      setShowLocationInput(false);
+      const data = await weatherAPI.getCurrentWeather(locationName || location);
+      if (data.success) {
+        const formattedWeather = {
+          location: data.data.location,
+          localTime: new Date().toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            month: 'short', 
+            day: 'numeric' 
+          }),
+          condition: data.data.description,
+          icon: data.data.icon.startsWith('//') ? `https:${data.data.icon}` : data.data.icon,
+          temperature: `${Math.round(data.data.temperature)}°C`,
+          windSpeed: `${data.data.wind_speed} km/h`,
+          humidity: `${data.data.humidity}%`,
+          uv: data.data.uv || "6"
+        };
+        setWeatherData(formattedWeather);
+        setShowLocationInput(false);
+      }
       setError(null);
     } catch (error) {
       console.error('Weather API Error:', error);
