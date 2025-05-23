@@ -7,7 +7,8 @@ const UserSchema = new mongoose.Schema({
   name: {
     type: String,
     required: [true, 'Please add a name'],
-    trim: true
+    trim: true,
+    maxlength: [50, 'Name cannot be more than 50 characters']
   },
   email: {
     type: String,
@@ -24,50 +25,40 @@ const UserSchema = new mongoose.Schema({
     minlength: 6,
     select: false
   },
-  // Add Firebase UID to link Firebase auth with our database
-  firebaseUid: {
+  avatar: {
     type: String,
-    sparse: true, // Allows null values but enforces uniqueness when present
-    index: true   // Improves query performance
-  },
-  // Track authentication provider
-  authProvider: {
-    type: String,
-    enum: ['local', 'google', 'facebook', 'apple', null],
-    default: 'local'
+    default: null
   },
   location: {
     type: String,
-    default: ''
+    trim: true,
+    maxlength: [100, 'Location cannot be more than 100 characters']
   },
   preferences: {
-    darkMode: {
-      type: Boolean,
-      default: false
-    },
-    notificationsEnabled: {
+    notifications: {
       type: Boolean,
       default: true
     },
-    emailNotifications: {
-      type: Boolean,
-      default: true
-    },
-    pushNotifications: {
-      type: Boolean,
-      default: false
+    theme: {
+      type: String,
+      enum: ['light', 'dark'],
+      default: 'light'
     }
   },
-  avatar: {
+  firebaseUid: {
     type: String,
-    default: 'default-avatar.png'
+    unique: true,
+    sparse: true
+  },
+  authProvider: {
+    type: String,
+    enum: ['local', 'google'],
+    default: 'local'
   },
   resetPasswordToken: String,
-  resetPasswordExpire: Date,
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
+  resetPasswordExpire: Date
+}, {
+  timestamps: true
 });
 
 // Encrypt password using bcrypt
