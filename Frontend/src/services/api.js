@@ -124,24 +124,107 @@ export const authAPI = {
 
 // User Services
 export const userAPI = {
+  // Get user profile
   getProfile: async () => {
-    const response = await api.get('/users/profile');
-    return response.data;
-  },
-  
-  updateProfile: async (userData) => {
-    const response = await api.put('/users/profile', userData);
-    return response.data;
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`${API_URL}/users/profile`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch profile');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Get profile error:', error);
+      throw error;
+    }
   },
 
-  updatePassword: async (passwordData) => {
-    const response = await api.put('/users/password', passwordData);
-    return response.data;
+  // Update user profile
+  updateProfile: async (profileData) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      console.log('Updating profile with data:', { 
+        ...profileData, 
+        avatar: profileData.avatar ? 'Image data present' : 'No avatar' 
+      });
+
+      const response = await fetch(`${API_URL}/users/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(profileData)
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update profile');
+      }
+
+      // Update localStorage user data
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const updatedUser = { 
+        ...storedUser, 
+        name: profileData.name || storedUser.name,
+        avatar: profileData.avatar || storedUser.avatar 
+      };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+
+      console.log('Profile updated successfully');
+      return data;
+    } catch (error) {
+      console.error('Update profile error:', error);
+      throw error;
+    }
   },
-  
-  getUserStats: async () => {
-    const response = await api.get('/users/stats');
-    return response.data;
+
+  // Get user stats
+  getStats: async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`${API_URL}/users/stats`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch stats');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Get stats error:', error);
+      throw error;
+    }
   }
 };
 
