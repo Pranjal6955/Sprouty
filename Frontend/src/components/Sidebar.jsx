@@ -1,19 +1,20 @@
 import React from 'react';
-import { Menu, LogOut, User, Home, Book, Bell } from 'lucide-react'; // Removed Settings import
+import { Menu, LogOut, User, Home, Book, Bell } from 'lucide-react';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
+import { DarkModeToggle } from './ThemeProvider'; // Add this import
 
 const NavItem = ({ icon, label, isActive, onClick }) => (
   <div 
     onClick={onClick}
     className={`flex items-center space-x-4 p-2.5 rounded-lg cursor-pointer transition-colors ${
       isActive 
-        ? 'bg-green-50 text-green-600' 
-        : 'hover:bg-gray-100 text-gray-600'
+        ? 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400' 
+        : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400'
     }`}
   >
-    <div className={isActive ? 'text-green-600' : 'text-gray-500'}>{icon}</div>
+    <div className={isActive ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}>{icon}</div>
     <span className={`${isActive ? 'font-medium' : ''} transition-all`}>{label}</span>
   </div>
 );
@@ -49,17 +50,18 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen, activeNavItem, setActiveNavItem })
   };
 
   return (
-    <div className={`bg-white h-full shadow-lg transition-all duration-300 ease-in-out ${
+    <div className={`bg-white dark:bg-gray-800 h-full shadow-lg transition-all duration-300 ease-in-out ${
       isMenuOpen ? 'w-64' : 'w-16'
-    } flex flex-col border-r border-gray-100`}>
-      {/* Hamburger Menu */}
-      <div className="p-4 flex justify-start">  {/* Changed justify-center to justify-start */}
+    } flex flex-col border-r border-gray-100 dark:border-gray-700`}>
+      {/* Hamburger Menu and Dark Mode Toggle */}
+      <div className="p-4 flex justify-between items-center">
         <button 
           onClick={() => setIsMenuOpen(!isMenuOpen)} 
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
         >
-          <Menu size={22} className="text-gray-600" />
+          <Menu size={22} className="text-gray-600 dark:text-gray-400" />
         </button>
+        {isMenuOpen && <DarkModeToggle />}
       </div>
 
       {/* Navigation Items - Only show when menu is open */}
@@ -95,10 +97,10 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen, activeNavItem, setActiveNavItem })
       </div>
 
       {/* Logout Button - Always visible */}
-      <div className="p-2 border-t border-gray-100">
+      <div className="p-2 border-t border-gray-100 dark:border-gray-700">
         <button 
           onClick={handleLogout} 
-          className={`flex items-center justify-center w-full p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors ${
+          className={`flex items-center justify-center w-full p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors ${
             isMenuOpen ? 'justify-start px-4' : 'justify-center'
           }`}
         >
