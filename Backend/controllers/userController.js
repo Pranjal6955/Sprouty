@@ -30,12 +30,44 @@ exports.updateUserProfile = async (req, res, next) => {
   try {
     const { name, location, preferences, avatar } = req.body;
     
+    console.log('Updating profile for user:', req.user.id);
+    console.log('Update data:', { 
+      name, 
+      location, 
+      preferences, 
+      avatar: avatar ? 'Avatar data present' : 'No avatar' 
+    });
+    
     // Build update object with only the fields that are provided
     const updateFields = {};
-    if (name) updateFields.name = name;
-    if (location) updateFields.location = location;
-    if (preferences) updateFields.preferences = { ...preferences };
-    if (avatar) updateFields.avatar = avatar;
+    if (name !== undefined) updateFields.name = name.trim();
+    if (location !== undefined) updateFields.location = location.trim();
+    if (preferences !== undefined) updateFields.preferences = { ...preferences };
+    if (avatar !== undefined) updateFields.avatar = avatar;
+    
+    // Validate name if provided
+    if (name && (name.trim().length === 0 || name.length > 50)) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Name must be between 1 and 50 characters' 
+      });
+    }
+    
+    // Validate location if provided
+    if (location && location.length > 100) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Location cannot be more than 100 characters' 
+      });
+    }
+    
+    // Validate avatar size (base64 data should not be too large)
+    if (avatar && avatar.length > 10 * 1024 * 1024) { // ~7.5MB base64 = ~10MB file
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Avatar image is too large. Please use an image smaller than 5MB.' 
+      });
+    }
     
     const user = await User.findByIdAndUpdate(
       req.user.id,
@@ -47,13 +79,30 @@ exports.updateUserProfile = async (req, res, next) => {
       return res.status(404).json({ success: false, error: 'User not found' });
     }
     
+    console.log('Profile updated successfully for user:', req.user.id);
+    
     res.status(200).json({
       success: true,
-      data: user
+      data: user,
+      message: 'Profile updated successfully'
     });
   } catch (err) {
-    console.error(err.message);
-    res.status(500).json({ success: false, error: 'Server Error' });
+    console.error('Profile update error:', err.message);
+    
+    // Handle validation errors
+    if (err.name === 'ValidationError') {
+      const messages = Object.values(err.errors).map(val => val.message);
+      return res.status(400).json({
+        success: false,
+        error: messages.join(', ')
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      error: 'Server Error',
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 };
 
