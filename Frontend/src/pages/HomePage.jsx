@@ -3,6 +3,7 @@ import { Plus, Bell, TrendingUp, Zap, Thermometer, Clock } from 'lucide-react';
 import plantPhoto from '../assets/plantPhoto.jpg';
 import { Link } from 'react-router-dom';
 import LogoOJT from '../assets/LogoOJT.png';
+import { DarkModeToggle } from '../components/ThemeProvider';
 
 const HomePage = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -12,9 +13,9 @@ const HomePage = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Navbar - Updated with consistent styling */}
-      <nav className="sticky top-0 z-50 mx-auto w-[75%] bg-white/90 backdrop-blur-sm border border-sprouty-green-100 shadow-lg rounded-[100px] mt-4">
+      <nav className="sticky top-0 z-50 mx-auto w-[75%] bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-green-100 dark:border-gray-700 shadow-lg rounded-[100px] mt-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
@@ -24,19 +25,20 @@ const HomePage = () => {
                   alt="Sprouty Logo" 
                   className="h-12 w-13"
                 />
-                <span className="text-sprouty-green-600 font-bold text-2xl ml-2">Sprouty</span>
+                <span className="text-teal-600 font-bold text-2xl ml-2">Sprouty</span>
               </div>
               <div className="hidden md:ml-8 md:flex md:space-x-10">
-                <a href="#home" className="text-gray-700 hover:text-sprouty-green-600 px-3 py-2 text-sm font-medium transition duration-150">Home</a>
-                <a href="#features" className="text-gray-700 hover:text-sprouty-green-600 px-3 py-2 text-sm font-medium transition duration-150">Features</a>
-                <a href="#about" className="text-gray-700 hover:text-sprouty-green-600 px-3 py-2 text-sm font-medium transition duration-150">About Us</a>
+                <a href="#home" className="text-gray-700 dark:text-gray-200 hover:text-teal-600 dark:hover:text-teal-400 px-3 py-2 text-sm font-medium transition duration-150">Home</a>
+                <a href="#features" className="text-gray-700 dark:text-gray-200 hover:text-teal-600 dark:hover:text-teal-400 px-3 py-2 text-sm font-medium transition duration-150">Features</a>
+                <a href="#about" className="text-gray-700 dark:text-gray-200 hover:text-teal-600 dark:hover:text-teal-400 px-3 py-2 text-sm font-medium transition duration-150">About Us</a>
               </div>
             </div>
             <div className="hidden md:flex items-center space-x-4">
-              <Link to="/Login" className="text-sprouty-green-600 font-medium hover:text-sprouty-green-800 transition duration-150">
+              <DarkModeToggle />
+              <Link to="/Login" className="text-teal-600 dark:text-teal-400 font-medium hover:text-teal-800 dark:hover:text-teal-300">
                 Login
               </Link>
-              <Link to="/signup" className="bg-sprouty-green-600 hover:bg-sprouty-green-700 text-white font-medium py-2 px-5 rounded-full transition duration-150">
+              <Link to="/signup" className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-5 rounded-full transition duration-150">
                 Sign Up
               </Link>
             </div>
@@ -54,16 +56,16 @@ const HomePage = () => {
         {isMenuOpen && (
           <div className="md:hidden animate-slideDown">
             <div className="pt-2 pb-3 space-y-1 px-2">
-              <a href="#home" className="block px-3 py-2 text-gray-700 font-medium hover:bg-sprouty-green-50 hover:text-sprouty-green-600 rounded-lg">Home</a>
-              <a href="#features" className="block px-3 py-2 text-gray-700 font-medium hover:bg-sprouty-green-50 hover:text-sprouty-green-600 rounded-lg">Features</a>
-              <a href="#about" className="block px-3 py-2 text-gray-700 font-medium hover:bg-sprouty-green-50 hover:text-sprouty-green-600 rounded-lg">About Us</a>
+              <a href="#home" className="block px-3 py-2 text-gray-700 dark:text-gray-200 font-medium hover:bg-teal-50 dark:hover:bg-teal-900/20 hover:text-teal-600 dark:hover:text-teal-400 rounded-lg">Home</a>
+              <a href="#features" className="block px-3 py-2 text-gray-700 dark:text-gray-200 font-medium hover:bg-teal-50 dark:hover:bg-teal-900/20 hover:text-teal-600 dark:hover:text-teal-400 rounded-lg">Features</a>
+              <a href="#about" className="block px-3 py-2 text-gray-700 dark:text-gray-200 font-medium hover:bg-teal-50 dark:hover:bg-teal-900/20 hover:text-teal-600 dark:hover:text-teal-400 rounded-lg">About Us</a>
             </div>
             <div className="pt-4 pb-3 border-t border-gray-200">
               <div className="flex items-center justify-center px-4 space-x-4 py-2">
-                <Link to="/" className="w-full text-sprouty-green-600 font-medium py-2 px-4 rounded-lg border border-sprouty-green-600 hover:bg-sprouty-green-50">
+                <Link to="/" className="w-full text-teal-600 font-medium py-2 px-4 rounded-lg border border-teal-600 hover:bg-teal-50">
                   Login
                 </Link>
-                <Link to="/signup" className="w-full bg-sprouty-green-600 hover:bg-sprouty-green-700 text-white font-medium py-2 px-4 rounded-lg">
+                <Link to="/signup" className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-lg">
                   Sign Up
                 </Link>
               </div>
@@ -74,22 +76,22 @@ const HomePage = () => {
 
       {/* Hero Section - Updated gradient */}
       <section id="home" className="relative py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 z-0"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-900/50 dark:via-gray-800/50 dark:to-gray-900/50 z-0"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="flex flex-col md:flex-row items-center">
             <div className="md:w-1/2 md:pr-10">
-              <div className="inline-block px-3 py-1 text-sm font-medium text-sprouty-green-700 bg-sprouty-green-100 rounded-full mb-6">
+              <div className="inline-block px-3 py-1 text-sm font-medium text-teal-700 bg-teal-100 rounded-full mb-6">
                 Your plant care companion
               </div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-4 leading-tight">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-4 leading-tight">
                 Grow Happier, <br/>
-                <span className="text-sprouty-green-600">Healthier Plants</span>
+                <span className="text-teal-600 dark:text-teal-400">Healthier Plants</span>
               </h1>
               <p className="text-lg text-gray-600 mb-8 leading-relaxed">
                 Sprouty helps you remember when to water, prune, and care for your plants with timely reminders and personalized advice.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link to="/signup" className="bg-sprouty-green-600 hover:bg-sprouty-green-700 text-white font-medium py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:-translate-y-1 text-center">
+                <Link to="/signup" className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:-translate-y-1 text-center">
                   Get Started Free
                 </Link>
               </div>
@@ -108,73 +110,73 @@ const HomePage = () => {
       </section>
 
       {/* Features Section - Updated card styling */}
-      <section id="features" className="py-20 bg-white/90 backdrop-blur-sm">
+      <section id="features" className="py-20 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Smart Features for Plant Lovers</h2>
-            <p className="mt-4 text-xl text-gray-600 max-w-3xl mx-auto">Everything you need to become a successful plant parent</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Smart Features for Plant Lovers</h2>
+            <p className="mt-4 text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">Everything you need to become a successful plant parent</p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Feature 1 */}
-            <div className="bg-white/90 backdrop-blur-sm p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-green-100">
+            <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-green-100 dark:border-gray-700">
               <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center text-teal-600 mb-6">
                 <Plus className="h-8 w-8" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Plant Recognition</h3>
-              <p className="text-gray-600 leading-relaxed">Identify any plant instantly with our AI-powered recognition system. Just snap a photo.</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Plant Recognition</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">Identify any plant instantly with our AI-powered recognition system. Just snap a photo.</p>
             </div>
             
             {/* Feature 2 */}
-            <div className="bg-white/90 backdrop-blur-sm p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-green-100">
+            <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-green-100 dark:border-gray-700">
               <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center text-teal-600 mb-6">
                 <Bell className="h-8 w-8" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Smart Reminders</h3>
-              <p className="text-gray-600 leading-relaxed">Never forget to water again with intelligent care schedules tailored to each plant's needs.</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Smart Reminders</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">Never forget to water again with intelligent care schedules tailored to each plant's needs.</p>
             </div>
             
             {/* Feature 3 */}
-            <div className="bg-white/90 backdrop-blur-sm p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-green-100">
+            <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-green-100 dark:border-gray-700">
               <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center text-teal-600 mb-6">
                 <TrendingUp className="h-8 w-8" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Growth Tracking</h3>
-              <p className="text-gray-600 leading-relaxed">Monitor progress with visual growth tracking, celebrating your plant care success.</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Growth Tracking</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">Monitor progress with visual growth tracking, celebrating your plant care success.</p>
             </div>
             
             {/* Feature 4 */}
-            <div className="bg-white/90 backdrop-blur-sm p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-green-100">
+            <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-green-100 dark:border-gray-700">
               <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center text-teal-600 mb-6">
                 <Zap className="h-8 w-8" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Care Tips & Guides</h3>
-              <p className="text-gray-600 leading-relaxed">Access plant-specific care guides and expert advice to help your plants thrive.</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Care Tips & Guides</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">Access plant-specific care guides and expert advice to help your plants thrive.</p>
             </div>
             
             {/* Feature 5 */}
-            <div className="bg-white/90 backdrop-blur-sm p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-green-100">
+            <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-green-100 dark:border-gray-700">
               <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center text-teal-600 mb-6">
                 <Thermometer className="h-8 w-8" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Light & Temperature</h3>
-              <p className="text-gray-600 leading-relaxed">Get recommendations for optimal light and temperature conditions for each plant type.</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Light & Temperature</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">Get recommendations for optimal light and temperature conditions for each plant type.</p>
             </div>
             
             {/* Feature 6 */}
-            <div className="bg-white/90 backdrop-blur-sm p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-green-100">
+            <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-green-100 dark:border-gray-700">
               <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center text-teal-600 mb-6">
                 <Clock className="h-8 w-8" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">Seasonal Changes</h3>
-              <p className="text-gray-600 leading-relaxed">Adaptive care schedules that change with the seasons for year-round plant health.</p>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Seasonal Changes</h3>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">Adaptive care schedules that change with the seasons for year-round plant health.</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* About Us Section - Updated styling */}
-      <section id="about" className="py-20 bg-white/90 backdrop-blur-sm">
+      <section id="about" className="py-20 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row gap-12 items-center">
             <div className="md:w-1/2">
@@ -188,14 +190,14 @@ const HomePage = () => {
               <div className="inline-block px-3 py-1 text-sm font-medium text-teal-700 bg-teal-100 rounded-full mb-6">
                 Our Story
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">A Growing Passion</h2>
-              <p className="text-gray-700 mb-6 leading-relaxed">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-6">A Growing Passion</h2>
+              <p className="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
                 Sprouty was born when our founder's collection of houseplants kept dying despite their best efforts. We realized that consistent care was the key to thriving plants, and technology could help bridge that gap.
               </p>
-              <p className="text-gray-700 mb-6 leading-relaxed">
+              <p className="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
                 Our mission is to empower plant lovers of all experience levels with the tools and knowledge they need to create thriving indoor jungles and outdoor gardens.
               </p>
-              <p className="text-gray-700 leading-relaxed">
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                 Every feature in Sprouty is designed with plant science in mind, built by a team of developers who are also passionate plant parents.
               </p>
             </div>
@@ -204,7 +206,7 @@ const HomePage = () => {
       </section>
 
       {/* Call to Action - Updated gradient */}
-      <section className="py-16 bg-gradient-to-r from-green-600 to-emerald-700">
+      <section className="py-16 bg-gradient-to-r from-green-600 to-emerald-700 dark:from-green-800 dark:to-emerald-900">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-white mb-6">Ready to grow with us?</h2>
           <p className="text-teal-100 mb-8 text-lg max-w-3xl mx-auto">
@@ -222,7 +224,7 @@ const HomePage = () => {
       </section>
 
       {/* Footer - Updated styling */}
-      <footer className="bg-gradient-to-br from-gray-900 to-emerald-900 text-white py-12">
+      <footer className="bg-gradient-to-br from-gray-900 to-emerald-900 dark:from-gray-950 dark:to-emerald-950 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-1 md:col-span-1">
