@@ -49,7 +49,7 @@ const Reminder = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar 
         isMenuOpen={isMenuOpen}
         setIsMenuOpen={setIsMenuOpen}
@@ -65,27 +65,29 @@ const Reminder = () => {
               <img 
                 src={LogoOJT} 
                 alt="Sprouty Logo" 
-                className="h-17 w-16 mr-4"
+                className="h-17 w-16"
               />
-              <h1 className="text-2xl font-bold text-gray-800">Plant Care Reminders</h1>
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-white ml-2">Plant Care Reminders</h1>
+            </div>
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => setShowAddReminder(true)}
+                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-sm"
+              >
+                <Plus size={20} className="mr-1" /> Add Reminder
+              </button>
             </div>
           </div>
 
           {/* Main Content */}
           <div className="grid gap-6">
             {/* Add Reminder Button */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
               <div className="flex justify-between items-center">
                 <div className="flex items-center">
                   <Bell className="text-green-500 mr-2" />
-                  <h2 className="text-xl font-semibold text-gray-800">My Reminders</h2>
+                  <h2 className="text-xl font-semibold text-gray-800 dark:text-white">My Reminders</h2>
                 </div>
-                <button
-                  onClick={() => setShowAddReminder(true)}
-                  className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-sm"
-                >
-                  <Plus size={20} className="mr-1" /> Add Reminder
-                </button>
               </div>
 
               {/* Reminders List */}
@@ -93,24 +95,24 @@ const Reminder = () => {
                 {reminders.map(reminder => (
                   <div 
                     key={reminder.id}
-                    className="flex items-center justify-between bg-gray-50 p-4 rounded-lg border border-gray-100"
+                    className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700"
                   >
                     <div className="flex items-center space-x-4">
                       <Droplets className="text-blue-500" />
                       <div>
-                        <h3 className="font-medium text-gray-800">{reminder.plantName}</h3>
-                        <p className="text-sm text-gray-600">
+                        <h3 className="font-medium text-gray-800 dark:text-white">{reminder.plantName}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
                           {reminder.type} - {reminder.recurring}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center space-x-4">
                       <div className="text-right">
-                        <div className="flex items-center text-gray-600">
+                        <div className="flex items-center text-gray-600 dark:text-gray-400">
                           <Calendar size={16} className="mr-1" />
                           <span className="text-sm">{reminder.date}</span>
                         </div>
-                        <div className="flex items-center text-gray-600">
+                        <div className="flex items-center text-gray-600 dark:text-gray-400">
                           <Clock size={16} className="mr-1" />
                           <span className="text-sm">{reminder.time}</span>
                         </div>
