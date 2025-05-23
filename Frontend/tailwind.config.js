@@ -2,8 +2,9 @@
 export default {
   content: [
     "./index.html",
-    "./src/**/*.{js,jsx,ts,tsx,vue,html,css}"
+    "./src/**/*.{js,jsx,ts,tsx,vue,html,css}" // Fixed path pattern
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       colors: {
