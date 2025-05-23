@@ -3,7 +3,6 @@ import { Menu, LogOut, User, Home, Book, Bell } from 'lucide-react';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import { DarkModeToggle } from './ThemeProvider'; // Add this import
 
 const NavItem = ({ icon, label, isActive, onClick }) => (
   <div 
@@ -53,15 +52,14 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen, activeNavItem, setActiveNavItem })
     <div className={`bg-white dark:bg-gray-800 h-full shadow-lg transition-all duration-300 ease-in-out ${
       isMenuOpen ? 'w-64' : 'w-16'
     } flex flex-col border-r border-gray-100 dark:border-gray-700`}>
-      {/* Hamburger Menu and Dark Mode Toggle */}
-      <div className="p-4 flex justify-between items-center">
+      {/* Hamburger Menu only */}
+      <div className="p-4 flex justify-start">
         <button 
           onClick={() => setIsMenuOpen(!isMenuOpen)} 
           className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
         >
           <Menu size={22} className="text-gray-600 dark:text-gray-400" />
         </button>
-        {isMenuOpen && <DarkModeToggle />}
       </div>
 
       {/* Navigation Items - Only show when menu is open */}
