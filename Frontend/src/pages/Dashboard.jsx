@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Plus, Sun, Wind, Thermometer, MapPin, Camera, Cloud, 
-  Umbrella, ArrowRight, AlertCircle, Droplets, ChevronDown
+  Umbrella, ArrowRight, AlertCircle, Droplets, ChevronDown, Calendar, Edit, Trash2, MoreVertical
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import { auth } from '../firebase';
@@ -195,10 +195,15 @@ const Dashboard = () => {
               </div>
             </div>
             
-            {/* Plants Section */}
+            {/* Plants Section - Updated UI */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-all hover:shadow-md mb-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-white">My Plants</h2>
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-800 dark:text-white">My Plants</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    {plants.length} {plants.length === 1 ? 'plant' : 'plants'} in your garden
+                  </p>
+                </div>
                 <button 
                   onClick={handleAddPlant}
                   className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-sm"
@@ -214,26 +219,70 @@ const Dashboard = () => {
                   <p className="text-sm mt-1 dark:text-gray-400">Take a photo of your plants to start tracking them</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {plants.map(plant => (
-                    <div key={plant.id} className="border dark:border-gray-700 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all group bg-white dark:bg-gray-800">
-                      <div className="h-48 overflow-hidden bg-gray-100 dark:bg-gray-700 relative">
+                    <div 
+                      key={plant.id} 
+                      className="group relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all duration-300"
+                    >
+                      {/* Plant Image */}
+                      <div className="aspect-square overflow-hidden bg-gray-100 dark:bg-gray-700">
                         <img 
                           src={plant.image} 
                           alt={plant.name} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       </div>
+                      
+                      {/* Quick Actions Overlay */}
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex gap-2 bg-black/20 backdrop-blur-sm p-1 rounded-lg">
+                          <button 
+                            className="p-1.5 rounded-lg hover:bg-white/20 transition-colors"
+                            onClick={() => handleEditPlant(plant.id)}
+                          >
+                            <Edit size={16} className="text-white" />
+                          </button>
+                          <button 
+                            className="p-1.5 rounded-lg hover:bg-white/20 transition-colors"
+                            onClick={() => handleWaterPlant(plant.id)}
+                          >
+                            <Droplets size={16} className="text-white" />
+                          </button>
+                          <button 
+                            className="p-1.5 rounded-lg hover:bg-red-500/80 transition-colors"
+                            onClick={() => handleDeletePlant(plant.id)}
+                          >
+                            <Trash2 size={16} className="text-white" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Plant Info */}
                       <div className="p-4">
-                        <h3 className="font-semibold text-lg text-gray-800 dark:text-white">{plant.name}</h3>
-                        <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                          <div className="flex items-center">
-                            <div className="h-2 w-2 rounded-full bg-green-500 mr-2"></div>
-                            <span className="text-gray-600 dark:text-gray-300">Health: {plant.health}</span>
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h3 className="font-semibold text-gray-800 dark:text-white">{plant.nickname}</h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{plant.species}</p>
                           </div>
-                          <div className="flex items-center">
-                            <div className="h-2 w-2 rounded-full bg-blue-400 mr-2"></div>
-                            <span className="text-gray-600 dark:text-gray-300">Last Watered: {plant.lastWatered}</span>
+                          <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            plant.health === 'Healthy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                            plant.health === 'Needs Attention' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                            'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                          }`}>
+                            {plant.health}
+                          </div>
+                        </div>
+
+                        {/* Plant Stats */}
+                        <div className="grid grid-cols-2 gap-3 mt-4 text-sm">
+                          <div className="flex items-center text-gray-600 dark:text-gray-300">
+                            <Droplets size={16} className="mr-2 text-blue-500" />
+                            <span>{plant.lastWatered}</span>
+                          </div>
+                          <div className="flex items-center text-gray-600 dark:text-gray-300">
+                            <Calendar size={16} className="mr-2 text-gray-400" />
+                            <span>Added {plant.dateAdded}</span>
                           </div>
                         </div>
                       </div>
@@ -403,5 +452,22 @@ const WeatherItem = ({ icon, label, value, className = "" }) => (
     </div>
   </div>
 );
+
+const handleEditPlant = (plantId) => {
+  // Implement edit functionality
+  console.log('Edit plant:', plantId);
+};
+
+const handleWaterPlant = (plantId) => {
+  // Implement watering functionality
+  console.log('Water plant:', plantId);
+};
+
+const handleDeletePlant = (plantId) => {
+  // Implement delete functionality
+  if (window.confirm('Are you sure you want to delete this plant?')) {
+    console.log('Delete plant:', plantId);
+  }
+};
 
 export default Dashboard;
