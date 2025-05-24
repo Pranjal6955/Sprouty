@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Camera, X, Check, ArrowLeft, Loader, Info, Maximize, Droplets, Sun, Wind, Thermometer, 
-         Globe, Leaf, Bookmark, FlowerIcon, Calendar, Upload, Image } from 'lucide-react';
+         Globe, Leaf, Bookmark, FlowerIcon, Calendar, Upload, Image, Search } from 'lucide-react';
 import Webcam from 'react-webcam';
 import { plantAPI } from '../services/api';
 import { useTheme } from '../components/ThemeProvider';
@@ -22,6 +22,10 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
   const fileInputRef = useRef(null);
   const [showCamera, setShowCamera] = useState(false); // Add this new state
   const { isDarkMode } = useTheme();
+  const [searchMode, setSearchMode] = useState('image'); // 'image' or 'text'
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Add debugging state
   const [apiResponse, setApiResponse] = useState(null);
@@ -315,6 +319,45 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
     setError(null);
   };
 
+  // Add this new function for text search
+  const handleTextSearch = async (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    setIsSearching(true);
+    setError(null);
+
+    try {
+      const response = await plantAPI.searchPlantByName(searchQuery);
+      if (response.success && response.data.suggestions) {
+        const topMatch = response.data.suggestions[0];
+        setPlantDetails({
+          scientificName: topMatch.name,
+          commonName: topMatch.details?.common_names?.[0] || topMatch.name,
+          allCommonNames: topMatch.details?.common_names || [],
+          description: topMatch.details?.description || '',
+          taxonomy: topMatch.details?.taxonomy || {},
+          family: topMatch.details?.taxonomy?.family || 'Unknown',
+          genus: topMatch.details?.taxonomy?.genus || 'Unknown',
+          wikiUrl: topMatch.details?.url || ''
+        });
+        setSearchResults(response.data.suggestions);
+        
+        // Auto-fill form fields
+        if (topMatch.details?.common_names?.[0]) {
+          setPlantName(topMatch.details.common_names[0]);
+        }
+      } else {
+        setError("No plants found matching your search.");
+      }
+    } catch (err) {
+      console.error('Search error:', err);
+      setError('Failed to search for plants. Please try again.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col border dark:border-gray-700">
@@ -335,82 +378,169 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
         <div className="overflow-y-auto scrollbar-hide flex-1 p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             {!capturedImage ? (
-              <div className="relative h-80 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border dark:border-gray-700">
-                {showCamera ? (
-                  // Camera View
-                  <div className="relative h-full">
-                    <Webcam
-                      audio={false}
-                      ref={webcamRef}
-                      screenshotFormat="image/jpeg"
-                      className="absolute inset-0 w-full h-full object-cover"
-                      videoConstraints={{ 
-                        facingMode: 'environment',
-                        width: 1280,
-                        height: 720,
-                      }}
-                    />
-                    <div className="absolute bottom-4 inset-x-0 flex justify-center space-x-4">
-                      <button
-                        type="button"
-                        onClick={handleCapture}
-                        disabled={isUploading}
-                        className="bg-white px-6 py-3 rounded-full shadow-lg hover:bg-gray-50 transition-colors flex items-center"
-                      >
-                        <Camera size={20} className="text-gray-700 mr-2" />
-                        Capture
-                      </button>
-                      <button
-                        type="button"
-                        onClick={toggleCamera}
-                        className="bg-gray-500 text-white px-6 py-3 rounded-full shadow-lg hover:bg-gray-600 transition-colors"
-                      >
-                        Cancel
-                      </button>
+              <div className="space-y-4">
+                {/* Add mode toggle buttons */}
+                <div className="flex rounded-lg bg-gray-100 dark:bg-gray-800 p-1 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setSearchMode('image')}
+                    className={`flex-1 py-2 px-4 rounded-md transition-colors ${
+                      searchMode === 'image'
+                        ? 'bg-white dark:bg-gray-700 text-green-600 dark:text-green-400 shadow-sm'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                    }`}
+                  >
+                    <Camera size={18} className="inline mr-2" />
+                    Image
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSearchMode('text')}
+                    className={`flex-1 py-2 px-4 rounded-md transition-colors ${
+                      searchMode === 'text'
+                        ? 'bg-white dark:bg-gray-700 text-green-600 dark:text-green-400 shadow-sm'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                    }`}
+                  >
+                    <Search size={18} className="inline mr-2" />
+                    Text
+                  </button>
+                </div>
+
+                {searchMode === 'text' ? (
+                  // Text search interface
+                  <div className="space-y-4">
+                    <div className="relative">
+                      <form onSubmit={handleTextSearch} className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Search plant by name..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-green-500 dark:focus:ring-green-500/50 outline-none transition-all text-gray-900 dark:text-gray-100"
+                        />
+                        <button
+                          type="submit"
+                          disabled={isSearching || !searchQuery.trim()}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
+                        >
+                          {isSearching ? (
+                            <Loader size={20} className="animate-spin" />
+                          ) : (
+                            <Search size={20} />
+                          )}
+                        </button>
+                      </form>
+
+                      {/* Search Results */}
+                      {searchResults.length > 0 && (
+                        <div className="mt-4 space-y-2">
+                          {searchResults.map((result, index) => (
+                            <div
+                              key={index}
+                              className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                              onClick={() => {
+                                setPlantName(result.details?.common_names?.[0] || result.name);
+                                setPlantType(result.name);
+                                setPlantDetails({
+                                  scientificName: result.name,
+                                  commonName: result.details?.common_names?.[0] || result.name,
+                                  // ...other details
+                                });
+                              }}
+                            >
+                              <p className="font-medium text-gray-900 dark:text-gray-100">
+                                {result.details?.common_names?.[0] || result.name}
+                              </p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                                {result.name}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : (
-                  // Initial View with buttons
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800">
-                    <div className="flex flex-col items-center mb-6">
-                      <Camera size={48} className="text-gray-400 dark:text-gray-500 mb-4" />
-                      <p className="text-gray-600 dark:text-gray-300 text-center mb-8 px-4">
-                        Take a photo or upload an image of your plant
-                      </p>
-                    </div>
-
-                    <div className="flex space-x-4">
-                      <button
-                        type="button"
-                        onClick={toggleCamera}
-                        className="bg-green-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-green-700 transition-colors flex items-center"
-                      >
-                        <Camera size={20} className="mr-2" />
-                        Take Photo
-                      </button>
-
-                      <label className="bg-gray-100 dark:bg-gray-700 px-6 py-3 rounded-full shadow-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center cursor-pointer border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200">
-                        <Upload size={20} className="mr-2" />
-                        Upload Image
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleFileUpload}
-                          disabled={isUploading}
+                  // Existing image capture/upload interface
+                  <div className="relative h-80 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border dark:border-gray-700">
+                    {showCamera ? (
+                      // Camera View
+                      <div className="relative h-full">
+                        <Webcam
+                          audio={false}
+                          ref={webcamRef}
+                          screenshotFormat="image/jpeg"
+                          className="absolute inset-0 w-full h-full object-cover"
+                          videoConstraints={{ 
+                            facingMode: 'environment',
+                            width: 1280,
+                            height: 720,
+                          }}
                         />
-                      </label>
-                    </div>
-                  </div>
-                )}
+                        <div className="absolute bottom-4 inset-x-0 flex justify-center space-x-4">
+                          <button
+                            type="button"
+                            onClick={handleCapture}
+                            disabled={isUploading}
+                            className="bg-white px-6 py-3 rounded-full shadow-lg hover:bg-gray-50 transition-colors flex items-center"
+                          >
+                            <Camera size={20} className="text-gray-700 mr-2" />
+                            Capture
+                          </button>
+                          <button
+                            type="button"
+                            onClick={toggleCamera}
+                            className="bg-gray-500 text-white px-6 py-3 rounded-full shadow-lg hover:bg-gray-600 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      // Initial View with buttons
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800">
+                        <div className="flex flex-col items-center mb-6">
+                          <Camera size={48} className="text-gray-400 dark:text-gray-500 mb-4" />
+                          <p className="text-gray-600 dark:text-gray-300 text-center mb-8 px-4">
+                            Take a photo or upload an image of your plant
+                          </p>
+                        </div>
 
-                {/* Loading overlay */}
-                {isUploading && (
-                  <div className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center">
-                    <div className="text-center text-white">
-                      <div className="animate-spin rounded-full h-10 w-10 border-2 border-white border-t-transparent mb-2"></div>
-                      <p className="text-gray-100">Processing image...</p>
-                    </div>
+                        <div className="flex space-x-4">
+                          <button
+                            type="button"
+                            onClick={toggleCamera}
+                            className="bg-green-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-green-700 transition-colors flex items-center"
+                          >
+                            <Camera size={20} className="mr-2" />
+                            Take Photo
+                          </button>
+
+                          <label className="bg-gray-100 dark:bg-gray-700 px-6 py-3 rounded-full shadow-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center cursor-pointer border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200">
+                            <Upload size={20} className="mr-2" />
+                            Upload Image
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handleFileUpload}
+                              disabled={isUploading}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Loading overlay */}
+                    {isUploading && (
+                      <div className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center">
+                        <div className="text-center text-white">
+                          <div className="animate-spin rounded-full h-10 w-10 border-2 border-white border-t-transparent mb-2"></div>
+                          <p className="text-gray-100">Processing image...</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

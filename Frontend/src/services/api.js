@@ -345,7 +345,16 @@ export const plantAPI = {
       }
       throw err;
     }
-  }
+  },
+
+  searchPlantByName: async (query) => {
+    try {
+      const response = await axios.post('/api/plants/search', { query });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
 };
 
 // Weather API endpoints
