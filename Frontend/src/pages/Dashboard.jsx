@@ -12,6 +12,7 @@ import AddPlant from '../components/AddPlant';
 import LogoOJT from '../assets/LogoOJT.png';
 import { plantAPI } from '../services/api';
 import { DarkModeToggle } from '../components/ThemeProvider';
+import PlantDetails from '../components/PlantDetails';
 
 const Dashboard = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -28,6 +29,7 @@ const Dashboard = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [deletingPlant, setDeletingPlant] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedPlant, setSelectedPlant] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -186,6 +188,10 @@ const Dashboard = () => {
     }
   };
 
+  const handlePlantClick = (plant) => {
+    setSelectedPlant(plant);
+  };
+
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar 
@@ -245,7 +251,8 @@ const Dashboard = () => {
                   {plants.map(plant => (
                     <div 
                       key={plant.id} 
-                      className="group relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all duration-300"
+                      className="group relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all duration-300 cursor-pointer"
+                      onClick={() => handlePlantClick(plant)}
                     >
                       {/* Plant Image */}
                       <div className="aspect-square overflow-hidden bg-gray-100 dark:bg-gray-700">
@@ -503,6 +510,14 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Plant Details Modal */}
+      {selectedPlant && (
+        <PlantDetails 
+          plant={selectedPlant} 
+          onClose={() => setSelectedPlant(null)} 
+        />
       )}
     </div>
   );
