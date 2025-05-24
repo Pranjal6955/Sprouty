@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Plus, Sun, Wind, Thermometer, MapPin, Camera, Cloud, 
-  Umbrella, ArrowRight, AlertCircle, Droplets, ChevronDown, Calendar, Edit, Trash2, MoreVertical
+  Umbrella, ArrowRight, AlertCircle, Droplets, ChevronDown, Calendar, Edit, Trash2, MoreVertical, AlertTriangle
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import { auth } from '../firebase';
@@ -26,6 +26,8 @@ const Dashboard = () => {
   const [plantName, setPlantName] = useState("");
   const [activeNavItem, setActiveNavItem] = useState('Home');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [deletingPlant, setDeletingPlant] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -161,6 +163,26 @@ const Dashboard = () => {
       setError(error.message);
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  const handleDeletePlant = async (plantId) => {
+    setDeletingPlant(plants.find(p => p.id === plantId));
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingPlant) return;
+    
+    setIsDeleting(true);
+    try {
+      await plantAPI.deletePlant(deletingPlant.id);
+      setPlants(plants.filter(p => p.id !== deletingPlant.id));
+      setDeletingPlant(null);
+    } catch (error) {
+      console.error('Error deleting plant:', error);
+      // You could add error state handling here if needed
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -439,6 +461,49 @@ const Dashboard = () => {
           onCancel={() => setShowAddPlant(false)} 
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingPlant && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md">
+            <div className="flex items-center mb-4">
+              <AlertTriangle size={24} className="text-red-500 mr-2" />
+              <h3 className="text-xl font-semibold text-gray-800 dark:text-white">Delete Plant</h3>
+            </div>
+            
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              Are you sure you want to delete <span className="font-semibold">{deletingPlant.nickname}</span>? This action cannot be undone.
+            </p>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setDeletingPlant(null)}
+                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} className="mr-2" />
+                    Delete Plant
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -461,13 +526,6 @@ const handleEditPlant = (plantId) => {
 const handleWaterPlant = (plantId) => {
   // Implement watering functionality
   console.log('Water plant:', plantId);
-};
-
-const handleDeletePlant = (plantId) => {
-  // Implement delete functionality
-  if (window.confirm('Are you sure you want to delete this plant?')) {
-    console.log('Delete plant:', plantId);
-  }
 };
 
 export default Dashboard;
