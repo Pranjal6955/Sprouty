@@ -13,6 +13,7 @@ import LogoOJT from '../assets/LogoOJT.png';
 import { plantAPI } from '../services/api';
 import { DarkModeToggle } from '../components/ThemeProvider';
 import PlantDetails from '../components/PlantDetails';
+import EditPlant from '../components/EditPlant';
 
 const Dashboard = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -30,6 +31,7 @@ const Dashboard = () => {
   const [deletingPlant, setDeletingPlant] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedPlant, setSelectedPlant] = useState(null);
+  const [editingPlant, setEditingPlant] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -192,6 +194,31 @@ const Dashboard = () => {
     setSelectedPlant(plant);
   };
 
+  const handleEditClick = (e, plant) => {
+    e.stopPropagation(); // Prevent plant details modal from opening
+    setEditingPlant(plant);
+  };
+
+  const handlePlantUpdate = (updatedPlant) => {
+    setPlants(plants.map(p => p.id === updatedPlant.id ? updatedPlant : p));
+    setEditingPlant(null);
+  };
+
+  const handleDeleteClick = (e, plantId) => {
+    e.stopPropagation(); // Prevent plant details modal from opening
+    setDeletingPlant(plants.find(p => p.id === plantId));
+  };
+
+  const handleWaterClick = async (e, plantId) => {
+    e.stopPropagation(); // Prevent plant details modal from opening
+    try {
+      // Add your watering logic here
+      console.log('Watering plant:', plantId);
+    } catch (error) {
+      console.error('Error watering plant:', error);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar 
@@ -268,19 +295,19 @@ const Dashboard = () => {
                         <div className="flex gap-2 bg-black/20 backdrop-blur-sm p-1 rounded-lg">
                           <button 
                             className="p-1.5 rounded-lg hover:bg-white/20 transition-colors"
-                            onClick={() => handleEditPlant(plant.id)}
+                            onClick={(e) => handleEditClick(e, plant)}
                           >
                             <Edit size={16} className="text-white" />
                           </button>
                           <button 
                             className="p-1.5 rounded-lg hover:bg-white/20 transition-colors"
-                            onClick={() => handleWaterPlant(plant.id)}
+                            onClick={(e) => handleWaterClick(e, plant.id)}
                           >
                             <Droplets size={16} className="text-white" />
                           </button>
                           <button 
                             className="p-1.5 rounded-lg hover:bg-red-500/80 transition-colors"
-                            onClick={() => handleDeletePlant(plant.id)}
+                            onClick={(e) => handleDeleteClick(e, plant.id)}
                           >
                             <Trash2 size={16} className="text-white" />
                           </button>
@@ -519,6 +546,15 @@ const Dashboard = () => {
           onClose={() => setSelectedPlant(null)} 
         />
       )}
+
+      {/* Add EditPlant Modal */}
+      {editingPlant && (
+        <EditPlant
+          plant={editingPlant}
+          onSave={handlePlantUpdate}
+          onCancel={() => setEditingPlant(null)}
+        />
+      )}
     </div>
   );
 };
@@ -532,15 +568,5 @@ const WeatherItem = ({ icon, label, value, className = "" }) => (
     </div>
   </div>
 );
-
-const handleEditPlant = (plantId) => {
-  // Implement edit functionality
-  console.log('Edit plant:', plantId);
-};
-
-const handleWaterPlant = (plantId) => {
-  // Implement watering functionality
-  console.log('Water plant:', plantId);
-};
 
 export default Dashboard;
