@@ -78,14 +78,6 @@ const getAuthHeader = () => {
   return token ? { 'Authorization': `Bearer ${token}` } : {};
 };
 
-// Add this helper function to your API service to handle avatar URLs
-export const getAvatarUrl = (avatarPath) => {
-  if (!avatarPath) return defaultProfile;
-  if (avatarPath.startsWith('data:')) return avatarPath;
-  if (avatarPath.startsWith('http')) return avatarPath;
-  return `${import.meta.env.VITE_API_URL}${avatarPath}`;
-};
-
 // Auth Services
 export const authAPI = {
   register: async (userData) => {
