@@ -3,6 +3,7 @@ import { Camera, X, Check, ArrowLeft, Loader, Info, Maximize, Droplets, Sun, Win
          Globe, Leaf, Bookmark, FlowerIcon, Calendar, Upload, Image } from 'lucide-react';
 import Webcam from 'react-webcam';
 import { plantAPI } from '../services/api';
+import { useTheme } from '../components/ThemeProvider';
 
 const AddPlant = ({ onAddPlant, onCancel }) => {
   const [plantName, setPlantName] = useState("");
@@ -20,6 +21,7 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
   const [showCamera, setShowCamera] = useState(false); // Add this new state
+  const { isDarkMode } = useTheme();
 
   // Add debugging state
   const [apiResponse, setApiResponse] = useState(null);
@@ -315,24 +317,25 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="p-6 pb-3">
-          <div className="flex justify-between items-center mb-4">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col border dark:border-gray-700">
+        {/* Header */}
+        <div className="p-6 pb-3 border-b dark:border-gray-700">
+          <div className="flex justify-between items-center">
             <button 
               onClick={onCancel}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
             >
-              <ArrowLeft size={20} className="text-gray-600" />
+              <ArrowLeft size={20} className="text-gray-600 dark:text-gray-300" />
             </button>
-            <h2 className="text-xl font-semibold text-gray-800">Add New Plant</h2>
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Add New Plant</h2>
             <div className="w-8"></div>
           </div>
         </div>
 
-        <div className="overflow-y-auto scrollbar-hide flex-1 px-6 pb-6">
+        <div className="overflow-y-auto scrollbar-hide flex-1 p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             {!capturedImage ? (
-              <div className="relative h-80 bg-gray-100 rounded-lg overflow-hidden">
+              <div className="relative h-80 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border dark:border-gray-700">
                 {showCamera ? (
                   // Camera View
                   <div className="relative h-full">
@@ -370,8 +373,8 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
                   // Initial View with buttons
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800">
                     <div className="flex flex-col items-center mb-6">
-                      <Camera size={48} className="text-gray-400 mb-4" />
-                      <p className="text-gray-600 dark:text-gray-400 text-center mb-8">
+                      <Camera size={48} className="text-gray-400 dark:text-gray-500 mb-4" />
+                      <p className="text-gray-600 dark:text-gray-300 text-center mb-8 px-4">
                         Take a photo or upload an image of your plant
                       </p>
                     </div>
@@ -380,14 +383,14 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
                       <button
                         type="button"
                         onClick={toggleCamera}
-                        className="bg-green-500 text-white px-6 py-3 rounded-full shadow-lg hover:bg-green-600 transition-colors flex items-center"
+                        className="bg-green-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-green-700 transition-colors flex items-center"
                       >
                         <Camera size={20} className="mr-2" />
                         Take Photo
                       </button>
 
-                      <label className="bg-white px-6 py-3 rounded-full shadow-lg hover:bg-gray-50 transition-colors flex items-center cursor-pointer border border-gray-200">
-                        <Upload size={20} className="text-gray-700 mr-2" />
+                      <label className="bg-gray-100 dark:bg-gray-700 px-6 py-3 rounded-full shadow-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center cursor-pointer border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200">
+                        <Upload size={20} className="mr-2" />
                         Upload Image
                         <input
                           type="file"
@@ -403,10 +406,10 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
 
                 {/* Loading overlay */}
                 {isUploading && (
-                  <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center">
                     <div className="text-center text-white">
                       <div className="animate-spin rounded-full h-10 w-10 border-2 border-white border-t-transparent mb-2"></div>
-                      <p>Processing image...</p>
+                      <p className="text-gray-100">Processing image...</p>
                     </div>
                   </div>
                 )}
@@ -454,55 +457,63 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
               </div>
             )}
 
-            <div className="space-y-3">
+            {/* Form Fields */}
+            <div className="space-y-4 mt-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Plant Name*</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  Plant Name*
+                </label>
                 <input
                   type="text"
                   placeholder="E.g., Peace Lily"
                   value={plantName}
                   onChange={(e) => setPlantName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-lg shadow-sm border focus:ring-2 focus:ring-sprouty-green-200 outline-none transition-all"
+                  className="w-full px-4 py-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-green-500 dark:focus:ring-green-500/50 outline-none transition-all text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                   required
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Plant Type</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  Plant Type
+                </label>
                 <input
                   type="text"
                   placeholder="E.g., Indoor/Flowering"
                   value={plantType}
                   onChange={(e) => setPlantType(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-lg shadow-sm border focus:ring-2 focus:ring-sprouty-green-200 outline-none transition-all"
+                  className="w-full px-4 py-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-green-500 dark:focus:ring-green-500/50 outline-none transition-all text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  Notes
+                </label>
                 <textarea
                   placeholder="Add any care instructions or notes..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows="4"
-                  className="w-full px-4 py-2.5 rounded-lg shadow-sm border focus:ring-2 focus:ring-sprouty-green-200 outline-none transition-all"
+                  className="w-full px-4 py-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-green-500 dark:focus:ring-green-500/50 outline-none transition-all text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                 />
               </div>
             </div>
 
-            <div className="flex space-x-3 pt-2">
+            {/* Action Buttons */}
+            <div className="flex space-x-3 pt-4">
               <button
                 type="button"
                 onClick={onCancel}
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+                className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-medium"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={!capturedImage || !plantName || isIdentifying}
-                className={`flex-1 bg-sprouty-green-500 text-white px-4 py-3 rounded-lg transition-colors shadow-sm font-medium flex items-center justify-center ${
-                  !capturedImage || !plantName || isIdentifying ? 'opacity-60 cursor-not-allowed' : 'hover:bg-sprouty-green-600'
+                className={`flex-1 bg-green-600 text-white px-4 py-3 rounded-lg transition-colors shadow-sm font-medium flex items-center justify-center ${
+                  !capturedImage || !plantName || isIdentifying ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-700'
                 }`}
               >
                 {isIdentifying ? (
@@ -519,52 +530,6 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
           </form>
         </div>
       </div>
-
-      {/* Fullscreen image preview modal */}
-      {showImagePreview && capturedImage && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-90 z-[60] flex items-center justify-center animate-fadeIn"
-          onClick={() => setShowImagePreview(false)}
-        >
-          <div className="relative w-full h-full flex flex-col items-center justify-center" onClick={e => e.stopPropagation()}>
-            <button
-              type="button"
-              onClick={() => setShowImagePreview(false)}
-              className="absolute top-4 right-4 bg-black bg-opacity-50 p-2 rounded-full hover:bg-opacity-70 transition-colors z-10"
-            >
-              <X size={24} className="text-white" />
-            </button>
-            
-            <div className="relative w-[90%] h-[80%] flex items-center justify-center">
-              <img 
-                src={capturedImage} 
-                alt="Plant preview" 
-                className="max-w-full max-h-full object-contain" 
-              />
-            </div>
-            
-            {plantDetails && (
-              <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white p-4">
-                <p className="text-xl font-semibold">{plantDetails.commonName || plantName}</p>
-                <p className="text-sm italic">{plantDetails.scientificName}</p>
-                
-                {/* Add a button to view plant details */}
-                <button
-                  onClick={() => setShowImagePreview(false)}
-                  className="mt-2 bg-sprouty-green-600 hover:bg-sprouty-green-700 text-white px-4 py-2 rounded-full text-sm transition-colors"
-                >
-                  View Plant Details
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      
-      {/* Uncomment the debug info during development */}
-      {isIdentifying && <div className="fixed bottom-4 right-4 bg-white p-2 rounded-md shadow-md text-xs">
-        Processing plant image...
-      </div>}
     </div>
   );
 };

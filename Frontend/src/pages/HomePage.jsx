@@ -74,7 +74,7 @@ const HomePage = () => {
         )}
       </nav>
 
-      {/* Hero Section - Updated gradient */}
+      {/* Hero Section */}
       <section id="home" className="relative py-20 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-900/50 dark:via-gray-800/50 dark:to-gray-900/50 z-0"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -87,7 +87,7 @@ const HomePage = () => {
                 Grow Happier, <br/>
                 <span className="text-teal-600 dark:text-teal-400">Healthier Plants</span>
               </h1>
-              <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+              <p className="text-lg text-gray-700 dark:text-gray-200 mb-8 leading-relaxed">
                 Sprouty helps you remember when to water, prune, and care for your plants with timely reminders and personalized advice.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -109,12 +109,14 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Features Section - Updated card styling */}
+      {/* Features Section */}
       <section id="features" className="py-20 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Smart Features for Plant Lovers</h2>
-            <p className="mt-4 text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">Everything you need to become a successful plant parent</p>
+            <p className="mt-4 text-lg text-gray-700 dark:text-gray-200 max-w-3xl mx-auto">
+              Everything you need to become a successful plant parent
+            </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -175,7 +177,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* About Us Section - Updated styling */}
+      {/* About Us Section - Updated text colors */}
       <section id="about" className="py-20 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row gap-12 items-center">
@@ -191,7 +193,7 @@ const HomePage = () => {
                 Our Story
               </div>
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-6">A Growing Passion</h2>
-              <p className="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
+              <p className="text-lg text-gray-700 dark:text-gray-200 mb-6 leading-relaxed">
                 Sprouty was born when our founder's collection of houseplants kept dying despite their best efforts. We realized that consistent care was the key to thriving plants, and technology could help bridge that gap.
               </p>
               <p className="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">
@@ -248,18 +250,8 @@ const HomePage = () => {
                 <li><a href="#home" className="text-gray-400 hover:text-teal-400 transition duration-150">Home</a></li>
                 <li><a href="#features" className="text-gray-400 hover:text-teal-400 transition duration-150">Features</a></li>
                 <li><a href="#about" className="text-gray-400 hover:text-teal-400 transition duration-150">About Us</a></li>
-                {/* <li><a href="#" className="text-gray-400 hover:text-teal-400 transition duration-150">Pricing</a></li> */}
               </ul>
             </div>
-            {/* <div>
-              <h4 className="text-lg font-semibold mb-4">Resources</h4>
-              <ul className="space-y-2">
-                <li><a href="#" className="text-gray-400 hover:text-teal-400 transition duration-150">Plant Care Blog</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-teal-400 transition duration-150">Help Center</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-teal-400 transition duration-150">Plant Index</a></li>
-                <li><a href="#" className="text-gray-400 hover:text-teal-400 transition duration-150">Community</a></li>
-              </ul>
-            </div> */}
             <div>
               <h4 className="text-lg font-semibold mb-4">Stay Updated</h4>
               <p className="text-gray-400 mb-4">Subscribe to our newsletter for tips and updates.</p>
