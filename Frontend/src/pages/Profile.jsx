@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Mail, Camera, Edit2, Save, X, Upload, Image as ImageIcon } from 'lucide-react';
+import { User, Mail, Camera, Edit2, Save, X, Upload, Image as ImageIcon, MapPin, Calendar, Activity, 
+  Droplets, ThermometerSun, Scissors, AlertCircle, Sun } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import LogoOJT from '../assets/LogoOJT.png';
 import defaultProfile from '../assets/profile.png';
@@ -25,6 +26,40 @@ const Profile = () => {
   const [editForm, setEditForm] = useState({ ...userProfile });
   const [showImageModal, setShowImageModal] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [selectedSection, setSelectedSection] = useState('overview');
+  const [activities] = useState([
+    {
+      icon: <Droplets size={16} className="text-blue-500" />,
+      text: "Watered Monstera",
+      time: "2 hours ago",
+      type: "water"
+    },
+    {
+      icon: <ThermometerSun size={16} className="text-orange-500" />,
+      text: "Moved Snake Plant to more sunlight",
+      time: "Yesterday",
+      type: "care"
+    },
+    {
+      icon: <Scissors size={16} className="text-green-500" />,
+      text: "Pruned Peace Lily",
+      time: "2 days ago",
+      type: "maintenance"
+    },
+    {
+      icon: <AlertCircle size={16} className="text-yellow-500" />,
+      text: "Added fertilizer to Pothos",
+      time: "3 days ago",
+      type: "nutrition"
+    },
+    {
+      icon: <Sun size={16} className="text-amber-500" />,
+      text: "Rotated Calathea for even growth",
+      time: "4 days ago",
+      type: "care"
+    }
+  ]);
+
   const webcamRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -233,83 +268,100 @@ const Profile = () => {
       />
 
       <div className="flex-1 overflow-y-auto">
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center">
-              <img 
-                src={LogoOJT} 
-                alt="Sprouty Logo" 
-                className="h-17 w-16 mr-4"
-              />
-              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">My Profile</h1>
-            </div>
-          </div>
-
-          {/* Error Message */}
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-600">{error}</p>
-            </div>
-          )}
-
-          {/* Profile Content */}
-          <div className="grid gap-6">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-              {/* Profile Header */}
-              <div className="flex flex-col md:flex-row items-center gap-6">
-                <div className="relative">
-                  <img 
-                    src={userProfile.avatar || defaultProfile}
-                    alt="Profile"
-                    className="w-32 h-32 rounded-full object-cover border-4 border-green-100"
-                    onError={(e) => {
-                      e.target.onerror = null; // Prevent infinite loop
-                      e.target.src = defaultProfile;
-                    }}
-                  />
-                  <button 
-                    onClick={() => setShowImageModal(true)}
-                    className="absolute bottom-0 right-0 bg-green-500 p-2 rounded-full text-white hover:bg-green-600 transition-colors"
+        {/* Profile Header/Cover */}
+        <div className="relative h-64 bg-gradient-to-r from-green-400 to-emerald-600 dark:from-green-800 dark:to-emerald-900">
+          <div className="absolute inset-0 bg-black/20"></div>
+          <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+            <div className="flex items-end space-x-6">
+              <div className="relative">
+                <img 
+                  src={userProfile.avatar || defaultProfile}
+                  alt="Profile"
+                  className="w-32 h-32 rounded-full object-cover border-4 border-white"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = defaultProfile;
+                  }}
+                />
+                <button 
+                  onClick={() => setShowImageModal(true)}
+                  className="absolute bottom-0 right-0 bg-green-500 p-2 rounded-full text-white hover:bg-green-600 transition-colors"
+                >
+                  <Camera size={20} />
+                </button>
+              </div>
+              <div className="mb-2">
+                <div className="flex items-center gap-4">
+                  <h1 className="text-3xl font-bold">{userProfile.name}</h1>
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg flex items-center text-sm backdrop-blur-sm transition-colors"
                   >
-                    <Camera size={20} />
+                    <Edit2 size={16} className="mr-2" /> Edit Profile
                   </button>
                 </div>
-                
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">{userProfile.name}</h2>
-                      <p className="text-gray-600 dark:text-gray-300 flex items-center mt-1">
-                        <Mail size={16} className="mr-2" />
-                        {userProfile.email}
-                      </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                        Member since {userProfile.joinDate}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="bg-green-500 text-white px-4 py-2 rounded-lg flex items-center hover:bg-green-600 transition-colors"
-                    >
-                      <Edit2 size={16} className="mr-2" />
-                      Edit Profile
-                    </button>
-                  </div>
-
-                  {/* Stats */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                    <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-                      <h3 className="text-sm text-green-600 dark:text-green-400 font-medium">Total Plants</h3>
-                      <p className="text-2xl font-bold text-green-700 dark:text-green-300">{userProfile.totalPlants}</p>
-                    </div>
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                      <h3 className="text-sm text-blue-600 dark:text-blue-400 font-medium">Active Reminders</h3>
-                      <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{userProfile.activeReminders}</p>
-                    </div>
-                  </div>
+                <div className="flex items-center mt-2 space-x-4">
+                  <span className="flex items-center text-sm">
+                    <Mail size={16} className="mr-1" /> {userProfile.email}
+                  </span>
+                  {userProfile.location && (
+                    <span className="flex items-center text-sm">
+                      <MapPin size={16} className="mr-1" /> {userProfile.location}
+                    </span>
+                  )}
+                  <span className="flex items-center text-sm">
+                    <Calendar size={16} className="mr-1" /> Joined {userProfile.joinDate}
+                  </span>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="p-6">
+          <div className="grid gap-6">
+            {/* Quick Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Plants</h3>
+                <div className="mt-2 flex items-baseline">
+                  <p className="text-3xl font-semibold text-gray-900 dark:text-white">{userProfile.totalPlants}</p>
+                  <p className="ml-2 text-sm text-gray-500 dark:text-gray-400">plants</p>
+                </div>
+              </div>
+              
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Active Reminders</h3>
+                <div className="mt-2 flex items-baseline">
+                  <p className="text-3xl font-semibold text-gray-900 dark:text-white">{userProfile.activeReminders}</p>
+                  <p className="ml-2 text-sm text-gray-500 dark:text-gray-400">reminders</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
+              <div className="space-y-4">
+                {activities.map((activity, index) => (
+                  <div 
+                    key={index} 
+                    className="flex items-center space-x-3 text-sm p-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
+                  >
+                    <div className="p-2 rounded-full bg-gray-50 dark:bg-gray-700">
+                      {activity.icon}
+                    </div>
+                    <span className="flex-1 text-gray-700 dark:text-gray-300">{activity.text}</span>
+                    <span className="text-gray-400 dark:text-gray-500 text-xs">{activity.time}</span>
+                  </div>
+                ))}
+              </div>
+              {activities.length > 4 && (
+                <button className="w-full mt-4 text-sm text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-medium">
+                  View All Activities
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -352,16 +404,6 @@ const Profile = () => {
                       disabled
                     />
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Email cannot be changed</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Location (Optional)</label>
-                    <input
-                      type="text"
-                      value={editForm.location || ''}
-                      onChange={(e) => setEditForm({...editForm, location: e.target.value})}
-                      className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 dark:bg-gray-700 dark:text-white"
-                      placeholder="Enter your location"
-                    />
                   </div>
                 </div>
 
