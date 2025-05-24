@@ -3,6 +3,7 @@ import { Camera, X, Check, ArrowLeft, Loader, Info, Maximize, Droplets, Sun, Win
          Globe, Leaf, Bookmark, FlowerIcon, Calendar, Upload, Image } from 'lucide-react';
 import Webcam from 'react-webcam';
 import { plantAPI } from '../services/api';
+import { useTheme } from '../components/ThemeProvider';
 
 const AddPlant = ({ onAddPlant, onCancel }) => {
   const [plantName, setPlantName] = useState("");
@@ -19,25 +20,37 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
   const webcamRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
+  const [showCamera, setShowCamera] = useState(false); // Add this new state
+  const { isDarkMode } = useTheme();
 
   // Add debugging state
   const [apiResponse, setApiResponse] = useState(null);
 
   // Handle file upload
   const handleFileUpload = (event) => {
-    const file = event.target.files[0];
+    const file = event.target.files?.[0];
     if (!file) return;
-    
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file');
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be less than 5MB');
+      return;
+    }
+
     setIsUploading(true);
     setError(null);
-    
+
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
         const imageData = e.target.result;
         setCapturedImage(imageData);
-        
-        // Now identify the plant using the uploaded image
         await identifyPlantFromImage(imageData);
       } catch (err) {
         console.error('Error processing uploaded image:', err);
@@ -46,12 +59,12 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
         setIsUploading(false);
       }
     };
-    
+
     reader.onerror = () => {
       setError('Could not read the uploaded file. Please try another image.');
       setIsUploading(false);
     };
-    
+
     reader.readAsDataURL(file);
   };
 
@@ -140,16 +153,28 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
   };
 
   const handleCapture = async () => {
+    if (!webcamRef.current) {
+      setError('Camera not initialized. Please try again.');
+      return;
+    }
+
     try {
       const imageSrc = webcamRef.current.getScreenshot();
-      setCapturedImage(imageSrc);
+      if (!imageSrc) {
+        setError('Failed to capture image. Please try again.');
+        return;
+      }
       
-      // Start plant identification process
+      setIsUploading(true);
+      setError(null);
+      setCapturedImage(imageSrc);
+      setShowCamera(false); // Hide camera after capture
       await identifyPlantFromImage(imageSrc);
     } catch (err) {
       console.error('Camera capture error:', err);
       setError('Could not capture image. Please try again or upload an image instead.');
-      setIsIdentifying(false);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -284,297 +309,211 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
     );
   };
 
+  // Add camera toggle function
+  const toggleCamera = () => {
+    setShowCamera(prev => !prev);
+    setError(null);
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="p-6 pb-3">
-          <div className="flex justify-between items-center mb-4">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col border dark:border-gray-700">
+        {/* Header */}
+        <div className="p-6 pb-3 border-b dark:border-gray-700">
+          <div className="flex justify-between items-center">
             <button 
               onClick={onCancel}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
             >
-              <ArrowLeft size={20} className="text-gray-600" />
+              <ArrowLeft size={20} className="text-gray-600 dark:text-gray-300" />
             </button>
-            <h2 className="text-xl font-semibold text-gray-800">Add New Plant</h2>
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Add New Plant</h2>
             <div className="w-8"></div>
           </div>
         </div>
 
-        <div className="overflow-y-auto scrollbar-hide flex-1 px-6 pb-6">
+        <div className="overflow-y-auto scrollbar-hide flex-1 p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             {!capturedImage ? (
-              <div className="relative">
-                <Webcam
-                  audio={false}
-                  ref={webcamRef}
-                  screenshotFormat="image/jpeg"
-                  className="w-full rounded-lg shadow-md mb-4 aspect-[4/3] object-cover"
-                  videoConstraints={{facingMode: 'environment'}}
-                />
-                
-                {/* Camera controls with added upload button */}
-                <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-4">
-                  <button
-                    type="button"
-                    onClick={handleCapture}
-                    className="bg-white p-4 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
-                    disabled={isUploading}
-                  >
-                    <Camera size={24} className="text-sprouty-green-600" />
-                  </button>
-                  
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current.click()}
-                    className="bg-white p-4 rounded-full shadow-lg hover:bg-gray-50 transition-colors"
-                    disabled={isIdentifying}
-                  >
-                    <Upload size={24} className="text-blue-600" />
-                  </button>
-                  
-                  {/* Hidden file input */}
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileUpload}
-                    accept="image/*"
-                    className="hidden"
-                  />
-                </div>
-                
-                {/* Upload indicator */}
-                {isUploading && (
-                  <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
-                    <div className="text-center text-white">
-                      <Loader size={32} className="mx-auto animate-spin mb-2" />
-                      <p>Processing image...</p>
+              <div className="relative h-80 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border dark:border-gray-700">
+                {showCamera ? (
+                  // Camera View
+                  <div className="relative h-full">
+                    <Webcam
+                      audio={false}
+                      ref={webcamRef}
+                      screenshotFormat="image/jpeg"
+                      className="absolute inset-0 w-full h-full object-cover"
+                      videoConstraints={{ 
+                        facingMode: 'environment',
+                        width: 1280,
+                        height: 720,
+                      }}
+                    />
+                    <div className="absolute bottom-4 inset-x-0 flex justify-center space-x-4">
+                      <button
+                        type="button"
+                        onClick={handleCapture}
+                        disabled={isUploading}
+                        className="bg-white px-6 py-3 rounded-full shadow-lg hover:bg-gray-50 transition-colors flex items-center"
+                      >
+                        <Camera size={20} className="text-gray-700 mr-2" />
+                        Capture
+                      </button>
+                      <button
+                        type="button"
+                        onClick={toggleCamera}
+                        className="bg-gray-500 text-white px-6 py-3 rounded-full shadow-lg hover:bg-gray-600 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  // Initial View with buttons
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800">
+                    <div className="flex flex-col items-center mb-6">
+                      <Camera size={48} className="text-gray-400 dark:text-gray-500 mb-4" />
+                      <p className="text-gray-600 dark:text-gray-300 text-center mb-8 px-4">
+                        Take a photo or upload an image of your plant
+                      </p>
+                    </div>
+
+                    <div className="flex space-x-4">
+                      <button
+                        type="button"
+                        onClick={toggleCamera}
+                        className="bg-green-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-green-700 transition-colors flex items-center"
+                      >
+                        <Camera size={20} className="mr-2" />
+                        Take Photo
+                      </button>
+
+                      <label className="bg-gray-100 dark:bg-gray-700 px-6 py-3 rounded-full shadow-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center cursor-pointer border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200">
+                        <Upload size={20} className="mr-2" />
+                        Upload Image
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleFileUpload}
+                          disabled={isUploading}
+                        />
+                      </label>
                     </div>
                   </div>
                 )}
-                
-                {/* File upload zone for drag and drop */}
-                <div 
-                  className="absolute inset-0 flex flex-col items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black bg-opacity-30 rounded-lg"
-                  onClick={() => fileInputRef.current.click()}
-                >
-                  <Image size={42} className="text-white mb-2 opacity-80" />
-                  <p className="text-white text-sm font-medium text-center">
-                    Click or drag and drop<br />to upload a plant image
-                  </p>
-                </div>
+
+                {/* Loading overlay */}
+                {isUploading && (
+                  <div className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center">
+                    <div className="text-center text-white">
+                      <div className="animate-spin rounded-full h-10 w-10 border-2 border-white border-t-transparent mb-2"></div>
+                      <p className="text-gray-100">Processing image...</p>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="relative">
-                <div className="group relative">
-                  <img 
-                    src={capturedImage} 
-                    alt="Captured plant" 
-                    className="w-full h-64 object-cover rounded-lg shadow-md cursor-pointer" 
-                    onClick={() => setShowImagePreview(true)}
-                  />
-                  <div className="absolute inset-0 bg-black bg-opacity-30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-lg">
+              <div className="space-y-4">
+                {error && (
+                  <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+                    {error}
                     <button
                       type="button"
-                      onClick={() => setShowImagePreview(true)}
-                      className="bg-white p-2 rounded-full hover:bg-gray-100 transition-colors"
+                      onClick={handleRetake}
+                      className="ml-2 underline"
                     >
-                      <Maximize size={20} className="text-gray-700" />
+                      Try again
                     </button>
                   </div>
-                </div>
-                
+                )}
+
+                {isIdentifying ? (
+                  <div className="h-20 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-2 border-green-500 border-t-transparent mb-2"></div>
+                      <p className="text-gray-600">Identifying plant...</p>
+                    </div>
+                  </div>
+                ) : (
+                  plantDetails && (
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <h3 className="font-medium text-green-800">Plant Identified!</h3>
+                      <p className="text-sm text-green-600">
+                        {plantDetails.commonName} ({plantDetails.scientificName})
+                      </p>
+                    </div>
+                  )
+                )}
+
                 <button
                   type="button"
                   onClick={handleRetake}
-                  className="absolute top-2 right-2 bg-black bg-opacity-50 p-1.5 rounded-full hover:bg-opacity-70 transition-colors"
+                  className="text-sm text-gray-600 hover:text-gray-800 underline"
                 >
-                  <X size={18} className="text-white" />
+                  Take another photo
                 </button>
-                
-                {isIdentifying && (
-                  <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
-                    <div className="text-center text-white">
-                      <Loader size={32} className="mx-auto animate-spin mb-2" />
-                      <p>Identifying plant...</p>
-                    </div>
-                  </div>
-                )}
-                
-                {error && (
-                  <div className="mt-2 text-red-600 text-sm bg-red-50 p-2 rounded-md">
-                    {error}
-                  </div>
-                )}
-                
-                {/* Uncomment this for debugging */}
-                {/* {renderDebugInfo()} */}
-                
-                {plantDetails && (
-                  <div className="mt-2 bg-green-50 p-3 rounded-md">
-                    <div className="flex items-center justify-between">
-                      <p className="text-green-800 text-sm font-medium">
-                        Identified as <span className="italic">{plantDetails.scientificName}</span> ({(plantDetails.confidence * 100).toFixed(1)}% confidence)
-                      </p>
-                      {/* No need for an info button since we're showing details by default */}
-                    </div>
-                    
-                    <div className="mt-2 border-t border-green-200 pt-2">
-                      {/* Tabs for plant information */}
-                      <div className="flex border-b border-green-200 mb-2">
-                        <button 
-                          type="button"
-                          className={`px-3 py-2 text-xs font-medium ${activeTab === 'overview' ? 'border-b-2 border-green-600 text-green-800' : 'text-gray-600'}`}
-                          onClick={() => setActiveTab('overview')}
-                        >
-                          Overview
-                        </button>
-                        <button 
-                          type="button"
-                          className={`px-3 py-2 text-xs font-medium ${activeTab === 'care' ? 'border-b-2 border-green-600 text-green-800' : 'text-gray-600'}`}
-                          onClick={() => setActiveTab('care')}
-                        >
-                          Care Tips
-                        </button>
-                        <button 
-                          type="button"
-                          className={`px-3 py-2 text-xs font-medium ${activeTab === 'growing' ? 'border-b-2 border-green-600 text-green-800' : 'text-gray-600'}`}
-                          onClick={() => setActiveTab('growing')}
-                        >
-                          Growing Info
-                        </button>
-                      </div>
-                      
-                      {/* Tab content */}
-                      <div className="text-sm">
-                        {activeTab === 'overview' && (
-                          <div>
-                            <div className="grid grid-cols-2 gap-2 mb-2">
-                              <div>
-                                <p className="font-medium text-green-800">Common Name</p>
-                                <p>{plantDetails.commonName}</p>
-                              </div>
-                              <div>
-                                <p className="font-medium text-green-800">Family</p>
-                                <p>{plantDetails.family}</p>
-                              </div>
-                              <div>
-                                <p className="font-medium text-green-800">Genus</p>
-                                <p>{plantDetails.genus}</p>
-                              </div>
-                              <div>
-                                <p className="font-medium text-green-800">Confidence</p>
-                                <p>{(plantDetails.confidence * 100).toFixed(1)}%</p>
-                              </div>
-                            </div>
-                            
-                            {plantDetails.description && (
-                              <div className="mt-1">
-                                <p className="font-medium text-green-800">Description</p>
-                                <p className="text-gray-700">{plantDetails.description.substring(0, 150)}...</p>
-                              </div>
-                            )}
-                            
-                            {plantDetails.wikiUrl && (
-                              <a 
-                                href={plantDetails.wikiUrl} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline inline-block mt-2"
-                              >
-                                Read more on Wikipedia
-                              </a>
-                            )}
-                          </div>
-                        )}
-                        
-                        {activeTab === 'care' && (
-                          <div className="space-y-2">
-                            {Object.entries(generateCareInfo(plantDetails)).map(([key, value]) => (
-                              <div key={key} className="flex items-start">
-                                {key === 'watering' && <Droplets size={16} className="text-blue-500 mt-0.5 mr-2 flex-shrink-0" />}
-                                {key === 'light' && <Sun size={16} className="text-yellow-500 mt-0.5 mr-2 flex-shrink-0" />}
-                                {key === 'soil' && <Globe size={16} className="text-brown-500 mt-0.5 mr-2 flex-shrink-0" />}
-                                {key === 'humidity' && <Wind size={16} className="text-blue-400 mt-0.5 mr-2 flex-shrink-0" />}
-                                {key === 'temperature' && <Thermometer size={16} className="text-red-500 mt-0.5 mr-2 flex-shrink-0" />}
-                                {key === 'fertilizing' && <Leaf size={16} className="text-green-500 mt-0.5 mr-2 flex-shrink-0" />}
-                                {key === 'pruning' && <Leaf size={16} className="text-green-600 mt-0.5 mr-2 flex-shrink-0" />}
-                                {key === 'repotting' && <FlowerIcon size={16} className="text-green-700 mt-0.5 mr-2 flex-shrink-0" />}
-                                {key === 'propagation' && <Bookmark size={16} className="text-green-800 mt-0.5 mr-2 flex-shrink-0" />}
-                                {key === 'toxicity' && <Info size={16} className="text-red-600 mt-0.5 mr-2 flex-shrink-0" />}
-                                <p>{value}</p>
-                              </div>
-                            ))}
-                            <p className="text-xs text-gray-500 mt-2">Note: These care tips are general recommendations. Research specific needs for your exact plant species.</p>
-                          </div>
-                        )}
-                        
-                        {activeTab === 'growing' && (
-                          <div className="space-y-2">
-                            {Object.entries(generateGrowingInfo(plantDetails)).map(([key, value]) => (
-                              <div key={key} className="flex items-start">
-                                <Calendar size={16} className="text-green-600 mt-0.5 mr-2 flex-shrink-0" />
-                                <p>{value}</p>
-                              </div>
-                            ))}
-                            <p className="text-xs text-gray-500 mt-2">Note: Growing information may vary by specific variety and local conditions.</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 
-            <div className="space-y-3">
+            {/* Form Fields */}
+            <div className="space-y-4 mt-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Plant Name*</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  Plant Name*
+                </label>
                 <input
                   type="text"
                   placeholder="E.g., Peace Lily"
                   value={plantName}
                   onChange={(e) => setPlantName(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-lg shadow-sm border focus:ring-2 focus:ring-sprouty-green-200 outline-none transition-all"
+                  className="w-full px-4 py-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-green-500 dark:focus:ring-green-500/50 outline-none transition-all text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                   required
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Plant Type</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  Plant Type
+                </label>
                 <input
                   type="text"
                   placeholder="E.g., Indoor/Flowering"
                   value={plantType}
                   onChange={(e) => setPlantType(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-lg shadow-sm border focus:ring-2 focus:ring-sprouty-green-200 outline-none transition-all"
+                  className="w-full px-4 py-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-green-500 dark:focus:ring-green-500/50 outline-none transition-all text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                  Notes
+                </label>
                 <textarea
                   placeholder="Add any care instructions or notes..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows="4"
-                  className="w-full px-4 py-2.5 rounded-lg shadow-sm border focus:ring-2 focus:ring-sprouty-green-200 outline-none transition-all"
+                  className="w-full px-4 py-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-green-500 dark:focus:ring-green-500/50 outline-none transition-all text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                 />
               </div>
             </div>
 
-            <div className="flex space-x-3 pt-2">
+            {/* Action Buttons */}
+            <div className="flex space-x-3 pt-4">
               <button
                 type="button"
                 onClick={onCancel}
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+                className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors font-medium"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={!capturedImage || !plantName || isIdentifying}
-                className={`flex-1 bg-sprouty-green-500 text-white px-4 py-3 rounded-lg transition-colors shadow-sm font-medium flex items-center justify-center ${
-                  !capturedImage || !plantName || isIdentifying ? 'opacity-60 cursor-not-allowed' : 'hover:bg-sprouty-green-600'
+                className={`flex-1 bg-green-600 text-white px-4 py-3 rounded-lg transition-colors shadow-sm font-medium flex items-center justify-center ${
+                  !capturedImage || !plantName || isIdentifying ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-700'
                 }`}
               >
                 {isIdentifying ? (
@@ -591,52 +530,6 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
           </form>
         </div>
       </div>
-
-      {/* Fullscreen image preview modal */}
-      {showImagePreview && capturedImage && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-90 z-[60] flex items-center justify-center animate-fadeIn"
-          onClick={() => setShowImagePreview(false)}
-        >
-          <div className="relative w-full h-full flex flex-col items-center justify-center" onClick={e => e.stopPropagation()}>
-            <button
-              type="button"
-              onClick={() => setShowImagePreview(false)}
-              className="absolute top-4 right-4 bg-black bg-opacity-50 p-2 rounded-full hover:bg-opacity-70 transition-colors z-10"
-            >
-              <X size={24} className="text-white" />
-            </button>
-            
-            <div className="relative w-[90%] h-[80%] flex items-center justify-center">
-              <img 
-                src={capturedImage} 
-                alt="Plant preview" 
-                className="max-w-full max-h-full object-contain" 
-              />
-            </div>
-            
-            {plantDetails && (
-              <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white p-4">
-                <p className="text-xl font-semibold">{plantDetails.commonName || plantName}</p>
-                <p className="text-sm italic">{plantDetails.scientificName}</p>
-                
-                {/* Add a button to view plant details */}
-                <button
-                  onClick={() => setShowImagePreview(false)}
-                  className="mt-2 bg-sprouty-green-600 hover:bg-sprouty-green-700 text-white px-4 py-2 rounded-full text-sm transition-colors"
-                >
-                  View Plant Details
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      
-      {/* Uncomment the debug info during development */}
-      {isIdentifying && <div className="fixed bottom-4 right-4 bg-white p-2 rounded-md shadow-md text-xs">
-        Processing plant image...
-      </div>}
     </div>
   );
 };
