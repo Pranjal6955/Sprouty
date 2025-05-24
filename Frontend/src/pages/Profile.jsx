@@ -260,9 +260,13 @@ const Profile = () => {
               <div className="flex flex-col md:flex-row items-center gap-6">
                 <div className="relative">
                   <img 
-                    src={userProfile.avatar}
+                    src={userProfile.avatar || defaultProfile}
                     alt="Profile"
                     className="w-32 h-32 rounded-full object-cover border-4 border-green-100"
+                    onError={(e) => {
+                      e.target.onerror = null; // Prevent infinite loop
+                      e.target.src = defaultProfile;
+                    }}
                   />
                   <button 
                     onClick={() => setShowImageModal(true)}
