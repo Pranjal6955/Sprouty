@@ -5,8 +5,10 @@ import { signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, Go
 import {FcGoogle} from 'react-icons/fc';
 import { authAPI } from '../services/api';
 import LogoOJT from '../assets/LogoOJT.png';
+import { useTheme } from '../components/ThemeProvider';
 
 function Login() {
+  const { isDarkMode } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -191,8 +193,8 @@ function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-green-100">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="w-full max-w-md p-8 space-y-6 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg border border-green-100 dark:border-gray-700">
         {/* Logo Header */}
         <div className="text-center">
           <img 
@@ -203,18 +205,18 @@ function Login() {
           <h1 className="text-3xl font-extrabold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">
             Welcome Back
           </h1>
-          <p className="text-sm text-gray-600 mt-2">Sign in to your Sprouty account</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Sign in to your Sprouty account</p>
         </div>
         
         {error && (
-          <div className="p-3 text-sm text-red-600 bg-red-100 rounded-lg">
+          <div className="p-3 text-sm text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 rounded-lg">
             {error}
           </div>
         )}
         
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
             <input 
               type="email" 
               id="email"
@@ -222,11 +224,11 @@ function Login() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
               required
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 dark:bg-gray-700 dark:text-white"
             />
           </div>
           <div className="space-y-2">
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
             <input 
               type={showPassword ? 'text' : 'password'}
               id="password"
@@ -234,15 +236,15 @@ function Login() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
               required
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 dark:bg-gray-700 dark:text-white"
             />
             {password && password.length < 8 && (
-              <p className="text-sm text-red-500">Password must be at least 8 characters long.</p>
+              <p className="text-sm text-red-500 dark:text-red-400">Password must be at least 8 characters long.</p>
             )}
             <div className="flex items-center justify-between">
               <button 
                 onClick={openResetModal} 
-                className="text-sm text-emerald-600 hover:text-emerald-700 transition-colors duration-200"
+                className="text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors duration-200"
               >
                 Forgot Password?
               </button>
@@ -252,16 +254,16 @@ function Login() {
                   id="showPassword"
                   checked={showPassword}
                   onChange={() => setShowPassword(!showPassword)}
-                  className="text-emerald-600 focus:ring-emerald-500 w-4 h-4 rounded"
+                  className="text-emerald-600 focus:ring-emerald-500 w-4 h-4 rounded dark:bg-gray-700"
                 />
-                <label htmlFor="showPassword" className="text-sm text-gray-600">Show Password</label>
+                <label htmlFor="showPassword" className="text-sm text-gray-600 dark:text-gray-400">Show Password</label>
               </div>
             </div>
           </div>
           <button 
             type="submit"
             disabled={loading}
-            className={`w-full px-4 py-3 text-white font-medium rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+            className={`w-full px-4 py-3 text-white font-medium rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
             {loading ? 'Logging in...' : 'Login'}
           </button>
@@ -272,23 +274,23 @@ function Login() {
           type="button"
           onClick={handleGoogleSignIn}
           disabled={loading}
-          className={`w-full flex items-center justify-center gap-2 px-4 py-3 mb-2 text-gray-700 font-medium rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-all duration-200 shadow-sm transform hover:-translate-y-0.5 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
+          className={`w-full flex items-center justify-center gap-2 px-4 py-3 mb-2 text-gray-700 dark:text-gray-200 font-medium rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all duration-200 shadow-sm transform hover:-translate-y-0.5 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
         >
           <FcGoogle className='text-xl mr-2'/>Continue with Google
         </button>
-        <p className="text-center text-sm text-gray-600">
-          Don't have an account? <Link to="/signup" className="text-emerald-600 font-medium hover:text-emerald-700 transition-colors duration-200">Sign Up</Link>
+        <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+          Don't have an account? <Link to="/signup" className="text-emerald-600 dark:text-emerald-400 font-medium hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors duration-200">Sign Up</Link>
         </p>
       </div>
 
       {/* Password Reset Modal */}
       {showResetModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-xl">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Reset Password</h2>
+          <div className="w-full max-w-md p-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">Reset Password</h2>
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div>
-                <label htmlFor="resetEmail" className="block text-sm font-medium text-gray-700">Email Address</label>
+                <label htmlFor="resetEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email Address</label>
                 <input
                   type="email"
                   id="resetEmail"
@@ -296,15 +298,15 @@ function Login() {
                   onChange={(e) => setResetEmail(e.target.value)}
                   placeholder="Enter your email"
                   required
-                  className="w-full px-4 py-3 mt-1 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-4 py-3 mt-1 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                 />
               </div>
               
               {resetMessage.text && (
                 <div className={`p-3 text-sm rounded-lg ${
                   resetMessage.type === 'error' 
-                    ? 'bg-red-100 text-red-600' 
-                    : 'bg-green-100 text-green-600'
+                    ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' 
+                    : 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
                 }`}>
                   {resetMessage.text}
                 </div>
@@ -314,7 +316,7 @@ function Login() {
                 <button
                   type="button"
                   onClick={() => setShowResetModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
                 >
                   Cancel
                 </button>
