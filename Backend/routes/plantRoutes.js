@@ -393,162 +393,53 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
 
   // Add this new function for text search
   const handleTextSearch = async (e) => {
-    if (e) {
-      e.preventDefault();
-    }
+    e.preventDefault();
     if (!searchQuery.trim()) return;
 
     setIsSearching(true);
     setError(null);
-    setSearchResults([]);
 
     try {
-      console.log('Starting search for:', searchQuery);
       const response = await plantAPI.searchPlantByName(searchQuery);
-      console.log('Search response received:', response);
+      console.log('Search response:', response);
       
-      if (response.success) {
-        // Check different possible response structures
-        let suggestions = [];
+      if (response.success && response.data.suggestions && response.data.suggestions.length > 0) {
+        setSearchResults(response.data.suggestions);
         
-        if (response.data?.suggestions) {
-          suggestions = response.data.suggestions;
-          console.log('Found suggestions in data.suggestions:', suggestions);
-        } else if (response.data?.entities) {
-          suggestions = response.data.entities;
-          console.log('Found suggestions in data.entities:', suggestions);
-        } else if (Array.isArray(response.data)) {
-          suggestions = response.data;
-          console.log('Found suggestions as array in data:', suggestions);
+        // Auto-select the first result for preview
+        const topMatch = response.data.suggestions[0];
+        const commonNames = topMatch.details?.common_names || [];
+        const primaryCommonName = commonNames.length > 0 ? commonNames[0] : null;
+        
+        setPlantDetails({
+          scientificName: topMatch.entity_name || topMatch.name,
+          commonName: primaryCommonName || topMatch.entity_name || topMatch.name,
+          allCommonNames: commonNames,
+          description: topMatch.details?.description || '',
+          taxonomy: topMatch.details?.taxonomy || {},
+          family: topMatch.details?.taxonomy?.family || 'Unknown',
+          genus: topMatch.details?.taxonomy?.genus || 'Unknown',
+          wikiUrl: topMatch.details?.url || ''
+        });
+        
+        // Auto-fill form fields with common name preference
+        if (primaryCommonName) {
+          setPlantName(primaryCommonName);
+          setPlantType(topMatch.entity_name || topMatch.name); // Scientific name as type
         } else {
-          console.log('Unexpected response structure:', response.data);
-          console.log('Available keys in response.data:', Object.keys(response.data || {}));
+          setPlantName(topMatch.entity_name || topMatch.name);
         }
         
-        if (suggestions && suggestions.length > 0) {
-          console.log('Processing suggestions:', suggestions.length);
-          
-          // Ensure we have image data and enhance the results
-          const enhancedSuggestions = suggestions.map(suggestion => {
-            // Get plant image from different possible locations
-            let plantImageUrl = null;
-            
-            // Check all possible image locations and log what we find
-            console.log(`Checking image sources for ${suggestion.name || suggestion.entity_name || suggestion.matched_in}:`);
-            
-            if (suggestion.images && suggestion.images.length > 0) {
-              console.log('- Found images array with length:', suggestion.images.length);
-              
-              // Find the first valid image URL
-              for (const img of suggestion.images) {
-                if (img.url) {
-                  plantImageUrl = img.url;
-                  console.log('- Using image URL from images[].url:', plantImageUrl);
-                  break;
-                } else if (img.image_url) {
-                  plantImageUrl = img.image_url;
-                  console.log('- Using image URL from images[].image_url:', plantImageUrl);
-                  break;
-                }
-              }
-            }
-            
-            if (!plantImageUrl && suggestion.image_url) {
-              plantImageUrl = suggestion.image_url;
-              console.log('- Using direct image_url property:', plantImageUrl);
-            }
-            
-            if (!plantImageUrl && suggestion.details?.images && suggestion.details.images.length > 0) {
-              plantImageUrl = suggestion.details.images[0].url || suggestion.details.images[0].image_url;
-              console.log('- Using image URL from details.images[]:', plantImageUrl);
-            }
-            
-            if (!plantImageUrl && suggestion.wiki_image && suggestion.wiki_image.value) {
-              plantImageUrl = suggestion.wiki_image.value;
-              console.log('- Using wiki_image.value:', plantImageUrl);
-            }
-            
-            if (!plantImageUrl && suggestion.details?.wiki_image?.value) {
-              plantImageUrl = suggestion.details.wiki_image.value;
-              console.log('- Using details.wiki_image.value:', plantImageUrl);
-            }
-            
-            // If we found an image, ensure it has a proper URL format
-            if (plantImageUrl) {
-              // Fix any URLs that don't start with http/https
-              if (!plantImageUrl.startsWith('http')) {
-                plantImageUrl = `https://${plantImageUrl.replace(/^\/\//, '')}`;
-                console.log('- Fixed image URL format:', plantImageUrl);
-              }
-            } else {
-              console.log('❌ No valid image URL found for this suggestion');
-            }
-            
-            return {
-              ...suggestion,
-              plantImageUrl: plantImageUrl
-            };
-          });
-          
-          setSearchResults(enhancedSuggestions);
-          
-          // Auto-select the first result for preview
-          const topMatch = enhancedSuggestions[0];
-          console.log('Top match keys:', Object.keys(topMatch));
-          
-          // Try to extract common names from different possible locations
-          let commonNames = [];
-          if (topMatch.details?.common_names) {
-            commonNames = topMatch.details.common_names;
-          } else if (topMatch.common_names) {
-            commonNames = topMatch.common_names;
-          } else if (topMatch.commonNames) {
-            commonNames = topMatch.commonNames;
-          }
-          
-          const primaryCommonName = commonNames.length > 0 ? commonNames[0] : null;
-          console.log('Extracted common names:', commonNames);
-          
-          // Try to get the scientific/entity name from different locations
-          const scientificName = topMatch.entity_name || topMatch.name || topMatch.matched_in || topMatch.scientific_name;
-          
-          setPlantDetails({
-            scientificName: scientificName,
-            commonName: primaryCommonName || scientificName,
-            allCommonNames: commonNames,
-            description: topMatch.details?.description || topMatch.description || '',
-            taxonomy: topMatch.details?.taxonomy || topMatch.taxonomy || {},
-            family: topMatch.details?.taxonomy?.family || topMatch.taxonomy?.family || 'Unknown',
-            genus: topMatch.details?.taxonomy?.genus || topMatch.taxonomy?.genus || 'Unknown',
-            wikiUrl: topMatch.details?.url || topMatch.url || '',
-            plantImage: topMatch.plantImageUrl // Use our enhanced image URL
-          });
-          
-          // Auto-fill form fields with common name preference
-          if (primaryCommonName) {
-            setPlantName(primaryCommonName);
-            setPlantType(scientificName); // Scientific name as type
-          } else {
-            setPlantName(scientificName);
-          }
-          
-          // Set the plant image as captured image if available, otherwise use placeholder
-          if (topMatch.plantImageUrl) {
-            setCapturedImage(topMatch.plantImageUrl);
-          } else {
-            setCapturedImage('text-search-result');
-          }
-        } else {
-          console.log('No suggestions found in any expected location');
-          setError("No plants found matching your search. Try a different name or use manual entry.");
-        }
+        // Set placeholder image so form can be submitted
+        setCapturedImage('text-search-result');
       } else {
-        console.log('Search response not successful:', response);
-        setError(response.error || "Search failed. Please try again.");
+        setError("No plants found matching your search. Try a different name or use manual entry.");
+        setSearchResults([]);
       }
     } catch (err) {
-      console.error('Search error details:', err);
-      setError(`Failed to search for plants: ${err.message}. Please try again or use manual entry.`);
+      console.error('Search error:', err);
+      setError('Failed to search for plants. Please try again or use manual entry.');
+      setSearchResults([]);
     } finally {
       setIsSearching(false);
     }
@@ -607,23 +498,16 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
                   // Text search interface
                   <div className="space-y-4">
                     <div className="relative">
-                      <div className="flex gap-2">
+                      <form onSubmit={handleTextSearch} className="flex gap-2">
                         <input
                           type="text"
                           placeholder="Search plant by name..."
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              handleTextSearch(e);
-                            }
-                          }}
                           className="w-full px-4 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-green-500 dark:focus:ring-green-500/50 outline-none transition-all text-gray-900 dark:text-gray-100"
                         />
                         <button
-                          type="button"
-                          onClick={handleTextSearch}
+                          type="submit"
                           disabled={isSearching || !searchQuery.trim()}
                           className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
                         >
@@ -633,7 +517,7 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
                             <Search size={20} />
                           )}
                         </button>
-                      </div>
+                      </form>
 
                       {/* Manual Entry Option */}
                       <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
@@ -660,10 +544,9 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
                             Found {searchResults.length} plant{searchResults.length > 1 ? 's' : ''} matching "{searchQuery}"
                           </p>
                           {searchResults.map((result, index) => {
-                            // Handle different possible response structures
-                            const commonNames = result.details?.common_names || result.common_names || result.commonNames || [];
-                            const scientificName = result.entity_name || result.name || result.matched_in || result.scientific_name;
-                            const displayName = commonNames.length > 0 ? commonNames[0] : scientificName;
+                            const commonNames = result.details?.common_names || [];
+                            const displayName = commonNames.length > 0 ? commonNames[0] : (result.entity_name || result.name);
+                            const scientificName = result.entity_name || result.name;
                             
                             return (
                               <div
@@ -678,100 +561,69 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
                                     scientificName: scientificName,
                                     commonName: primaryCommonName || scientificName,
                                     allCommonNames: commonNames,
-                                    description: result.details?.description || result.description || '',
-                                    taxonomy: result.details?.taxonomy || result.taxonomy || {},
-                                    family: result.details?.taxonomy?.family || result.taxonomy?.family || 'Unknown',
-                                    genus: result.details?.taxonomy?.genus || result.taxonomy?.genus || 'Unknown',
-                                    wikiUrl: result.details?.url || result.url || '',
-                                    plantImage: result.plantImageUrl // Use our enhanced image URL
+                                    description: result.details?.description || '',
+                                    taxonomy: result.details?.taxonomy || {},
+                                    family: result.details?.taxonomy?.family || 'Unknown',
+                                    genus: result.details?.taxonomy?.genus || 'Unknown',
+                                    wikiUrl: result.details?.url || ''
                                   });
-                                  
-                                  // Set the plant image as captured image if available
-                                  if (result.plantImageUrl) {
-                                    setCapturedImage(result.plantImageUrl);
-                                  } else {
-                                    setCapturedImage('text-search-result');
-                                  }
+                                  // Set a placeholder so form can be submitted
+                                  setCapturedImage('text-search-result');
                                 }}
                               >
-                                {/* Plant Image and Info Container */}
-                                <div className="flex gap-3">
-                                  {/* Plant Image */}
-                                  {result.plantImageUrl ? (
-                                    <div className="flex-shrink-0">
-                                      <img
-                                        src={result.plantImageUrl}
-                                        alt={displayName || 'Plant image'}
-                                        className="w-16 h-16 rounded-lg object-cover border border-gray-200 dark:border-gray-600"
-                                        onError={(e) => {
-                                          console.error('Image failed to load:', result.plantImageUrl);
-                                          e.target.parentNode.style.display = 'none';
-                                        }}
-                                      />
-                                    </div>
-                                  ) : (
-                                    <div className="flex-shrink-0 w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                                      <Leaf size={24} className="text-gray-400 dark:text-gray-500" />
-                                    </div>
-                                  )}
-                                  
-                                  {/* Plant Information */}
-                                  <div className="flex-1 min-w-0">
-                                    {/* Primary name */}
-                                    <p className="font-medium text-gray-900 dark:text-gray-100 text-base">
-                                      {displayName || 'Unknown Plant'}
+                                {/* Primary name */}
+                                <p className="font-medium text-gray-900 dark:text-gray-100 text-base">
+                                  {displayName}
+                                </p>
+                                
+                                {/* Scientific name if different from display name */}
+                                {displayName !== scientificName && (
+                                  <p className="text-sm text-gray-500 dark:text-gray-400 italic mt-1">
+                                    {scientificName}
+                                  </p>
+                                )}
+                                
+                                {/* All common names */}
+                                {commonNames.length > 1 && (
+                                  <div className="mt-2">
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                                      Also known as:
                                     </p>
-                                    
-                                    {/* Scientific name if different from display name */}
-                                    {displayName !== scientificName && scientificName && (
-                                      <p className="text-sm text-gray-500 dark:text-gray-400 italic mt-1">
-                                        {scientificName}
-                                      </p>
-                                    )}
-                                    
-                                    {/* All common names */}
-                                    {commonNames.length > 1 && (
-                                      <div className="mt-2">
-                                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                                          Also known as:
-                                        </p>
-                                        <div className="flex flex-wrap gap-1">
-                                          {commonNames.slice(1).map((name, nameIndex) => (
-                                            <span
-                                              key={nameIndex}
-                                              className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full"
-                                            >
-                                              {name}
-                                            </span>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
-                                    
-                                    {/* Description preview */}
-                                    {(result.details?.description || result.description) && (
-                                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 line-clamp-2">
-                                        {(result.details?.description || result.description).length > 100 
-                                          ? (result.details?.description || result.description).substring(0, 100) + '...'
-                                          : (result.details?.description || result.description)
-                                        }
-                                      </p>
-                                    )}
-                                    
-                                    {/* Taxonomy info */}
-                                    {(result.details?.taxonomy?.family || result.taxonomy?.family) && (
-                                      <div className="mt-2 text-xs text-gray-500 dark:text-gray-500">
-                                        Family: {result.details?.taxonomy?.family || result.taxonomy?.family}
-                                        {(result.details?.taxonomy?.genus || result.taxonomy?.genus) && (
-                                          <span> • Genus: {result.details?.taxonomy?.genus || result.taxonomy?.genus}</span>
-                                        )}
-                                      </div>
-                                    )}
-                                    
-                                    <div className="mt-2 text-xs text-green-600 dark:text-green-400">
-                                      Click to select this plant
+                                    <div className="flex flex-wrap gap-1">
+                                      {commonNames.slice(1).map((name, nameIndex) => (
+                                        <span
+                                          key={nameIndex}
+                                          className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full"
+                                        >
+                                          {name}
+                                        </span>
+                                      ))}
                                     </div>
                                   </div>
+                                )}
+                                
+                                {/* Description preview */}
+                                {result.details?.description && (
+                                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 line-clamp-2">
+                                    {result.details.description.length > 100 
+                                      ? result.details.description.substring(0, 100) + '...'
+                                      : result.details.description
+                                    }
+                                  </p>
+                                )}
+                                
+                                {/* Taxonomy info */}
+                                {result.details?.taxonomy?.family && (
+                                  <div className="mt-2 text-xs text-gray-500 dark:text-gray-500">
+                                    Family: {result.details.taxonomy.family}
+                                    {result.details.taxonomy.genus && (
+                                      <span> • Genus: {result.details.taxonomy.genus}</span>
+                                    )}
+                                  </div>
+                                )}
+                                
+                                <div className="mt-2 text-xs text-green-600 dark:text-green-400">
+                                  Click to select this plant
                                 </div>
                               </div>
                             );
@@ -923,30 +775,8 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
                 ) : (
                   plantDetails && (
                     <div className="space-y-3">
-                      {/* Show plant image if available from text search */}
-                      {plantDetails.plantImage && (
-                        <div className="relative">
-                          <img
-                            src={plantDetails.plantImage}
-                            alt={plantDetails.commonName}
-                            className="w-full h-48 object-cover rounded-lg border border-gray-200 dark:border-gray-600"
-                            onError={(e) => {
-                              // Hide image container if it fails to load
-                              e.target.closest('div').style.display = 'none';
-                            }}
-                          />
-                          <div className="absolute top-2 right-2">
-                            <span className="bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
-                              From Plant Database
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                      
                       <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
-                        <h3 className="font-medium text-green-800 dark:text-green-300">
-                          {capturedImage === 'text-search-result' || plantDetails.plantImage ? 'Plant Found!' : 'Plant Identified!'}
-                        </h3>
+                        <h3 className="font-medium text-green-800 dark:text-green-300">Plant Identified!</h3>
                         <div className="mt-2">
                           {/* Show primary common name prominently */}
                           <p className="text-sm text-green-600 dark:text-green-400">

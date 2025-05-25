@@ -345,28 +345,114 @@ export const plantAPI = {
     }
   },
 
-  // Text-based plant search endpoint
+  // Search plant by name
   searchPlantByName: async (plantName) => {
     try {
-      console.log('Making plant search request for:', plantName);
-      
+      console.log('Making search request for:', plantName);
       const response = await api.get(`/plants/search?name=${encodeURIComponent(plantName)}`);
-      
-      console.log('Plant search response received:', response.data);
+      console.log('Search API response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Plant search API error:', error);
-      
-      if (error.response) {
-        if (error.response.status === 500) {
-          throw new Error('Plant search service is currently unavailable. Please try again later.');
-        }
-        throw new Error(error.response.data?.error || 'Failed to search plants');
-      } else if (error.request) {
-        throw new Error('Network error - please check your connection');
-      } else {
-        throw new Error('Failed to search plants');
-      }
+      console.error('Error response:', error.response?.data);
+      throw new Error(error.response?.data?.error || 'Failed to search for plants');
     }
   }
 };
+
+// Weather API endpoints
+export const weatherAPI = {
+  getCurrentWeather: async (location) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const params = location ? `?location=${encodeURIComponent(location)}` : '';
+      const response = await fetch(`${API_URL}/weather${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Weather API error: ${response.statusText}`);
+      }
+      
+      return response.json();
+    } catch (error) {
+      console.error('Weather API Error:', error);
+      throw error;
+    }
+  },
+
+  getWeatherRecommendations: async (location) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const params = location ? `?location=${encodeURIComponent(location)}` : '';
+      const response = await fetch(`${API_URL}/weather/recommendations${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Weather recommendations error: ${response.statusText}`);
+      }
+      
+      return response.json();
+    } catch (error) {
+      console.error('Weather Recommendations API Error:', error);
+      throw error;
+    }
+  },
+
+  getWeatherForecast: async (location) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const params = location ? `?location=${encodeURIComponent(location)}` : '';
+      const response = await fetch(`${API_URL}/weather/forecast${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Weather forecast error: ${response.statusText}`);
+      }
+      
+      return response.json();
+    } catch (error) {
+      console.error('Weather Forecast API Error:', error);
+      throw error;
+    }
+  },
+
+  searchLocations: async (query) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const params = query ? `?q=${encodeURIComponent(query)}` : '';
+      const response = await fetch(`${API_URL}/weather/search${params}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Location search error: ${response.statusText}`);
+      }
+      
+      return response.json();
+    } catch (error) {
+      console.error('Location Search API Error:', error);
+      throw error;
+    }
+  }
+};
+
+export default api;

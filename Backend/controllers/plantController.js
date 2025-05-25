@@ -282,7 +282,7 @@ exports.identifyPlant = async (req, res, next) => {
       console.warn('⚠️  Plant identification service not available');
       return res.status(503).json({
         success: false,
-        error: 'Plant identification service is not available. Please configure the Plant.ID API key or try entering plant details manually.'
+        error: 'Plant identification service is not available. Please configure the Plant.ID API key.'
       });
     }
     
@@ -290,19 +290,34 @@ exports.identifyPlant = async (req, res, next) => {
     
     // Check if API key is configured
     if (!process.env.PLANT_ID_API_KEY) {
-      console.log('🔧 No API key configured, using mock identification');
-      identificationResults = await plantIdentification.mockIdentifyPlant();
+      console.log('🔧 No API key configured, returning error with mock suggestion');
+      return res.status(503).json({
+        success: false,
+        error: 'Plant identification service requires API key configuration. Please contact administrator.',
+        mock_available: true,
+        suggestion: 'You can still add plants manually using the text search or manual entry options.'
+      });
     } else {
-      if (imageUrl) {
-        // Identify using image URL
-        identificationResults = await plantIdentification.identifyPlantByUrl(imageUrl);
-      } else if (base64Image) {
-        // Identify using base64 image
-        identificationResults = await plantIdentification.identifyPlantByBase64(base64Image);
+      try {
+        if (imageUrl) {
+          // Identify using image URL
+          identificationResults = await plantIdentification.identifyPlantByUrl(imageUrl);
+        } else if (base64Image) {
+          // Identify using base64 image
+          identificationResults = await plantIdentification.identifyPlantByBase64(base64Image);
+        }
+        
+        console.log('✅ Plant identification completed successfully');
+      } catch (apiError) {
+        console.error('❌ Plant.ID API failed:', apiError.message);
+        
+        return res.status(503).json({
+          success: false,
+          error: 'Plant identification service is temporarily unavailable: ' + apiError.message,
+          suggestion: 'Please try again later or add your plant manually.'
+        });
       }
     }
-    
-    console.log('✅ Plant identification completed, processing results');
     
     // Process the Plant.ID v3 API response format
     if (identificationResults && identificationResults.result) {
@@ -310,18 +325,74 @@ exports.identifyPlant = async (req, res, next) => {
       
       // Extract suggestions with proper structure for v3 API
       if (result.classification && result.classification.suggestions) {
-        const processedSuggestions = result.classification.suggestions.map(suggestion => {
-          return {
+        const processedSuggestions = result.classification.suggestions.map((suggestion, index) => {
+          console.log(`🔍 Processing suggestion ${index + 1}: ${suggestion.name}`);
+          
+          // Try to get plant details from various locations
+          let commonNames = [];
+          let description = '';
+          let taxonomy = {};
+          let url = '';
+          
+          // Method 1: Direct common_names property
+          if (suggestion.common_names && Array.isArray(suggestion.common_names) && suggestion.common_names.length > 0) {
+            commonNames = suggestion.common_names;
+            console.log(`✅ Found common names (method 1): ${commonNames.join(', ')}`);
+          }
+          // Method 2: From details object
+          else if (suggestion.details?.common_names && Array.isArray(suggestion.details.common_names) && suggestion.details.common_names.length > 0) {
+            commonNames = suggestion.details.common_names;
+            console.log(`✅ Found common names (method 2): ${commonNames.join(', ')}`);
+          }
+          // Method 3: Check if details has other name properties
+          else if (suggestion.details && typeof suggestion.details === 'object') {
+            console.log('Checking details object for common names...');
+            console.log('Available details keys:', Object.keys(suggestion.details));
+            
+            // Look for any property that might contain common names
+            const nameKeys = ['common_names', 'commonNames', 'names', 'vernacular_names', 'synonyms'];
+            for (const key of nameKeys) {
+              if (suggestion.details[key] && Array.isArray(suggestion.details[key]) && suggestion.details[key].length > 0) {
+                commonNames = suggestion.details[key];
+                console.log(`✅ Found common names (method 3, key: ${key}): ${commonNames.join(', ')}`);
+                break;
+              }
+            }
+          }
+          
+          if (commonNames.length === 0) {
+            console.log(`⚠️  No common names found for ${suggestion.name} - using scientific name only`);
+          }
+          
+          // Get other details
+          if (suggestion.details) {
+            description = suggestion.details.description?.value || suggestion.details.description || '';
+            taxonomy = suggestion.details.taxonomy || {};
+            url = suggestion.details.url || '';
+          }
+          
+          const processed = {
             ...suggestion,
-            // Ensure common names are easily accessible
-            common_names: suggestion.details?.common_names || [],
-            description: suggestion.details?.description?.value || suggestion.details?.description || '',
-            taxonomy: suggestion.details?.taxonomy || {},
-            family: suggestion.details?.taxonomy?.family || 'Unknown',
-            genus: suggestion.details?.taxonomy?.genus || 'Unknown',
-            url: suggestion.details?.url || ''
+            // Add common names at the top level for easy access
+            common_names: commonNames,
+            description: description,
+            taxonomy: taxonomy,
+            family: taxonomy.family || 'Unknown',
+            genus: taxonomy.genus || 'Unknown',
+            url: url
           };
+          
+          console.log(`📋 Final processed suggestion:`, {
+            name: processed.name,
+            common_names: processed.common_names,
+            has_description: !!processed.description,
+            probability: processed.probability
+          });
+          
+          return processed;
         });
+        
+        console.log(`Processed ${processedSuggestions.length} suggestions`);
         
         // Update the response structure
         identificationResults.result.classification.suggestions = processedSuggestions;
@@ -331,20 +402,16 @@ exports.identifyPlant = async (req, res, next) => {
     // Return the identification results
     res.status(200).json({
       success: true,
-      data: identificationResults
+      data: identificationResults,
+      source: 'plant_id_api'
     });
     
   } catch (err) {
     console.error('❌ Plant identification error:', err.message);
-    // Log more details if available
-    if (err.response) {
-      console.error('Response status:', err.response.status);
-      console.error('Response data:', err.response.data);
-    }
     
     res.status(500).json({ 
       success: false, 
-      error: 'Error identifying plant: ' + err.message,
+      error: 'Plant identification service encountered an error. Please try again later or add your plant manually.',
       details: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
   }
@@ -366,11 +433,11 @@ exports.searchPlantByName = async (req, res, next) => {
     
     console.log('🔍 Searching for plant by name:', name);
     
-    // Check if plantIdentification service exists
-    if (!plantIdentification || !plantIdentification.searchPlantByName) {
+    // Check if API key is configured
+    if (!process.env.PLANT_ID_API_KEY) {
       return res.status(503).json({
         success: false,
-        error: 'Plant search service is not available. Please configure the Plant.ID API key.'
+        error: 'Plant search service requires API key configuration. Please contact administrator.'
       });
     }
     
@@ -378,12 +445,100 @@ exports.searchPlantByName = async (req, res, next) => {
     const searchResults = await plantIdentification.searchPlantByName(name);
     
     console.log('✅ Plant search completed successfully');
-    
-    // Return the search results
-    res.status(200).json({
-      success: true,
-      data: searchResults
+    console.log('Search results structure:', {
+      hasEntities: !!searchResults.entities,
+      entitiesCount: searchResults.entities?.length || 0
     });
+    
+    // Process search results to get detailed information
+    if (searchResults.entities && searchResults.entities.length > 0) {
+      const processedResults = await Promise.all(
+        searchResults.entities.slice(0, 5).map(async (entity, index) => {
+          console.log(`Processing search result ${index + 1}: ${entity.matched_in}`);
+          
+          let detailedInfo = {
+            name: entity.matched_in,
+            entity_name: entity.entity_name,
+            common_names: entity.common_names || [],
+            matched_in: entity.matched_in,
+            access_token: entity.access_token
+          };
+          
+          // Try to get more detailed information using the entity access token
+          if (entity.access_token) {
+            try {
+              console.log(`Fetching detailed info for: ${entity.entity_name}`);
+              const detailsResponse = await plantIdentification.getPlantDetails(entity.access_token);
+              
+              if (detailsResponse) {
+                detailedInfo.details = {
+                  common_names: detailsResponse.common_names || entity.common_names || [],
+                  description: detailsResponse.description || '',
+                  taxonomy: detailsResponse.taxonomy || {},
+                  url: detailsResponse.url || '',
+                  images: detailsResponse.images || [],
+                  synonyms: detailsResponse.synonyms || []
+                };
+                
+                console.log(`✅ Got detailed info for ${entity.entity_name}:`, {
+                  hasCommonNames: !!detailsResponse.common_names,
+                  commonNamesCount: detailsResponse.common_names?.length || 0,
+                  hasDescription: !!detailsResponse.description,
+                  hasTaxonomy: !!detailsResponse.taxonomy
+                });
+              }
+            } catch (detailError) {
+              console.warn(`Could not fetch details for ${entity.entity_name}:`, detailError.message);
+              // Use basic info from search result
+              detailedInfo.details = {
+                common_names: entity.common_names || [],
+                description: '',
+                taxonomy: {},
+                url: '',
+                images: [],
+                synonyms: []
+              };
+            }
+          } else {
+            // Use basic info from search result
+            detailedInfo.details = {
+              common_names: entity.common_names || [],
+              description: '',
+              taxonomy: {},
+              url: '',
+              images: [],
+              synonyms: []
+            };
+          }
+          
+          console.log(`📋 Final processed search result:`, {
+            name: detailedInfo.name,
+            entity_name: detailedInfo.entity_name,
+            common_names: detailedInfo.details.common_names,
+            has_description: !!detailedInfo.details.description
+          });
+          
+          return detailedInfo;
+        })
+      );
+      
+      // Return formatted response
+      res.status(200).json({
+        success: true,
+        data: {
+          suggestions: processedResults,
+          total: searchResults.entities.length
+        }
+      });
+    } else {
+      res.status(200).json({
+        success: true,
+        data: {
+          suggestions: [],
+          total: 0
+        }
+      });
+    }
     
   } catch (err) {
     console.error('❌ Plant search error:', err.message);

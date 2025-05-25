@@ -20,7 +20,7 @@ exports.identifyPlantByBase64 = async (base64Image) => {
 
     const response = await axios.post(`${PLANT_ID_BASE_URL}/identification`, {
       images: [`data:image/jpeg;base64,${base64Image}`],
-      // Use correct modifiers for Plant.ID API v3
+      // Use only valid modifiers for Plant.ID API v3
       similar_images: true,
       classification_level: "all"
     }, {
@@ -32,6 +32,112 @@ exports.identifyPlantByBase64 = async (base64Image) => {
     });
 
     console.log('✅ Plant identification successful');
+    console.log('Raw response structure:', {
+      hasResult: !!response.data.result,
+      hasClassification: !!response.data.result?.classification,
+      hasSuggestions: !!response.data.result?.classification?.suggestions,
+      suggestionsCount: response.data.result?.classification?.suggestions?.length || 0
+    });
+    
+    // Log the first suggestion structure
+    if (response.data.result?.classification?.suggestions?.[0]) {
+      const firstSuggestion = response.data.result.classification.suggestions[0];
+      console.log('First suggestion structure:', {
+        name: firstSuggestion.name,
+        hasCommonNames: !!firstSuggestion.common_names,
+        commonNamesCount: firstSuggestion.common_names?.length || 0,
+        hasDetails: !!firstSuggestion.details,
+        hasPlantId: !!firstSuggestion.plant_id,
+        keys: Object.keys(firstSuggestion)
+      });
+    }
+    
+    // Try to enrich the response with additional plant details
+    if (response.data && response.data.result && response.data.result.classification) {
+      const suggestions = response.data.result.classification.suggestions;
+      
+      // For each suggestion, try to get additional details
+      for (let i = 0; i < Math.min(suggestions.length, 2); i++) { // Limit to first 2
+        const suggestion = suggestions[i];
+        
+        console.log(`Processing suggestion ${i + 1}: ${suggestion.name}`);
+        console.log(`Plant ID available: ${!!suggestion.plant_id}`);
+        console.log(`Existing common names: ${suggestion.common_names || 'None'}`);
+        
+        // If we already have common names, keep them
+        if (suggestion.common_names && Array.isArray(suggestion.common_names) && suggestion.common_names.length > 0) {
+          console.log(`✅ Already has common names: ${suggestion.common_names.join(', ')}`);
+          continue;
+        }
+        
+        // Try to fetch additional details using plant_id
+        if (suggestion.plant_id) {
+          try {
+            console.log(`Fetching details for plant ID: ${suggestion.plant_id}`);
+            const detailsResponse = await axios.get(`${PLANT_ID_BASE_URL}/kb/plants/${suggestion.plant_id}`, {
+              headers: {
+                'Api-Key': PLANT_ID_API_KEY,
+                'Content-Type': 'application/json'
+              },
+              timeout: 10000
+            });
+            
+            if (detailsResponse.data) {
+              console.log(`Details response for ${suggestion.name}:`, {
+                hasCommonNames: !!detailsResponse.data.common_names,
+                commonNames: detailsResponse.data.common_names,
+                hasDescription: !!detailsResponse.data.description,
+                keys: Object.keys(detailsResponse.data)
+              });
+              
+              suggestions[i].details = detailsResponse.data;
+              
+              // Add common names directly to the suggestion for easier access
+              if (detailsResponse.data.common_names && Array.isArray(detailsResponse.data.common_names)) {
+                suggestions[i].common_names = detailsResponse.data.common_names;
+                console.log(`✅ Added common names to suggestion: ${detailsResponse.data.common_names.join(', ')}`);
+              }
+            }
+          } catch (detailsError) {
+            console.warn(`Could not fetch details for plant ${suggestion.plant_id}:`, detailsError.message);
+          }
+        }
+        
+        // Try alternative approach - search by scientific name to get common names
+        if (!suggestions[i].common_names || suggestions[i].common_names.length === 0) {
+          try {
+            console.log(`Trying name search for: ${suggestion.name}`);
+            const searchResponse = await axios.get(`${PLANT_ID_BASE_URL}/kb/plants/name_search`, {
+              params: {
+                q: suggestion.name,
+                limit: 1
+              },
+              headers: {
+                'Api-Key': PLANT_ID_API_KEY,
+                'Content-Type': 'application/json'
+              },
+              timeout: 10000
+            });
+            
+            if (searchResponse.data?.entities?.[0]?.common_names) {
+              suggestions[i].common_names = searchResponse.data.entities[0].common_names;
+              console.log(`✅ Found common names via search: ${searchResponse.data.entities[0].common_names.join(', ')}`);
+            }
+          } catch (searchError) {
+            console.warn(`Could not search for plant ${suggestion.name}:`, searchError.message);
+          }
+        }
+      }
+      
+      // Log final structure
+      console.log('Final suggestions with common names:');
+      suggestions.forEach((suggestion, index) => {
+        console.log(`${index + 1}. ${suggestion.name}`);
+        console.log(`   Common names: ${suggestion.common_names ? suggestion.common_names.join(', ') : 'None'}`);
+        console.log(`   Has details: ${!!suggestion.details}`);
+      });
+    }
+
     return response.data;
   } catch (error) {
     console.error('❌ Plant.ID API Error:', error.response?.data || error.message);
@@ -44,6 +150,9 @@ exports.identifyPlantByBase64 = async (base64Image) => {
       throw new Error('Plant identification service timeout');
     } else if (error.response?.status === 402) {
       throw new Error('Plant identification service quota exceeded');
+    } else if (error.response?.status === 400) {
+      console.error('Bad request details:', error.response.data);
+      throw new Error('Invalid request to plant identification service');
     } else {
       throw new Error('Failed to identify plant using Plant.ID API');
     }
@@ -61,7 +170,7 @@ exports.identifyPlantByUrl = async (imageUrl) => {
 
     const response = await axios.post(`${PLANT_ID_BASE_URL}/identification`, {
       images: [imageUrl],
-      // Use correct modifiers for Plant.ID API v3
+      // Use only valid modifiers for Plant.ID API v3
       similar_images: true,
       classification_level: "all"
     }, {
@@ -73,6 +182,41 @@ exports.identifyPlantByUrl = async (imageUrl) => {
     });
 
     console.log('✅ Plant identification (URL) successful');
+    
+    // Try to enrich the response with additional plant details
+    if (response.data && response.data.result && response.data.result.classification) {
+      const suggestions = response.data.result.classification.suggestions;
+      
+      // For each suggestion, try to get additional details if plant_id is available
+      for (let i = 0; i < Math.min(suggestions.length, 3); i++) {
+        const suggestion = suggestions[i];
+        
+        if (suggestion.plant_id) {
+          try {
+            console.log(`Fetching details for plant ID: ${suggestion.plant_id}`);
+            const detailsResponse = await axios.get(`${PLANT_ID_BASE_URL}/kb/plants/${suggestion.plant_id}`, {
+              headers: {
+                'Api-Key': PLANT_ID_API_KEY,
+                'Content-Type': 'application/json'
+              },
+              timeout: 10000
+            });
+            
+            if (detailsResponse.data) {
+              suggestions[i].details = detailsResponse.data;
+              
+              // Also add common names directly to the suggestion for easier access
+              if (detailsResponse.data.common_names) {
+                suggestions[i].common_names = detailsResponse.data.common_names;
+              }
+            }
+          } catch (detailsError) {
+            console.warn(`Could not fetch details for plant ${suggestion.plant_id}:`, detailsError.message);
+          }
+        }
+      }
+    }
+
     return response.data;
   } catch (error) {
     console.error('❌ Plant.ID API Error (URL):', error.response?.data || error.message);
@@ -85,6 +229,9 @@ exports.identifyPlantByUrl = async (imageUrl) => {
       throw new Error('Plant identification service timeout');
     } else if (error.response?.status === 402) {
       throw new Error('Plant identification service quota exceeded');
+    } else if (error.response?.status === 400) {
+      console.error('Bad request details:', error.response.data);
+      throw new Error('Invalid request to plant identification service');
     } else {
       throw new Error('Failed to identify plant using Plant.ID API');
     }
@@ -100,11 +247,14 @@ exports.searchPlantByName = async (plantName) => {
 
     console.log('🔍 Searching for plant by name:', plantName);
 
-    // Use the Plant.ID knowledge base search endpoint
+    // Use the Plant.ID knowledge base search endpoint with detailed parameters
     const response = await axios.get(`${PLANT_ID_BASE_URL}/kb/plants/name_search`, {
       params: {
         q: plantName,
-        limit: 5
+        limit: 5,
+        details: 'true', // Request full details
+        include_image_url: 'true', // Explicitly request image URLs
+        include: 'images,common_names,description,taxonomy,wiki' // Request comprehensive data
       },
       headers: {
         'Api-Key': PLANT_ID_API_KEY,
@@ -114,6 +264,52 @@ exports.searchPlantByName = async (plantName) => {
     });
 
     console.log('✅ Plant search successful');
+    
+    // Enhanced logging for debugging image issues
+    if (response.data.entities && response.data.entities.length > 0) {
+      const firstEntity = response.data.entities[0];
+      console.log('First search result keys:', Object.keys(firstEntity));
+      
+      // Check if images exist and log their structure
+      if (firstEntity.images && firstEntity.images.length > 0) {
+        console.log('First entity has images array with length:', firstEntity.images.length);
+        console.log('First image structure:', firstEntity.images[0]);
+      } else {
+        console.log('No images array or empty images array in first entity');
+      }
+      
+      // Check for alternative image sources
+      if (firstEntity.image_url) {
+        console.log('Found image_url property:', firstEntity.image_url);
+      }
+      
+      // Enrich the response with additional image data if missing
+      for (const entity of response.data.entities) {
+        // If no images but there's an access token, try to fetch more details
+        if ((!entity.images || entity.images.length === 0) && entity.access_token) {
+          try {
+            console.log(`Fetching detailed data for ${entity.matched_in} to get images...`);
+            const detailsResponse = await exports.getPlantDetails(entity.access_token);
+            
+            if (detailsResponse && detailsResponse.images && detailsResponse.images.length > 0) {
+              entity.images = detailsResponse.images;
+              console.log(`✅ Found ${entity.images.length} images from details request`);
+            }
+          } catch (detailsError) {
+            console.warn(`Could not fetch details for ${entity.matched_in}:`, detailsError.message);
+          }
+        }
+        
+        // Add a fallback image URL if we have one but no images array
+        if (entity.image_url && (!entity.images || entity.images.length === 0)) {
+          entity.images = [{ url: entity.image_url }];
+          console.log('Created images array from image_url property');
+        }
+      }
+    } else {
+      console.log('No entities found in search response');
+    }
+    
     return response.data;
   } catch (error) {
     console.error('❌ Plant.ID Search API Error:', error.response?.data || error.message);
@@ -157,9 +353,10 @@ exports.extractPlantData = (apiResponse) => {
   return null;
 };
 
-// Mock identification function for when API key is not available
+// Mock identification function - only used when no API key is configured
 exports.mockIdentifyPlant = async () => {
   console.log('🔧 Using mock plant identification (no API key configured)');
+  console.log('⚠️  To use real plant identification, please configure PLANT_ID_API_KEY in your environment variables');
   
   return {
     result: {
@@ -167,31 +364,78 @@ exports.mockIdentifyPlant = async () => {
       classification: {
         suggestions: [
           {
-            id: "mock-plant-id",
-            name: "Epipremnum aureum",
-            probability: 0.85,
+            id: "mock-example-plant",
+            name: "Example Plant Species",
+            probability: 0.75,
+            common_names: ["Example Plant", "Demo Plant", "Test Plant"],
+            description: "This is a mock plant identification result. Please configure your Plant.ID API key to get real plant identification results.",
+            taxonomy: {
+              kingdom: "Plantae",
+              phylum: "Tracheophyta", 
+              class: "Magnoliopsida",
+              order: "Example Order",
+              family: "Example Family",
+              genus: "Example",
+              species: "E. example"
+            },
+            url: "https://example.com/mock-plant",
             details: {
-              common_names: ["Golden Pothos", "Devil's Ivy", "Money Plant"],
+              common_names: ["Example Plant", "Demo Plant", "Test Plant"],
               description: {
-                value: "This is a mock plant identification result. Epipremnum aureum, commonly known as Golden Pothos or Devil's Ivy, is a popular houseplant known for its heart-shaped leaves and trailing vines. Please configure your Plant.ID API key for real plant identification.",
-                citation: "Mock data for development"
+                value: "This is a mock plant identification result. Please configure your Plant.ID API key to get real plant identification results from the Plant.ID service."
               },
               taxonomy: {
                 kingdom: "Plantae",
                 phylum: "Tracheophyta", 
-                class: "Liliopsida",
-                order: "Alismatales",
-                family: "Araceae",
-                genus: "Epipremnum",
-                species: "E. aureum"
+                class: "Magnoliopsida",
+                order: "Example Order",
+                family: "Example Family",
+                genus: "Example",
+                species: "E. example"
               },
-              url: "https://en.wikipedia.org/wiki/Epipremnum_aureum",
-              gbif_id: 2752880,
-              inaturalist_id: 48384
+              url: "https://example.com/mock-plant"
             }
           }
         ]
       }
     }
   };
+};
+
+// Get detailed plant information using access token
+exports.getPlantDetails = async (accessToken) => {
+  try {
+    if (!PLANT_ID_API_KEY) {
+      throw new Error('Plant details service not configured - missing API key');
+    }
+
+    console.log('🔍 Fetching plant details using access token...');
+
+    const response = await axios.get(`${PLANT_ID_BASE_URL}/kb/plants/${accessToken}`, {
+      headers: {
+        'Api-Key': PLANT_ID_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      timeout: 15000
+    });
+
+    console.log('✅ Plant details fetched successfully');
+    return response.data;
+  } catch (error) {
+    console.error('❌ Plant Details API Error:', error.response?.data || error.message);
+    
+    if (error.response?.status === 401) {
+      throw new Error('Invalid API key for plant details service');
+    } else if (error.response?.status === 404) {
+      throw new Error('Plant details not found');
+    } else if (error.response?.status === 429) {
+      throw new Error('Too many requests to plant details service');
+    } else if (error.code === 'ECONNABORTED') {
+      throw new Error('Plant details service timeout');
+    } else if (error.response?.status === 402) {
+      throw new Error('Plant details service quota exceeded');
+    } else {
+      throw new Error('Failed to fetch plant details using Plant.ID API');
+    }
+  }
 };
