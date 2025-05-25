@@ -1,168 +1,197 @@
 const axios = require('axios');
 
-/**
- * Plant.id API base URL from environment variable
- */
-const API_URL = process.env.PLANT_ID_API_URL || 'https://plant.id/api/v3/identification';
+const PLANT_ID_API_KEY = process.env.PLANT_ID_API_KEY;
+const PLANT_ID_BASE_URL = 'https://api.plant.id/v3';
 
-/**
- * Identify a plant from an image URL
- * @param {string} imageUrl - URL of the plant image
- * @param {object} options - Additional options for identification
- * @returns {Promise<object>} - Identification results
- */
-exports.identifyPlantByUrl = async (imageUrl, options = {}) => {
+// Check if API key is available
+if (!PLANT_ID_API_KEY) {
+  console.warn('⚠️  Warning: PLANT_ID_API_KEY not found in environment variables');
+  console.warn('   Plant identification features will not work without a valid API key');
+}
+
+// Identify plant by base64 image
+exports.identifyPlantByBase64 = async (base64Image) => {
   try {
-    const apiKey = process.env.PLANT_ID_API_KEY;
-    
-    if (!apiKey) {
-      throw new Error('Plant identification API key not configured');
+    if (!PLANT_ID_API_KEY) {
+      throw new Error('Plant identification service not configured - missing API key');
     }
-    
-    console.log(`Using Plant ID API at: ${API_URL}`);
-    console.log(`Using API key: ${apiKey.substring(0, 10)}...`);
-    console.log(`Identifying plant with image URL: ${imageUrl}`);
-    
-    // Format payload for Plant ID v3 API - this is the correct format for v3
-    const requestData = {
-      images: [imageUrl],
-      // Optional parameters
-      latitude: options.latitude,
-      longitude: options.longitude,
-      similar_images: true
-    };
-    
-    console.log('Sending request to Plant ID API with payload:', JSON.stringify(requestData));
-    
-    // Send request with proper headers for v3 API
-    const response = await axios.post(API_URL, requestData, {
+
+    console.log('🔍 Sending plant identification request to Plant.ID API...');
+
+    const response = await axios.post(`${PLANT_ID_BASE_URL}/identification`, {
+      images: [`data:image/jpeg;base64,${base64Image}`],
+      // Use correct modifiers for Plant.ID API v3
+      similar_images: true,
+      classification_level: "all"
+    }, {
       headers: {
-        'Content-Type': 'application/json',
-        'Api-Key': apiKey  // The v3 API uses Api-Key header
-      }
+        'Api-Key': PLANT_ID_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      timeout: 30000 // 30 second timeout
     });
-    
-    console.log('Plant ID API returned status:', response.status);
-    console.log('Plant ID API response preview:', JSON.stringify(response.data).substring(0, 200) + '...');
-    
+
+    console.log('✅ Plant identification successful');
     return response.data;
   } catch (error) {
-    console.error('Plant identification error:', error.message);
+    console.error('❌ Plant.ID API Error:', error.response?.data || error.message);
     
-    // Enhanced error logging
-    if (error.response) {
-      console.error('Error status:', error.response.status);
-      console.error('Error data:', JSON.stringify(error.response.data));
-      console.error('Error headers:', JSON.stringify(error.response.headers));
-    } else if (error.request) {
-      console.error('No response received:', error.request);
+    if (error.response?.status === 401) {
+      throw new Error('Invalid API key for plant identification service');
+    } else if (error.response?.status === 429) {
+      throw new Error('Too many requests to plant identification service');
+    } else if (error.code === 'ECONNABORTED') {
+      throw new Error('Plant identification service timeout');
+    } else if (error.response?.status === 402) {
+      throw new Error('Plant identification service quota exceeded');
     } else {
-      console.error('Error setting up request:', error.message);
+      throw new Error('Failed to identify plant using Plant.ID API');
     }
-    
-    throw error;
   }
 };
 
-/**
- * Identify a plant from a base64 image string
- * @param {string} base64Image - Base64 encoded image
- * @param {object} options - Additional options for identification
- * @returns {Promise<object>} - Identification results
- */
-exports.identifyPlantByBase64 = async (base64Image, options = {}) => {
+// Identify plant by image URL
+exports.identifyPlantByUrl = async (imageUrl) => {
   try {
-    const apiKey = process.env.PLANT_ID_API_KEY;
-    
-    if (!apiKey) {
-      throw new Error('Plant identification API key not configured');
+    if (!PLANT_ID_API_KEY) {
+      throw new Error('Plant identification service not configured - missing API key');
     }
-    
-    console.log('Identifying plant with base64 image');
-    
-    // Remove data URL prefix if present
-    const imageData = base64Image.startsWith('data:image')
-      ? base64Image.split(',')[1]
-      : base64Image;
-    
-    // Format payload for Plant ID v3 API
-    const requestData = {
-      images: [imageData],
-      // Optional parameters
-      latitude: options.latitude,
-      longitude: options.longitude,
-      similar_images: true
-    };
-    
-    console.log('Sending base64 image to Plant ID API');
-    
-    // Send request with proper headers for v3 API
-    const response = await axios.post(API_URL, requestData, {
+
+    console.log('🔍 Sending plant identification request (URL) to Plant.ID API...');
+
+    const response = await axios.post(`${PLANT_ID_BASE_URL}/identification`, {
+      images: [imageUrl],
+      // Use correct modifiers for Plant.ID API v3
+      similar_images: true,
+      classification_level: "all"
+    }, {
       headers: {
-        'Content-Type': 'application/json',
-        'Api-Key': apiKey
-      }
+        'Api-Key': PLANT_ID_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      timeout: 30000
     });
-    
-    console.log('Plant ID API returned status:', response.status);
-    
+
+    console.log('✅ Plant identification (URL) successful');
     return response.data;
   } catch (error) {
-    console.error('Plant identification error:', error.message);
+    console.error('❌ Plant.ID API Error (URL):', error.response?.data || error.message);
     
-    // Enhanced error logging
-    if (error.response) {
-      console.error('Error status:', error.response.status);
-      console.error('Error data:', JSON.stringify(error.response.data));
+    if (error.response?.status === 401) {
+      throw new Error('Invalid API key for plant identification service');
+    } else if (error.response?.status === 429) {
+      throw new Error('Too many requests to plant identification service');
+    } else if (error.code === 'ECONNABORTED') {
+      throw new Error('Plant identification service timeout');
+    } else if (error.response?.status === 402) {
+      throw new Error('Plant identification service quota exceeded');
+    } else {
+      throw new Error('Failed to identify plant using Plant.ID API');
     }
-    
-    throw error;
   }
 };
 
-/**
- * Process identification results to extract useful plant data
- * @param {object} identificationResults - Results from identification API
- * @returns {object} - Simplified plant data
- */
-exports.extractPlantData = (identificationResults) => {
+// Search plant by name - Use knowledge base endpoint
+exports.searchPlantByName = async (plantName) => {
   try {
-    console.log('Extracting plant data from results');
-    
-    // Handle the v3 API response format which is different from v2
-    if (identificationResults.result && identificationResults.result.classification) {
-      const suggestions = identificationResults.result.classification.suggestions;
-      
-      if (!suggestions || suggestions.length === 0) {
-        console.log('No plant suggestions found in the results');
-        return null;
-      }
-      
-      // Get the top suggestion
-      const topMatch = suggestions[0];
-      console.log('Top match:', topMatch.name, 'with confidence', topMatch.probability);
-      
-      // Extract common names
-      const commonNames = topMatch.details?.common_names || [];
-      
-      // Build a simplified plant data object
-      return {
-        scientificName: topMatch.name,
-        commonName: commonNames.length > 0 ? commonNames[0] : topMatch.name,
-        allCommonNames: commonNames,
-        confidence: topMatch.probability,
-        description: topMatch.details?.description || '',
-        taxonomy: topMatch.details?.taxonomy || {},
-        wikiUrl: topMatch.details?.url || ''
-      };
+    if (!PLANT_ID_API_KEY) {
+      throw new Error('Plant search service not configured - missing API key');
     }
-    
-    // Log if the response format doesn't match expectations
-    console.log('Unexpected response format from Plant ID API:', 
-                JSON.stringify(identificationResults).substring(0, 200) + '...');
-    return null;
+
+    console.log('🔍 Searching for plant by name:', plantName);
+
+    // Use the Plant.ID knowledge base search endpoint
+    const response = await axios.get(`${PLANT_ID_BASE_URL}/kb/plants/name_search`, {
+      params: {
+        q: plantName,
+        limit: 5
+      },
+      headers: {
+        'Api-Key': PLANT_ID_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      timeout: 30000
+    });
+
+    console.log('✅ Plant search successful');
+    return response.data;
   } catch (error) {
-    console.error('Error extracting plant data:', error);
+    console.error('❌ Plant.ID Search API Error:', error.response?.data || error.message);
+    
+    if (error.response?.status === 401) {
+      throw new Error('Invalid API key for plant search service');
+    } else if (error.response?.status === 429) {
+      throw new Error('Too many requests to plant search service');
+    } else if (error.code === 'ECONNABORTED') {
+      throw new Error('Plant search service timeout');
+    } else if (error.response?.status === 402) {
+      throw new Error('Plant search service quota exceeded');
+    } else {
+      throw new Error('Failed to search plant using Plant.ID API');
+    }
+  }
+};
+
+// Extract simplified plant data from API response
+exports.extractPlantData = (apiResponse) => {
+  if (!apiResponse || !apiResponse.result) {
     return null;
   }
+
+  const result = apiResponse.result;
+  
+  if (result.classification && result.classification.suggestions) {
+    const suggestions = result.classification.suggestions.map(suggestion => ({
+      plant_name: suggestion.name,
+      plant_common_names: suggestion.details?.common_names || [],
+      probability: suggestion.probability,
+      plant_details: suggestion.details
+    }));
+
+    return {
+      suggestions,
+      is_plant: result.is_plant || { probability: 0.5 }
+    };
+  }
+
+  return null;
+};
+
+// Mock identification function for when API key is not available
+exports.mockIdentifyPlant = async () => {
+  console.log('🔧 Using mock plant identification (no API key configured)');
+  
+  return {
+    result: {
+      is_plant: { probability: 0.8, binary: true },
+      classification: {
+        suggestions: [
+          {
+            id: "mock-plant-id",
+            name: "Epipremnum aureum",
+            probability: 0.85,
+            details: {
+              common_names: ["Golden Pothos", "Devil's Ivy", "Money Plant"],
+              description: {
+                value: "This is a mock plant identification result. Epipremnum aureum, commonly known as Golden Pothos or Devil's Ivy, is a popular houseplant known for its heart-shaped leaves and trailing vines. Please configure your Plant.ID API key for real plant identification.",
+                citation: "Mock data for development"
+              },
+              taxonomy: {
+                kingdom: "Plantae",
+                phylum: "Tracheophyta", 
+                class: "Liliopsida",
+                order: "Alismatales",
+                family: "Araceae",
+                genus: "Epipremnum",
+                species: "E. aureum"
+              },
+              url: "https://en.wikipedia.org/wiki/Epipremnum_aureum",
+              gbif_id: 2752880,
+              inaturalist_id: 48384
+            }
+          }
+        ]
+      }
+    }
+  };
 };

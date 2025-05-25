@@ -88,66 +88,78 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
       console.log("Plant identification response:", response);
       
       // Process the API response
-      const responseData = response.data;
-      
-      // Handle Plant.ID v3 API response format
-      if (responseData && responseData.result && responseData.result.classification) {
-        const suggestions = responseData.result.classification.suggestions;
+      if (response.success && response.data) {
+        const responseData = response.data;
         
-        if (suggestions && suggestions.length > 0) {
-          const topMatch = suggestions[0];
-          setIdentificationResults(topMatch);
+        // Handle Plant.ID v3 API response format
+        if (responseData && responseData.result && responseData.result.classification) {
+          const suggestions = responseData.result.classification.suggestions;
           
-          // Extract and organize detailed plant information for v3 API
-          const details = {
-            scientificName: topMatch.name,
-            commonName: topMatch.details?.common_names?.[0] || topMatch.name,
-            allCommonNames: topMatch.details?.common_names || [],
-            confidence: topMatch.probability,
-            description: topMatch.details?.description || '',
-            taxonomy: topMatch.details?.taxonomy || {},
-            family: topMatch.details?.taxonomy?.family || 'Unknown',
-            genus: topMatch.details?.taxonomy?.genus || 'Unknown',
-            wikiUrl: topMatch.details?.url || ''
-          };
-          
-          setPlantDetails(details);
-          
-          // Auto-fill plant name and type if available
-          if (details.commonName) {
-            setPlantName(details.commonName);
-          }
-          
-          if (details.allCommonNames && details.allCommonNames.length > 0) {
-            setPlantType(details.allCommonNames[0]);
-          }
-          
-          // Add comprehensive identification info to notes
-          if (details.description) {
-            const careInfo = Object.entries(generateCareInfo(details))
-              .map(([key, value]) => `• ${value}`)
-              .join('\n');
+          if (suggestions && suggestions.length > 0) {
+            const topMatch = suggestions[0];
+            setIdentificationResults(topMatch);
             
-            setNotes(`${details.description.substring(0, 150)}...\n\n${careInfo}`);
+            // Extract and organize detailed plant information for v3 API
+            const details = {
+              scientificName: topMatch.name,
+              commonName: topMatch.common_names?.[0] || topMatch.details?.common_names?.[0] || topMatch.name,
+              allCommonNames: topMatch.common_names || topMatch.details?.common_names || [],
+              confidence: topMatch.probability,
+              description: topMatch.description || topMatch.details?.description?.value || topMatch.details?.description || '',
+              taxonomy: topMatch.taxonomy || topMatch.details?.taxonomy || {},
+              family: topMatch.family || topMatch.details?.taxonomy?.family || 'Unknown',
+              genus: topMatch.genus || topMatch.details?.taxonomy?.genus || 'Unknown',
+              wikiUrl: topMatch.url || topMatch.details?.url || ''
+            };
+            
+            setPlantDetails(details);
+            
+            // Auto-fill plant name and type if available
+            if (details.commonName && details.commonName !== details.scientificName) {
+              setPlantName(details.commonName);
+            } else {
+              setPlantName(details.scientificName);
+            }
+            
+            if (details.allCommonNames && details.allCommonNames.length > 0) {
+              setPlantType(details.allCommonNames[0]);
+            }
+            
+            // Add comprehensive identification info to notes
+            if (details.description) {
+              const careInfo = Object.entries(generateCareInfo(details))
+                .map(([key, value]) => `• ${value}`)
+                .join('\n');
+              
+              setNotes(`${details.description.substring(0, 150)}...\n\n${careInfo}`);
+            }
+            
+            // Automatically show image preview when identification is successful
+            setShowImagePreview(true);
+          } else {
+            setError("The plant couldn't be identified clearly. Please enter details manually or try another image.");
           }
-          
-          // Automatically show image preview when identification is successful
-          setShowImagePreview(true);
         } else {
           setError("The plant couldn't be identified clearly. Please enter details manually or try another image.");
         }
       } else {
-        setError("The plant couldn't be identified clearly. Please enter details manually or try another image.");
+        setError("Failed to get identification results. Please try again.");
       }
     } catch (err) {
       console.error('Plant identification error:', err);
-      let errorMessage = 'Could not identify the plant. Please enter details manually or try another image.';
+      let errorMessage = err.message || 'Could not identify the plant. Please enter details manually or try another image.';
       
-      if (err.response) {
-        console.log("Server returned error:", err.response.data);
-        if (err.response.data?.error) {
-          errorMessage = `API Error: ${err.response.data.error}`;
-        }
+      // Handle specific error cases
+      if (errorMessage.includes('Network error')) {
+        errorMessage = 'Network connection error. Please check your internet connection and try again.';
+      } else if (errorMessage.includes('Invalid API key')) {
+        errorMessage = 'Plant identification service is not properly configured. Please try again later.';
+      } else if (errorMessage.includes('Too many requests')) {
+        errorMessage = 'Too many identification requests. Please wait a moment and try again.';
+      } else if (errorMessage.includes('timeout')) {
+        errorMessage = 'The identification service is taking too long. Please try again with a different image.';
+      } else if (errorMessage.includes('quota exceeded')) {
+        errorMessage = 'Plant identification service quota exceeded. Please try again later.';
       }
       
       setError(errorMessage);
@@ -245,7 +257,11 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!plantName || !capturedImage) return;
+    // Allow submission with just plant name, without requiring an image
+    if (!plantName) {
+      setError("Please enter a plant name");
+      return;
+    }
     
     try {
       // Prepare plant data for saving to database
@@ -253,7 +269,7 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
         name: plantName,
         species: plantDetails?.scientificName || plantType || "Unknown",
         nickname: plantName,
-        mainImage: capturedImage,
+        mainImage: capturedImage || null, // Allow null if no image
         notes: notes,
         status: "Healthy",
         scientificDetails: plantDetails ? {
@@ -432,6 +448,24 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
                         </button>
                       </form>
 
+                      {/* Manual Entry Option */}
+                      <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
+                          Can't find your plant? You can add it manually by entering the details below.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            // Set a placeholder image so the form can be submitted
+                            setCapturedImage('manual-entry');
+                            setSearchMode('manual');
+                          }}
+                          className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline"
+                        >
+                          Skip identification and add manually
+                        </button>
+                      </div>
+
                       {/* Search Results */}
                       {searchResults.length > 0 && (
                         <div className="mt-4 space-y-2">
@@ -447,6 +481,8 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
                                   commonName: result.details?.common_names?.[0] || result.name,
                                   // ...other details
                                 });
+                                // Set a placeholder so form can be submitted
+                                setCapturedImage('text-search-result');
                               }}
                             >
                               <p className="font-medium text-gray-900 dark:text-gray-100">
@@ -461,9 +497,44 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
                       )}
                     </div>
                   </div>
+                ) : searchMode === 'manual' ? (
+                  // Manual entry mode
+                  <div className="space-y-4">
+                    <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                      <h3 className="font-medium text-green-800 dark:text-green-300 mb-2">Manual Entry Mode</h3>
+                      <p className="text-sm text-green-600 dark:text-green-400">
+                        Fill in the plant details below. You can add photos later from the plant details page.
+                      </p>
+                    </div>
+                    
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchMode('image');
+                        setCapturedImage(null);
+                      }}
+                      className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline"
+                    >
+                      ← Back to image/search options
+                    </button>
+                  </div>
                 ) : (
                   // Existing image capture/upload interface
                   <div className="relative h-80 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border dark:border-gray-700">
+                    {/* Add manual entry option */}
+                    <div className="absolute top-2 right-2 z-10">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCapturedImage('manual-entry');
+                          setSearchMode('manual');
+                        }}
+                        className="bg-white dark:bg-gray-700 px-3 py-1 rounded-full text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors border border-gray-200 dark:border-gray-600"
+                      >
+                        Add manually
+                      </button>
+                    </div>
+
                     {showCamera ? (
                       // Camera View
                       <div className="relative h-full">
@@ -641,9 +712,9 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
               </button>
               <button
                 type="submit"
-                disabled={!capturedImage || !plantName || isIdentifying}
+                disabled={!plantName || isIdentifying}
                 className={`flex-1 bg-green-600 text-white px-4 py-3 rounded-lg transition-colors shadow-sm font-medium flex items-center justify-center ${
-                  !capturedImage || !plantName || isIdentifying ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-700'
+                  !plantName || isIdentifying ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-700'
                 }`}
               >
                 {isIdentifying ? (

@@ -244,28 +244,42 @@ export const plantAPI = {
   
   // Create a new plant with proper image handling
   createPlant: async (plantData) => {
-    // Check if we need to upload the image to Cloudinary first
-    let processedData = { ...plantData };
-    
-    // If mainImage is a base64 or data URL, upload to Cloudinary
-    if (plantData.mainImage && typeof plantData.mainImage === 'string' && 
-        (plantData.mainImage.startsWith('data:') || plantData.mainImage.startsWith('base64'))) {
-      try {
-        console.log("Uploading plant image to Cloudinary...");
-        const imageUrl = await uploadToCloudinary(plantData.mainImage);
-        processedData.mainImage = imageUrl;
-        
-        // Also add to images array as per backend model
-        processedData.images = [{ url: imageUrl }];
-      } catch (err) {
-        console.error("Error uploading image:", err);
-        throw new Error("Failed to upload plant image");
+    try {
+      console.log('Creating plant with data:', plantData);
+      
+      // Check if we need to upload the image to Cloudinary first
+      let processedData = { ...plantData };
+      
+      // If mainImage is a base64 or data URL, upload to Cloudinary
+      if (plantData.mainImage && typeof plantData.mainImage === 'string' && 
+          (plantData.mainImage.startsWith('data:') || plantData.mainImage.startsWith('base64'))) {
+        try {
+          console.log("Uploading plant image to Cloudinary...");
+          const imageUrl = await uploadToCloudinary(plantData.mainImage);
+          processedData.mainImage = imageUrl;
+          
+          // Also add to images array as per backend model
+          processedData.images = [{ url: imageUrl }];
+        } catch (err) {
+          console.error("Error uploading image:", err);
+          throw new Error("Failed to upload plant image");
+        }
+      }
+      
+      const response = await api.post('/plants', processedData);
+      console.log('Plant created successfully:', response.data);
+      return response.data.data; // Return the plant data from the response
+    } catch (error) {
+      console.error('Create plant API error:', error);
+      
+      if (error.response) {
+        throw new Error(error.response.data?.error || 'Failed to create plant');
+      } else if (error.request) {
+        throw new Error('Network error - please check your connection');
+      } else {
+        throw new Error('Failed to create plant');
       }
     }
-    
-    console.log("Creating plant with processed data:", processedData);
-    const response = await api.post('/plants', processedData);
-    return response.data;
   },
   
   // Update a plant
@@ -292,164 +306,67 @@ export const plantAPI = {
     return response.data;
   },
   
-  /**
-   * Send a plant image to the backend for identification
-   * @param {string} imageData - Either a URL or base64 image data
-   * @returns {Promise<object>} - Plant identification results
-   */
+  // Plant identification endpoint
   identifyPlant: async (imageData) => {
     try {
-      console.log("Plant identification initiated");
+      console.log('Making plant identification request...');
       
-      // Get API key from environment or config
-      const plantIdApiKey = import.meta.env.VITE_PLANT_ID_API_KEY;
-      
-      if (!plantIdApiKey) {
-        console.warn("WARNING: No Plant.id API key found!");
-        throw new Error("Plant.id API key is missing");
+      // Convert data URL to base64 if needed
+      let base64Image = imageData;
+      if (imageData.startsWith('data:')) {
+        base64Image = imageData.split(',')[1];
       }
       
-      // Format the image data properly
-      let base64Data = imageData;
-      if (typeof imageData === 'string' && imageData.startsWith('data:image')) {
-        // Image is already in proper format
-        base64Data = imageData.split(',')[1]; // Extract the base64 part
-      } else if (typeof imageData === 'string' && imageData.startsWith('http')) {
-        // Send the URL directly to backend for processing
-        const response = await api.post('/plants/identify', { imageUrl: imageData });
-        return response.data;
-      } else if (typeof imageData === 'string') {
-        // If it's base64 without the prefix, use as is
-        base64Data = imageData;
-      }
+      const response = await api.post('/plants/identify', {
+        base64Image: base64Image
+      });
       
-      // Create payload according to plant.id API format
-      const payload = {
-        images: [`data:image/jpeg;base64,${base64Data}`],
-        latitude: null,  // Optional: add actual coordinates if available
-        longitude: null,
-        similar_images: true
-      };
-      
-      console.log("Sending plant identification request to backend");
-      
-      // Send to backend for identification instead of directly to Plant.id
-      const response = await api.post('/plants/identify', { base64Image: base64Data });
-      
-      return response.data;
-    } catch (err) {
-      console.error("Plant identification error:", err);
-      if (err.response) {
-        console.log("Error response data:", err.response.data);
-        console.log("Error response status:", err.response.status);
-      }
-      throw err;
-    }
-  },
-
-  searchPlantByName: async (query) => {
-    try {
-      const response = await axios.post('/api/plants/search', { query });
+      console.log('Plant identification response received:', response.data);
       return response.data;
     } catch (error) {
-      throw error;
-    }
-  },
-};
-
-// Weather API endpoints
-export const weatherAPI = {
-  getCurrentWeather: async (location) => {
-    try {
-      const token = localStorage.getItem('authToken');
-      const params = location ? `?location=${encodeURIComponent(location)}` : '';
-      const response = await fetch(`${API_URL}/weather${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      console.error('Plant identification API error:', error);
+      
+      // Provide more specific error information
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response data:', error.response.data);
+        
+        // Handle specific server errors
+        if (error.response.status === 500) {
+          throw new Error('Plant identification service is currently unavailable. Please try again later or enter plant details manually.');
         }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Weather API error: ${response.statusText}`);
+        
+        throw new Error(error.response.data?.error || 'Failed to identify plant');
+      } else if (error.request) {
+        throw new Error('Network error - please check your connection');
+      } else {
+        throw new Error('Failed to identify plant');
       }
-      
-      return response.json();
-    } catch (error) {
-      console.error('Weather API Error:', error);
-      throw error;
     }
   },
 
-  getWeatherRecommendations: async (location) => {
+  // Text-based plant search endpoint
+  searchPlantByName: async (plantName) => {
     try {
-      const token = localStorage.getItem('authToken');
-      const params = location ? `?location=${encodeURIComponent(location)}` : '';
-      const response = await fetch(`${API_URL}/weather/recommendations${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      console.log('Making plant search request for:', plantName);
       
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Weather recommendations error: ${response.statusText}`);
-      }
+      const response = await api.get(`/plants/search?name=${encodeURIComponent(plantName)}`);
       
-      return response.json();
+      console.log('Plant search response received:', response.data);
+      return response.data;
     } catch (error) {
-      console.error('Weather Recommendations API Error:', error);
-      throw error;
-    }
-  },
-
-  getWeatherForecast: async (location) => {
-    try {
-      const token = localStorage.getItem('authToken');
-      const params = location ? `?location=${encodeURIComponent(location)}` : '';
-      const response = await fetch(`${API_URL}/weather/forecast${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      console.error('Plant search API error:', error);
+      
+      if (error.response) {
+        if (error.response.status === 500) {
+          throw new Error('Plant search service is currently unavailable. Please try again later.');
         }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Weather forecast error: ${response.statusText}`);
+        throw new Error(error.response.data?.error || 'Failed to search plants');
+      } else if (error.request) {
+        throw new Error('Network error - please check your connection');
+      } else {
+        throw new Error('Failed to search plants');
       }
-      
-      return response.json();
-    } catch (error) {
-      console.error('Weather Forecast API Error:', error);
-      throw error;
-    }
-  },
-
-  searchLocations: async (query) => {
-    try {
-      const token = localStorage.getItem('authToken');
-      const params = query ? `?q=${encodeURIComponent(query)}` : '';
-      const response = await fetch(`${API_URL}/weather/search${params}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Location search error: ${response.statusText}`);
-      }
-      
-      return response.json();
-    } catch (error) {
-      console.error('Location Search API Error:', error);
-      throw error;
     }
   }
 };
-
-export default api;

@@ -1,6 +1,15 @@
 const Plant = require('../models/Plant');
 const axios = require('axios');
-const plantIdentification = require('../services/plantIdentification');
+
+// Try to import plant identification service, with fallback
+let plantIdentification;
+try {
+  plantIdentification = require('../services/plantIdentification');
+  console.log('✅ Plant identification service loaded successfully');
+} catch (error) {
+  console.warn('⚠️  Plant identification service not found, features will be limited');
+  plantIdentification = null;
+}
 
 // @desc    Create new plant
 // @route   POST /api/plants
@@ -266,45 +275,67 @@ exports.identifyPlant = async (req, res, next) => {
       });
     }
     
-    console.log('Attempting to identify plant with image:', imageUrl ? 'URL provided' : 'Base64 image provided');
+    console.log('🔍 Attempting to identify plant with image:', imageUrl ? 'URL provided' : 'Base64 image provided');
+    
+    // Check if plantIdentification service exists
+    if (!plantIdentification) {
+      console.warn('⚠️  Plant identification service not available');
+      return res.status(503).json({
+        success: false,
+        error: 'Plant identification service is not available. Please configure the Plant.ID API key or try entering plant details manually.'
+      });
+    }
     
     let identificationResults;
     
-    if (imageUrl) {
-      // Identify using image URL
-      identificationResults = await plantIdentification.identifyPlantByUrl(imageUrl);
-    } else if (base64Image) {
-      // Identify using base64 image
-      identificationResults = await plantIdentification.identifyPlantByBase64(base64Image);
+    // Check if API key is configured
+    if (!process.env.PLANT_ID_API_KEY) {
+      console.log('🔧 No API key configured, using mock identification');
+      identificationResults = await plantIdentification.mockIdentifyPlant();
+    } else {
+      if (imageUrl) {
+        // Identify using image URL
+        identificationResults = await plantIdentification.identifyPlantByUrl(imageUrl);
+      } else if (base64Image) {
+        // Identify using base64 image
+        identificationResults = await plantIdentification.identifyPlantByBase64(base64Image);
+      }
     }
     
-    console.log('Plant identification successful, processing results');
+    console.log('✅ Plant identification completed, processing results');
     
-    // Extract simplified plant data, with emphasis on common name
-    const simplifiedData = plantIdentification.extractPlantData(identificationResults);
-    
-    // Ensure common name is used instead of scientific name
-    if (simplifiedData && simplifiedData.suggestions && simplifiedData.suggestions.length > 0) {
-      // Prioritize common name display for each suggestion
-      simplifiedData.suggestions = simplifiedData.suggestions.map(suggestion => {
-        return {
-          ...suggestion,
-          plant_name: suggestion.plant_common_names && suggestion.plant_common_names.length > 0 
-            ? suggestion.plant_common_names[0] 
-            : suggestion.plant_name // fallback to whatever name is available
-        };
-      });
+    // Process the Plant.ID v3 API response format
+    if (identificationResults && identificationResults.result) {
+      const result = identificationResults.result;
+      
+      // Extract suggestions with proper structure for v3 API
+      if (result.classification && result.classification.suggestions) {
+        const processedSuggestions = result.classification.suggestions.map(suggestion => {
+          return {
+            ...suggestion,
+            // Ensure common names are easily accessible
+            common_names: suggestion.details?.common_names || [],
+            description: suggestion.details?.description?.value || suggestion.details?.description || '',
+            taxonomy: suggestion.details?.taxonomy || {},
+            family: suggestion.details?.taxonomy?.family || 'Unknown',
+            genus: suggestion.details?.taxonomy?.genus || 'Unknown',
+            url: suggestion.details?.url || ''
+          };
+        });
+        
+        // Update the response structure
+        identificationResults.result.classification.suggestions = processedSuggestions;
+      }
     }
     
     // Return the identification results
     res.status(200).json({
       success: true,
-      data: identificationResults,
-      simplifiedData
+      data: identificationResults
     });
     
   } catch (err) {
-    console.error('Plant identification error:', err.message);
+    console.error('❌ Plant identification error:', err.message);
     // Log more details if available
     if (err.response) {
       console.error('Response status:', err.response.status);
@@ -313,7 +344,53 @@ exports.identifyPlant = async (req, res, next) => {
     
     res.status(500).json({ 
       success: false, 
-      error: 'Error identifying plant',
+      error: 'Error identifying plant: ' + err.message,
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
+// @desc    Search plant by name using plant.id API
+// @route   GET /api/plants/search?name=plantname
+// @access  Private
+exports.searchPlantByName = async (req, res, next) => {
+  try {
+    const { name } = req.query;
+    
+    if (!name) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Please provide a plant name to search' 
+      });
+    }
+    
+    console.log('🔍 Searching for plant by name:', name);
+    
+    // Check if plantIdentification service exists
+    if (!plantIdentification || !plantIdentification.searchPlantByName) {
+      return res.status(503).json({
+        success: false,
+        error: 'Plant search service is not available. Please configure the Plant.ID API key.'
+      });
+    }
+    
+    // Use plant identification service to search by name
+    const searchResults = await plantIdentification.searchPlantByName(name);
+    
+    console.log('✅ Plant search completed successfully');
+    
+    // Return the search results
+    res.status(200).json({
+      success: true,
+      data: searchResults
+    });
+    
+  } catch (err) {
+    console.error('❌ Plant search error:', err.message);
+    
+    res.status(500).json({ 
+      success: false, 
+      error: 'Error searching for plant: ' + err.message,
       details: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
   }
