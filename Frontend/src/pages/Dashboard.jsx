@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Plus, Sun, Wind, Thermometer, MapPin, Camera, Cloud, 
-  Umbrella, ArrowRight, AlertCircle, Droplets, ChevronDown, Calendar, Edit, Trash2, MoreVertical, AlertTriangle
+  Umbrella, ArrowRight, AlertCircle, Droplets, ChevronDown, Calendar, Edit, Trash2, MoreVertical, AlertTriangle,
+  Bell
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import { auth } from '../firebase';
@@ -31,6 +32,7 @@ const Dashboard = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [editingPlant, setEditingPlant] = useState(null);
+  const [notifications, setNotifications] = useState(0); // Changed from 3 to 0
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -218,6 +220,18 @@ const Dashboard = () => {
     }
   };
 
+  // Notification Bell component
+  const NotificationBell = () => (
+    <button className="relative p-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
+      <Bell size={24} /> {/* Increased from 20 to 24 */}
+      {notifications > 0 && (
+        <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"> {/* Adjusted position and size */}
+          {notifications > 9 ? '9+' : notifications}
+        </span>
+      )}
+    </button>
+  );
+
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar 
@@ -242,6 +256,7 @@ const Dashboard = () => {
                 <h1 className="text-2xl font-bold text-gray-800 dark:text-white ml-2">My Garden Dashboard</h1>
               </div>
               <div className="flex items-center gap-4">
+                <NotificationBell />
                 <DarkModeToggle />
                 <span className="text-sm text-gray-500 dark:text-gray-400">
                   {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
