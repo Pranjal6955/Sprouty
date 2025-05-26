@@ -1,10 +1,14 @@
 import React from 'react';
-import { X, Calendar, Droplets, ThermometerSun, Wind, Sun, Ruler, FileText, Leaf, AlertTriangle } from 'lucide-react';
+import { 
+  X, Calendar, Droplets, ThermometerSun, Wind, Sun, 
+  Ruler, FileText, Leaf, AlertTriangle, Info, 
+  FlowerIcon, Sprout, ShieldAlert, Globe
+} from 'lucide-react';
 
 const PlantDetails = ({ plant, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4 animate-fadeIn">
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg w-full max-w-3xl max-h-[90vh] overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
         {/* Header with image */}
         <div className="relative h-64 sm:h-72">
           <img 
@@ -63,38 +67,109 @@ const PlantDetails = ({ plant, onClose }) => {
             </div>
           </div>
 
-          {/* Care Information */}
-          <div className="space-y-6">
+          {/* Detailed Information */}
+          <div className="space-y-6 mt-6">
+            {/* Basic Information */}
             <section>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Care Instructions</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex items-start p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <ThermometerSun size={20} className="text-orange-500 mt-1 mr-3" />
-                  <div>
-                    <h4 className="font-medium text-gray-900 dark:text-gray-100">Light</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Bright, indirect sunlight</p>
-                  </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                <Info className="mr-2" size={20} />
+                Plant Information
+              </h3>
+              <div className="grid gap-4">
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Common Names</h4>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    {plant.commonNames?.join(', ') || plant.nickname}
+                  </p>
                 </div>
-                <div className="flex items-start p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <Droplets size={20} className="text-blue-500 mt-1 mr-3" />
-                  <div>
-                    <h4 className="font-medium text-gray-900 dark:text-gray-100">Water</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Keep soil moist but not wet</p>
-                  </div>
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Description</h4>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    {plant.description || "A beautiful plant that adds life to any space. This species is known for its distinctive features and growth patterns."}
+                  </p>
                 </div>
-                <div className="flex items-start p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <Wind size={20} className="text-teal-500 mt-1 mr-3" />
-                  <div>
-                    <h4 className="font-medium text-gray-900 dark:text-gray-100">Humidity</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Prefers high humidity</p>
-                  </div>
+              </div>
+            </section>
+
+            {/* Usage & Benefits */}
+            <section>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                <FlowerIcon className="mr-2" size={20} />
+                Usage & Benefits
+              </h3>
+              <div className="grid gap-4">
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Edible Parts</h4>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    {plant.edibleParts || "No edible parts known for this plant."}
+                  </p>
                 </div>
-                <div className="flex items-start p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <Ruler size={20} className="text-violet-500 mt-1 mr-3" />
-                  <div>
-                    <h4 className="font-medium text-gray-900 dark:text-gray-100">Size</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Can grow up to 3 feet tall</p>
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Medicinal Uses</h4>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    {plant.medicinalUses || "No known medicinal properties."}
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Detailed Care Instructions */}
+            <section>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                <Sprout className="mr-2" size={20} />
+                Detailed Care Guide
+              </h3>
+              <div className="grid gap-4">
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Watering Method</h4>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    {plant.wateringMethod || "Water thoroughly when the top inch of soil feels dry. Ensure good drainage and avoid water logging. Best watered in the morning."}
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Lighting Conditions</h4>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    {plant.lightingConditions || "Thrives in bright, indirect sunlight. Protect from harsh afternoon sun. Can tolerate some shade but may affect growth rate."}
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Soil Requirements</h4>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    {plant.soilType || "Well-draining, rich potting mix. Prefers slightly acidic soil with good organic content. Add perlite for improved drainage."}
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Safety & Cultural Information */}
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                  <ShieldAlert className="mr-2" size={20} />
+                  Toxicity Information
+                </h3>
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                  <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium mb-2 ${
+                    plant.isToxic ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' 
+                    : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                  }`}>
+                    {plant.isToxic ? 'Toxic' : 'Non-toxic'}
                   </div>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    {plant.toxicityInfo || "No specific toxicity information available. Always keep plants out of reach of children and pets."}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                  <Globe className="mr-2" size={20} />
+                  Cultural Significance
+                </h3>
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                  <p className="text-gray-600 dark:text-gray-300">
+                    {plant.culturalSignificance || "This plant has been cultivated for generations and is valued in many cultures for its beauty and benefits."}
+                  </p>
                 </div>
               </div>
             </section>
