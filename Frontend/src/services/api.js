@@ -230,132 +230,123 @@ export const userAPI = {
 
 // Plant Services
 export const plantAPI = {
-  // Get all plants
-  getPlants: async () => {
-    const response = await api.get('/plants');
-    return response.data;
-  },
-  
-  // Get single plant by ID
-  getPlant: async (plantId) => {
-    const response = await api.get(`/plants/${plantId}`);
-    return response.data;
-  },
-  
-  // Create a new plant with proper image handling
+  // Create a new plant
   createPlant: async (plantData) => {
     try {
-      console.log('Creating plant with data:', plantData);
-      
-      // Check if we need to upload the image to Cloudinary first
-      let processedData = { ...plantData };
-      
-      // If mainImage is a base64 or data URL, upload to Cloudinary
-      if (plantData.mainImage && typeof plantData.mainImage === 'string' && 
-          (plantData.mainImage.startsWith('data:') || plantData.mainImage.startsWith('base64'))) {
-        try {
-          console.log("Uploading plant image to Cloudinary...");
-          const imageUrl = await uploadToCloudinary(plantData.mainImage);
-          processedData.mainImage = imageUrl;
-          
-          // Also add to images array as per backend model
-          processedData.images = [{ url: imageUrl }];
-        } catch (err) {
-          console.error("Error uploading image:", err);
-          throw new Error("Failed to upload plant image");
-        }
-      }
-      
-      const response = await api.post('/plants', processedData);
-      console.log('Plant created successfully:', response.data);
-      return response.data.data; // Return the plant data from the response
-    } catch (error) {
-      console.error('Create plant API error:', error);
-      
-      if (error.response) {
-        throw new Error(error.response.data?.error || 'Failed to create plant');
-      } else if (error.request) {
-        throw new Error('Network error - please check your connection');
-      } else {
-        throw new Error('Failed to create plant');
-      }
-    }
-  },
-  
-  // Update a plant
-  updatePlant: async (plantId, plantData) => {
-    const response = await api.put(`/plants/${plantId}`, plantData);
-    return response.data;
-  },
-  
-  // Delete a plant
-  deletePlant: async (plantId) => {
-    const response = await api.delete(`/plants/${plantId}`);
-    return response.data;
-  },
-  
-  // Update plant care history
-  updateCareHistory: async (plantId, careData) => {
-    const response = await api.put(`/plants/${plantId}/care`, careData);
-    return response.data;
-  },
-  
-  // Add a growth milestone
-  addGrowthMilestone: async (plantId, milestoneData) => {
-    const response = await api.post(`/plants/${plantId}/growth`, milestoneData);
-    return response.data;
-  },
-  
-  // Plant identification endpoint
-  identifyPlant: async (imageData) => {
-    try {
-      console.log('Making plant identification request...');
-      
-      // Convert data URL to base64 if needed
-      let base64Image = imageData;
-      if (imageData.startsWith('data:')) {
-        base64Image = imageData.split(',')[1];
-      }
-      
-      const response = await api.post('/plants/identify', {
-        base64Image: base64Image
-      });
-      
-      console.log('Plant identification response received:', response.data);
+      const response = await api.post('/plants', plantData);
       return response.data;
     } catch (error) {
-      console.error('Plant identification API error:', error);
+      throw error.response?.data || error;
+    }
+  },
+
+  // Get all plants for the current user
+  getAllPlants: async () => {
+    try {
+      const response = await api.get('/plants');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Get all plants (alias for getAllPlants for compatibility)
+  getPlants: async () => {
+    try {
+      const response = await api.get('/plants');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Get a specific plant by ID
+  getPlant: async (plantId) => {
+    try {
+      const response = await api.get(`/plants/${plantId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Update a plant
+  updatePlant: async (plantId, updateData) => {
+    try {
+      const response = await api.put(`/plants/${plantId}`, updateData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Delete a plant
+  deletePlant: async (plantId) => {
+    try {
+      const response = await api.delete(`/plants/${plantId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Update plant care history
+  updateCareHistory: async (plantId, careData) => {
+    try {
+      const response = await api.put(`/plants/${plantId}/care`, careData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Add growth milestone
+  addGrowthMilestone: async (plantId, milestoneData) => {
+    try {
+      const response = await api.post(`/plants/${plantId}/growth`, milestoneData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Identify plant from image
+  identifyPlant: async (imageData) => {
+    try {
+      let requestData;
       
-      // Provide more specific error information
-      if (error.response) {
-        console.error('Response status:', error.response.status);
-        console.error('Response data:', error.response.data);
-        
-        // Handle specific server errors
-        if (error.response.status === 500) {
-          throw new Error('Plant identification service is currently unavailable. Please try again later or enter plant details manually.');
+      // Check if imageData is a base64 string or URL
+      if (typeof imageData === 'string') {
+        if (imageData.startsWith('data:image/')) {
+          // It's a base64 image
+          const base64Data = imageData.split(',')[1]; // Remove data:image/jpeg;base64, prefix
+          requestData = { base64Image: base64Data };
+        } else if (imageData.startsWith('http') || imageData.startsWith('https')) {
+          // It's a URL
+          requestData = { imageUrl: imageData };
+        } else {
+          // Assume it's base64 without prefix
+          requestData = { base64Image: imageData };
         }
-        
-        throw new Error(error.response.data?.error || 'Failed to identify plant');
-      } else if (error.request) {
-        throw new Error('Network error - please check your connection');
       } else {
-        throw new Error('Failed to identify plant');
+        // If it's an object, pass it as is
+        requestData = imageData;
       }
+
+      const response = await api.post('/plants/identify', requestData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
     }
   },
 
   // Search plant by name
   searchPlantByName: async (plantName) => {
     try {
-      console.log('Making search request for:', plantName);
       const response = await api.get(`/plants/search?name=${encodeURIComponent(plantName)}`);
-      console.log('Search API response:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Plant search API error:', error);
-      console.error('Error response:', error.response?.data);
-      throw new Error(error.response?.data?.error || 'Failed to search for plants');
+      throw error.response?.data || error;
     }
   }
 };

@@ -1,44 +1,87 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
-import { Search, Droplets, AlertCircle, Scissors, Flower, Edit, Check, X } from 'lucide-react';
+import { Search, Droplets, AlertCircle, Scissors, Flower, Edit, Check, X, Loader } from 'lucide-react';
+import { plantAPI } from '../services/api';
 
 const PlantLogCard = ({ plant, onNotesUpdate }) => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
-  const [editedNotes, setEditedNotes] = useState(plant.notes);
+  const [editedNotes, setEditedNotes] = useState(plant.notes || '');
 
-  const handleNotesSubmit = () => {
-    onNotesUpdate(plant.id, editedNotes);
-    setIsEditingNotes(false);
+  const handleNotesSubmit = async () => {
+    try {
+      await onNotesUpdate(plant.id, editedNotes);
+      setIsEditingNotes(false);
+    } catch (error) {
+      console.error('Error updating notes:', error);
+    }
   };
 
   const handleCancel = () => {
-    setEditedNotes(plant.notes);
+    setEditedNotes(plant.notes || '');
     setIsEditingNotes(false);
   };
+
+  // Calculate health status based on plant data
+  const getHealthStatus = (plant) => {
+    if (plant.status === 'Sick') return 'Poor';
+    if (plant.status === 'Needs Attention') return 'Fair';
+    return 'Good';
+  };
+
+  // Format date strings
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Never';
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return dateString;
+    }
+  };
+
+  // Get the most recent care action of each type
+  const getLastCareAction = (careHistory, actionType) => {
+    if (!careHistory || !Array.isArray(careHistory)) return 'Never';
+    
+    const actions = careHistory.filter(action => action.actionType === actionType);
+    if (actions.length === 0) return 'Never';
+    
+    return formatDate(actions[0].date);
+  };
+
+  const health = getHealthStatus(plant);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-4 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
           <div className="relative">
-            <img src={plant.image} alt={plant.name} className="w-16 h-16 rounded-xl object-cover ring-2 ring-green-100 dark:ring-green-900" />
+            <img 
+              src={plant.mainImage || plant.image || 'https://via.placeholder.com/64x64/e5e7eb/9ca3af?text=Plant'} 
+              alt={plant.name} 
+              className="w-16 h-16 rounded-xl object-cover ring-2 ring-green-100 dark:ring-green-900"
+              onError={(e) => {
+                e.target.src = 'https://via.placeholder.com/64x64/e5e7eb/9ca3af?text=Plant';
+              }}
+            />
             <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white dark:border-gray-800 ${
-              plant.health === 'Good' ? 'bg-green-500' :
-              plant.health === 'Fair' ? 'bg-yellow-500' :
+              health === 'Good' ? 'bg-green-500' :
+              health === 'Fair' ? 'bg-yellow-500' :
               'bg-red-500'
             }`} />
           </div>
           <div>
             <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">{plant.name}</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{plant.species}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+              {plant.species || plant.nickname || 'Unknown species'}
+            </p>
           </div>
         </div>
         <span className={`px-4 py-1.5 rounded-full text-sm font-medium ${
-          plant.health === 'Good' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-          plant.health === 'Fair' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
+          health === 'Good' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+          health === 'Fair' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
           'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
         }`}>
-          {plant.health}
+          {health}
         </span>
       </div>
 
@@ -47,28 +90,36 @@ const PlantLogCard = ({ plant, onNotesUpdate }) => {
           <Droplets className="text-blue-500" size={20} />
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400">Last Watered</p>
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{plant.lastWatered}</span>
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              {plant.lastWatered ? formatDate(plant.lastWatered) : getLastCareAction(plant.careHistory, 'Watered')}
+            </span>
           </div>
         </div>
         <div className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-700/30 p-3 rounded-lg">
           <Flower className="text-purple-500" size={20} />
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400">Last Fertilised</p>
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{plant.lastFertilised}</span>
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              {plant.lastFertilized ? formatDate(plant.lastFertilized) : getLastCareAction(plant.careHistory, 'Fertilized')}
+            </span>
           </div>
         </div>
         <div className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-700/30 p-3 rounded-lg">
           <Scissors className="text-green-500" size={20} />
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400">Last Pruning</p>
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{plant.lastPruning}</span>
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              {plant.lastPruned ? formatDate(plant.lastPruned) : getLastCareAction(plant.careHistory, 'Pruned')}
+            </span>
           </div>
         </div>
         <div className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-700/30 p-3 rounded-lg">
           <AlertCircle className="text-yellow-500" size={20} />
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Last Diagnosis</p>
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{plant.lastDiagnosis}</span>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Date Added</p>
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              {formatDate(plant.dateAdded || plant.createdAt)}
+            </span>
           </div>
         </div>
       </div>
@@ -113,7 +164,9 @@ const PlantLogCard = ({ plant, onNotesUpdate }) => {
             </div>
           </div>
         ) : (
-          <p className="text-sm text-gray-600 dark:text-gray-300">{plant.notes}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            {plant.notes || 'No notes added yet. Click edit to add notes about your plant.'}
+          </p>
         )}
       </div>
     </div>
@@ -124,33 +177,132 @@ const GardenLog = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(true);
   const [activeNavItem, setActiveNavItem] = useState('Garden Log');
   const [searchTerm, setSearchTerm] = useState('');
-  const [plantLogs, setPlantLogs] = useState([
-    {
-      id: 1,
-      name: "Peace Lily",
-      species: "Spathiphyllum",
-      image: "https://example.com/peace-lily.jpg",
-      health: "Good",
-      lastWatered: "2 days ago",
-      lastFertilised: "2 weeks ago",
-      lastPruning: "1 month ago",
-      lastDiagnosis: "No issues found",
-      notes: "Plant is thriving. New leaf growth observed."
-    },
-    // Add more plant logs as needed
-  ]);
+  const [plantLogs, setPlantLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const handleNotesUpdate = (plantId, newNotes) => {
-    setPlantLogs(prevLogs =>
-      prevLogs.map(plant =>
-        plant.id === plantId
-          ? { ...plant, notes: newNotes }
-          : plant
-      )
-    );
-    // Here you would typically also make an API call to update the backend
-    console.log(`Updating notes for plant ${plantId}:`, newNotes);
+  // Fetch plants from API
+  useEffect(() => {
+    const fetchPlants = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        console.log('Fetching plants from API...');
+        
+        // Check if plantAPI and getAllPlants method exist
+        if (!plantAPI || typeof plantAPI.getAllPlants !== 'function') {
+          console.error('plantAPI or getAllPlants method not available');
+          throw new Error('Plant API service is not properly configured');
+        }
+        
+        const response = await plantAPI.getAllPlants();
+        console.log('Fetched plants for Garden Log:', response);
+        
+        if (response && response.success) {
+          setPlantLogs(response.data || []);
+        } else {
+          console.error('API response was not successful:', response);
+          setError(response?.error || 'Failed to fetch plants');
+        }
+      } catch (err) {
+        console.error('Error fetching plants:', err);
+        
+        // Provide more specific error messages
+        let errorMessage = 'Failed to load plants. Please try again.';
+        
+        if (err.message?.includes('Plant API service is not properly configured')) {
+          errorMessage = 'Plant API service is not available. Please refresh the page.';
+        } else if (err.message?.includes('Network Error') || err.code === 'NETWORK_ERROR') {
+          errorMessage = 'Network connection error. Please check your internet connection.';
+        } else if (err.status === 401 || err.error?.includes('unauthorized')) {
+          errorMessage = 'Your session has expired. Please log in again.';
+        } else if (err.status === 403) {
+          errorMessage = 'You do not have permission to view plants.';
+        } else if (err.status === 500) {
+          errorMessage = 'Server error. Please try again later.';
+        } else if (err.message) {
+          errorMessage = err.message;
+        }
+        
+        setError(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlants();
+  }, []);
+
+  const handleNotesUpdate = async (plantId, newNotes) => {
+    try {
+      console.log('Updating notes for plant:', plantId, 'New notes:', newNotes);
+      
+      // Check if plantAPI and updatePlant method exist
+      if (!plantAPI || typeof plantAPI.updatePlant !== 'function') {
+        throw new Error('Plant API service is not properly configured');
+      }
+      
+      const response = await plantAPI.updatePlant(plantId, { notes: newNotes });
+      
+      if (response && response.success) {
+        // Update local state
+        setPlantLogs(prevLogs =>
+          prevLogs.map(plant =>
+            plant._id === plantId || plant.id === plantId
+              ? { ...plant, notes: newNotes }
+              : plant
+          )
+        );
+        console.log('Notes updated successfully');
+      } else {
+        throw new Error(response?.error || 'Failed to update notes');
+      }
+    } catch (error) {
+      console.error('Error updating plant notes:', error);
+      
+      // Show user-friendly error message
+      let errorMessage = 'Failed to update notes. Please try again.';
+      if (error.message?.includes('Plant API service is not properly configured')) {
+        errorMessage = 'Plant API service is not available. Please refresh the page.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
+      throw error;
+    }
   };
+
+  // Filter plants based on search term
+  const filteredPlants = plantLogs.filter(plant =>
+    plant.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    plant.species?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    plant.nickname?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+        <Sidebar
+          isMenuOpen={isMenuOpen}
+          setIsMenuOpen={setIsMenuOpen}
+          activeNavItem={activeNavItem}
+          setActiveNavItem={setActiveNavItem}
+        />
+        <div className="flex-1 overflow-auto">
+          <div className="p-8">
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <Loader size={48} className="animate-spin text-green-500 mx-auto mb-4" />
+                <p className="text-gray-600 dark:text-gray-300">Loading your plants...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
@@ -177,15 +329,46 @@ const GardenLog = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {plantLogs.map(plant => (
-              <PlantLogCard 
-                key={plant.id} 
-                plant={plant} 
-                onNotesUpdate={handleNotesUpdate}
-              />
-            ))}
-          </div>
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-red-600 dark:text-red-400">{error}</p>
+            </div>
+          )}
+
+          {filteredPlants.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-gray-400 dark:text-gray-500 mb-4">
+                <Flower size={64} className="mx-auto" />
+              </div>
+              <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">
+                {searchTerm ? 'No plants found' : 'No plants in your garden yet'}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                {searchTerm 
+                  ? 'Try adjusting your search terms'
+                  : 'Add your first plant to start building your garden log'
+                }
+              </p>
+              {!searchTerm && (
+                <button 
+                  onClick={() => setActiveNavItem('My Garden')}
+                  className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Add Your First Plant
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {filteredPlants.map(plant => (
+                <PlantLogCard 
+                  key={plant._id || plant.id} 
+                  plant={plant} 
+                  onNotesUpdate={handleNotesUpdate}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

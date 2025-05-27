@@ -114,6 +114,21 @@ const PlantSchema = new mongoose.Schema({
     type: mongoose.Schema.ObjectId,
     ref: 'User',
     required: true
+  },
+  // Add scientific details from plant identification
+  scientificDetails: {
+    scientificName: String,
+    commonNames: [String],
+    confidence: Number,
+    taxonomy: {
+      family: String,
+      genus: String,
+      species: String,
+      class: String,
+      order: String
+    },
+    wikiUrl: String,
+    description: String
   }
 }, {
   timestamps: true,

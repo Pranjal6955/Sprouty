@@ -310,6 +310,17 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
     setShowMoreInfo(false);
   };
 
+  const handleNotesSubmit = async () => {
+    try {
+      // Use the correct plant ID property
+      const plantId = plant._id || plant.id;
+      await onNotesUpdate(plantId, editedNotes);
+      setIsEditingNotes(false);
+    } catch (error) {
+      console.error('Error updating notes:', error);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -320,12 +331,19 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
     }
     
     try {
+      console.log('Submitting plant data...');
+      
+      // Check if plantAPI and createPlant method exist
+      if (!plantAPI || typeof plantAPI.createPlant !== 'function') {
+        throw new Error('Plant API service is not properly configured');
+      }
+      
       // Prepare plant data for saving to database
       const plantData = {
         name: plantName,
         species: plantDetails?.scientificName || plantType || "Unknown",
         nickname: plantName,
-        mainImage: capturedImage || null, // Allow null if no image
+        mainImage: capturedImage && capturedImage !== 'manual-entry' && capturedImage !== 'text-search-result' ? capturedImage : null,
         notes: notes,
         status: "Healthy",
         scientificDetails: plantDetails ? {
@@ -333,30 +351,55 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
           commonNames: plantDetails.allCommonNames,
           confidence: plantDetails.confidence,
           taxonomy: plantDetails.taxonomy,
-          wikiUrl: plantDetails.wikiUrl
+          wikiUrl: plantDetails.wikiUrl,
+          description: plantDetails.description
         } : null
       };
       
+      console.log('Plant data to be saved:', plantData);
+      
       // Save to database via API
       const response = await plantAPI.createPlant(plantData);
+      console.log('Plant creation response:', response);
       
-      // Get the saved plant with proper MongoDB _id and pass it back
-      const savedPlant = {
-        id: response._id,
-        name: response.name,
-        species: response.species,
-        nickname: response.nickname,
-        image: response.mainImage,
-        notes: response.notes,
-        health: response.status,
-        lastWatered: response.lastWatered ? new Date(response.lastWatered).toLocaleDateString() : 'Not yet watered',
-        dateAdded: new Date(response.dateAdded || response.createdAt).toLocaleDateString()
-      };
-      
-      onAddPlant(savedPlant);
+      if (response && response.success && response.data) {
+        // Get the saved plant with proper MongoDB _id and pass it back
+        const savedPlant = {
+          id: response.data._id,
+          _id: response.data._id, // Include both for compatibility
+          name: response.data.name,
+          species: response.data.species,
+          nickname: response.data.nickname,
+          image: response.data.mainImage,
+          mainImage: response.data.mainImage,
+          notes: response.data.notes,
+          health: response.data.status,
+          status: response.data.status,
+          lastWatered: response.data.lastWatered ? new Date(response.data.lastWatered).toLocaleDateString() : 'Not yet watered',
+          dateAdded: new Date(response.data.dateAdded || response.data.createdAt).toLocaleDateString(),
+          createdAt: response.data.createdAt,
+          careHistory: response.data.careHistory || [],
+          scientificDetails: response.data.scientificDetails
+        };
+        
+        console.log('Saved plant object:', savedPlant);
+        onAddPlant(savedPlant);
+      } else {
+        throw new Error(response?.error || 'Failed to save plant');
+      }
     } catch (error) {
       console.error("Error saving plant to database:", error);
-      setError("Failed to save plant. Please try again.");
+      
+      let errorMessage = "Failed to save plant. Please try again.";
+      if (error.message?.includes('Plant API service is not properly configured')) {
+        errorMessage = 'Plant API service is not available. Please refresh the page.';
+      } else if (error.message?.includes('Network Error')) {
+        errorMessage = 'Network connection error. Please check your internet connection.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
     }
   };
 

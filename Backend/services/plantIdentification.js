@@ -94,8 +94,26 @@ exports.identifyPlantByBase64 = async (base64Image) => {
               
               // Add common names directly to the suggestion for easier access
               if (detailsResponse.data.common_names && Array.isArray(detailsResponse.data.common_names)) {
-                suggestions[i].common_names = detailsResponse.data.common_names;
-                console.log(`✅ Added common names to suggestion: ${detailsResponse.data.common_names.join(', ')}`);
+                // Ensure we're getting the actual string values, not objects
+                const validCommonNames = detailsResponse.data.common_names.filter(name => 
+                  typeof name === 'string' && name.trim().length > 0
+                );
+                
+                if (validCommonNames.length > 0) {
+                  suggestions[i].common_names = validCommonNames;
+                  console.log(`✅ Added ${validCommonNames.length} valid common names to suggestion: ${validCommonNames.join(', ')}`);
+                } else {
+                  console.log(`⚠️ Common names found but none were valid strings`);
+                }
+              }
+              
+              // Also try to get description and other details
+              if (detailsResponse.data.description) {
+                suggestions[i].description = detailsResponse.data.description;
+              }
+              
+              if (detailsResponse.data.taxonomy) {
+                suggestions[i].taxonomy = detailsResponse.data.taxonomy;
               }
             }
           } catch (detailsError) {
@@ -120,8 +138,14 @@ exports.identifyPlantByBase64 = async (base64Image) => {
             });
             
             if (searchResponse.data?.entities?.[0]?.common_names) {
-              suggestions[i].common_names = searchResponse.data.entities[0].common_names;
-              console.log(`✅ Found common names via search: ${searchResponse.data.entities[0].common_names.join(', ')}`);
+              const searchCommonNames = searchResponse.data.entities[0].common_names.filter(name => 
+                typeof name === 'string' && name.trim().length > 0
+              );
+              
+              if (searchCommonNames.length > 0) {
+                suggestions[i].common_names = searchCommonNames;
+                console.log(`✅ Found common names via search: ${searchCommonNames.join(', ')}`);
+              }
             }
           } catch (searchError) {
             console.warn(`Could not search for plant ${suggestion.name}:`, searchError.message);

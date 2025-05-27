@@ -45,11 +45,24 @@ exports.createPlant = async (req, res, next) => {
         scientificNotes += `Description: ${scientificDetails.description}\n\n`;
       }
       
+      if (scientificDetails.taxonomy && scientificDetails.taxonomy.family) {
+        scientificNotes += `Family: ${scientificDetails.taxonomy.family}\n`;
+      }
+      
+      if (scientificDetails.taxonomy && scientificDetails.taxonomy.genus) {
+        scientificNotes += `Genus: ${scientificDetails.taxonomy.genus}\n`;
+      }
+      
       if (scientificDetails.wikiUrl) {
-        scientificNotes += `More info: ${scientificDetails.wikiUrl}`;
+        scientificNotes += `\nMore info: ${scientificDetails.wikiUrl}`;
       }
       
       plantData.notes = scientificNotes;
+    }
+    
+    // Store scientific details separately for future use
+    if (scientificDetails) {
+      plantData.scientificDetails = scientificDetails;
     }
     
     console.log("Creating plant with data:", JSON.stringify(plantData, null, 2));
