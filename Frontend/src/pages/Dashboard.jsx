@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Plus, Sun, Wind, Thermometer, MapPin, Camera, Cloud, 
   Umbrella, ArrowRight, AlertCircle, Droplets, ChevronDown, Calendar, Edit, Trash2, MoreVertical, AlertTriangle,
-  Bell
+  Bell, Flower, Scissors
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import { auth } from '../firebase';
@@ -220,6 +220,26 @@ const Dashboard = () => {
     }
   };
 
+  const handleFertilizeClick = async (e, plantId) => {
+    e.stopPropagation();
+    try {
+      console.log('Fertilizing plant:', plantId);
+      // Add your fertilizing logic here
+    } catch (error) {
+      console.error('Error fertilizing plant:', error);
+    }
+  };
+
+  const handlePruningClick = async (e, plantId) => {
+    e.stopPropagation();
+    try {
+      console.log('Pruning plant:', plantId);
+      // Add your pruning logic here
+    } catch (error) {
+      console.error('Error pruning plant:', error);
+    }
+  };
+
   // Notification Bell component
   const NotificationBell = () => (
     <button className="relative p-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
@@ -308,20 +328,38 @@ const Dashboard = () => {
                       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <div className="flex gap-2 bg-black/20 backdrop-blur-sm p-1 rounded-lg">
                           <button 
-                            className="p-1.5 rounded-lg hover:bg-white/20 transition-colors"
-                            onClick={(e) => handleEditClick(e, plant)}
-                          >
-                            <Edit size={16} className="text-white" />
-                          </button>
-                          <button 
-                            className="p-1.5 rounded-lg hover:bg-white/20 transition-colors"
+                            className="p-1.5 rounded-lg hover:bg-green-500/80 transition-colors"
                             onClick={(e) => handleWaterClick(e, plant.id)}
+                            title="Water Plant"
                           >
                             <Droplets size={16} className="text-white" />
                           </button>
                           <button 
+                            className="p-1.5 rounded-lg hover:bg-purple-500/80 transition-colors"
+                            onClick={(e) => handleFertilizeClick(e, plant.id)}
+                            title="Fertilize Plant"
+                          >
+                            <Flower size={16} className="text-white" />
+                          </button>
+                          <button 
+                            className="p-1.5 rounded-lg hover:bg-blue-500/80 transition-colors"
+                            onClick={(e) => handlePruningClick(e, plant.id)}
+                            title="Prune Plant"
+                          >
+                            <Scissors size={16} className="text-white" />
+                          </button>
+                          <div className="w-px h-4 my-auto bg-white/20"></div>
+                          <button 
+                            className="p-1.5 rounded-lg hover:bg-white/20 transition-colors"
+                            onClick={(e) => handleEditClick(e, plant)}
+                            title="Edit Plant"
+                          >
+                            <Edit size={16} className="text-white" />
+                          </button>
+                          <button 
                             className="p-1.5 rounded-lg hover:bg-red-500/80 transition-colors"
                             onClick={(e) => handleDeleteClick(e, plant.id)}
+                            title="Delete Plant"
                           >
                             <Trash2 size={16} className="text-white" />
                           </button>
