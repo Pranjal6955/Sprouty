@@ -286,11 +286,11 @@ const Dashboard = () => {
         setActiveNavItem={setActiveNavItem}
       />
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Main Content - Updated with scrollbar hiding classes */}
+      <div className="flex-1 overflow-y-auto scrollbar-hide">
         <div className="flex flex-col md:flex-row h-full">
-          {/* Left Side Content */}
-          <div className="flex-1 p-6 overflow-y-auto">
+          {/* Left Side Content - Updated with scrollbar hiding classes */}
+          <div className="flex-1 p-6 overflow-y-auto scrollbar-hide">
             <div className="flex justify-between items-center mb-6">
               <div className="flex items-center">
                 <img 
