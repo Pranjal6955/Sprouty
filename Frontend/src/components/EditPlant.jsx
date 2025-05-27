@@ -23,7 +23,11 @@ const EditPlant = ({ plant, onSave, onCancel }) => {
     try {
       const updatedPlant = {
         ...formData,
-        mainImage: image
+        mainImage: image,
+        lastWatered: formData.lastWatered ? new Date(formData.lastWatered).toISOString() : null,
+        lastFertilised: formData.lastFertilised ? new Date(formData.lastFertilised).toISOString() : null,
+        lastPruning: formData.lastPruning ? new Date(formData.lastPruning).toISOString() : null,
+        dateAdded: formData.dateAdded ? new Date(formData.dateAdded).toISOString() : null
       };
 
       const response = await plantAPI.updatePlant(plant.id, updatedPlant);

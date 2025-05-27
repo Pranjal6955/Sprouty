@@ -35,6 +35,16 @@ const Dashboard = () => {
   const [notifications, setNotifications] = useState(0); // Changed from 3 to 0
   const navigate = useNavigate();
 
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Not yet set';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
   useEffect(() => {
     // Fetch weather data
     const initializeWeather = async () => {
@@ -78,8 +88,10 @@ const Dashboard = () => {
             image: plant.mainImage,
             notes: plant.notes,
             health: plant.status,
-            lastWatered: plant.lastWatered ? new Date(plant.lastWatered).toLocaleDateString() : 'Not yet watered',
-            dateAdded: new Date(plant.dateAdded || plant.createdAt).toLocaleDateString()
+            lastWatered: formatDate(plant.lastWatered),
+            dateAdded: formatDate(plant.dateAdded || plant.createdAt),
+            lastFertilised: formatDate(plant.lastFertilised),
+            lastPruning: formatDate(plant.lastPruning)
           }));
           setPlants(formattedPlants);
         }
@@ -201,7 +213,20 @@ const Dashboard = () => {
   };
 
   const handlePlantUpdate = (updatedPlant) => {
-    setPlants(plants.map(p => p.id === updatedPlant.id ? updatedPlant : p));
+    // Format dates consistently when updating plant data
+    const formattedPlant = {
+      ...updatedPlant,
+      lastWatered: formatDate(updatedPlant.lastWatered),
+      dateAdded: formatDate(updatedPlant.dateAdded || updatedPlant.createdAt),
+      lastFertilised: formatDate(updatedPlant.lastFertilised),
+      lastPruning: formatDate(updatedPlant.lastPruning)
+    };
+    
+    setPlants(prevPlants => 
+      prevPlants.map(p => 
+        p.id === formattedPlant.id ? formattedPlant : p
+      )
+    );
     setEditingPlant(null);
   };
 
