@@ -9,7 +9,11 @@ const {
   updateCareHistory,
   addGrowthMilestone,
   identifyPlant,
-  searchPlantByName
+  searchPlantByName,
+  waterPlant,
+  fertilizePlant,
+  prunePlant,
+  getPlantSchedule
 } = require('../controllers/plantController');
 
 // Import auth middleware - FIX: Import the destructured protect function
@@ -44,5 +48,18 @@ router.route('/:id/care')
 // Routes for growth milestones
 router.route('/:id/growth')
   .post(addGrowthMilestone);
+
+// Plant care action routes
+router.route('/:id/water')
+  .post(waterPlant);
+
+router.route('/:id/fertilize')
+  .post(fertilizePlant);
+
+router.route('/:id/prune')
+  .post(prunePlant);
+
+router.route('/:id/schedule')
+  .get(getPlantSchedule);
 
 module.exports = router;

@@ -348,6 +348,56 @@ export const plantAPI = {
     } catch (error) {
       throw error.response?.data || error;
     }
+  },
+
+  // Plant care actions
+  waterPlant: async (plantId, data = {}) => {
+    try {
+      const response = await api.post(`/plants/${plantId}/water`, {
+        notes: data.notes,
+        amount: data.amount
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error watering plant:', error);
+      throw error;
+    }
+  },
+
+  fertilizePlant: async (plantId, data = {}) => {
+    try {
+      const response = await api.post(`/plants/${plantId}/fertilize`, {
+        notes: data.notes,
+        fertilizerType: data.fertilizerType
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fertilizing plant:', error);
+      throw error;
+    }
+  },
+
+  prunePlant: async (plantId, data = {}) => {
+    try {
+      const response = await api.post(`/plants/${plantId}/prune`, {
+        notes: data.notes,
+        pruningType: data.pruningType
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error pruning plant:', error);
+      throw error;
+    }
+  },
+
+  getPlantSchedule: async (plantId) => {
+    try {
+      const response = await api.get(`/plants/${plantId}/schedule`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching plant schedule:', error);
+      throw error;
+    }
   }
 };
 

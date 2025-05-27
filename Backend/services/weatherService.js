@@ -126,11 +126,8 @@ exports.getWeatherForecast = async (location, days = 3) => {
  * @returns {object} Care recommendations
  */
 exports.generateRecommendations = (weatherData) => {
-  const temp = weatherData.temperature;
-  const humidity = weatherData.humidity;
-  const windSpeed = weatherData.wind_speed;
-  const description = weatherData.description.toLowerCase();
-  const uv = weatherData.uv;
+  // Extract weather variables from the data
+  const { temperature: temp, humidity, description, uv } = weatherData;
   
   let recommendations = {
     watering: null,
@@ -157,34 +154,26 @@ exports.generateRecommendations = (weatherData) => {
     } else {
       recommendations.sunlight = "It's sunny today! Perfect conditions for your sun-loving plants.";
     }
-  } else if (description.includes('partly cloudy') || description.includes('mostly cloudy')) {
-    recommendations.sunlight = "It's partly cloudy. Good diffused light for most plants. Sun-loving plants might need supplemental light.";
-  } else if (description.includes('overcast') || description.includes('cloudy')) {
-    recommendations.sunlight = "It's cloudy today. Your shade plants will be comfortable, but sun-loving plants might need grow lights.";
-  } else if (description.includes('rain') || description.includes('drizzle')) {
-    recommendations.sunlight = "It's rainy today. Keep plants away from windows if they don't like wet leaves.";
+  } else if (description.includes('cloudy') || description.includes('overcast')) {
+    recommendations.sunlight = "Cloudy conditions today. Your plants might appreciate being moved closer to windows for maximum light.";
+  } else if (description.includes('rain')) {
+    recommendations.sunlight = "Rainy day - perfect time to focus on indoor plant care and checking for pests.";
   }
   
   // General care recommendations
-  if (temp > 35) {
-    recommendations.general = "It's very hot! Move plants away from hot windows, increase humidity, and ensure adequate watering.";
-  } else if (temp < 0) {
-    recommendations.general = "It's freezing! Bring outdoor plants inside and keep indoor plants away from cold windows.";
-  } else if (temp < 10) {
-    recommendations.general = "It's cold! Keep plants away from drafty windows and consider reducing watering frequency.";
-  } else if (windSpeed > 15) {
-    recommendations.general = "It's very windy today! Secure or move outdoor plants to prevent damage.";
+  if (temp < 10) {
+    recommendations.general = "Cold weather alert! Bring outdoor plants inside and reduce watering frequency.";
+  } else if (temp > 35) {
+    recommendations.general = "Very hot weather! Increase watering and provide shade for outdoor plants.";
   } else {
-    recommendations.general = "Weather conditions are favorable for most plants today.";
+    recommendations.general = "Great weather for plant care activities!";
   }
   
   // Protection recommendations
-  if (description.includes('storm') || description.includes('thunder')) {
-    recommendations.protection = "Stormy weather ahead! Bring in outdoor plants and ensure indoor plants are secure.";
-  } else if (description.includes('hail')) {
-    recommendations.protection = "Hail warning! Protect all outdoor plants immediately.";
-  } else if (windSpeed > 25) {
-    recommendations.protection = "Strong winds expected! Secure or relocate vulnerable plants.";
+  if (description.includes('storm') || description.includes('wind')) {
+    recommendations.protection = "Stormy weather - secure outdoor plants and check for damage after the storm.";
+  } else if (uv > 8) {
+    recommendations.protection = "High UV levels - protect sensitive plants from direct sunlight during peak hours.";
   }
   
   return recommendations;

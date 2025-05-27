@@ -563,3 +563,172 @@ exports.searchPlantByName = async (req, res, next) => {
     });
   }
 };
+
+// @desc    Record watering action
+// @route   POST /api/plants/:id/water
+// @access  Private
+exports.waterPlant = async (req, res, next) => {
+  try {
+    const { notes, amount } = req.body;
+    
+    const plant = await Plant.findById(req.params.id);
+    
+    if (!plant) {
+      return res.status(404).json({ success: false, error: 'Plant not found' });
+    }
+    
+    // Make sure user owns plant
+    if (plant.user.toString() !== req.user.id) {
+      return res.status(401).json({ success: false, error: 'Not authorized to update this plant' });
+    }
+    
+    // Add to care history
+    plant.careHistory.unshift({
+      actionType: 'Watered',
+      notes: notes || `Watered${amount ? ` with ${amount}ml` : ''}`,
+      date: Date.now()
+    });
+    
+    // Update last watered date
+    plant.lastWatered = Date.now();
+    
+    await plant.save();
+    
+    res.status(200).json({
+      success: true,
+      data: plant,
+      message: 'Plant watered successfully'
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ success: false, error: 'Server Error' });
+  }
+};
+
+// @desc    Record fertilizing action
+// @route   POST /api/plants/:id/fertilize
+// @access  Private
+exports.fertilizePlant = async (req, res, next) => {
+  try {
+    const { notes, fertilizerType } = req.body;
+    
+    const plant = await Plant.findById(req.params.id);
+    
+    if (!plant) {
+      return res.status(404).json({ success: false, error: 'Plant not found' });
+    }
+    
+    // Make sure user owns plant
+    if (plant.user.toString() !== req.user.id) {
+      return res.status(401).json({ success: false, error: 'Not authorized to update this plant' });
+    }
+    
+    // Add to care history
+    plant.careHistory.unshift({
+      actionType: 'Fertilized',
+      notes: notes || `Fertilized${fertilizerType ? ` with ${fertilizerType}` : ''}`,
+      date: Date.now()
+    });
+    
+    // Update last fertilized date
+    plant.lastFertilized = Date.now();
+    
+    await plant.save();
+    
+    res.status(200).json({
+      success: true,
+      data: plant,
+      message: 'Plant fertilized successfully'
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ success: false, error: 'Server Error' });
+  }
+};
+
+// @desc    Record pruning action
+// @route   POST /api/plants/:id/prune
+// @access  Private
+exports.prunePlant = async (req, res, next) => {
+  try {
+    const { notes, pruningType } = req.body;
+    
+    const plant = await Plant.findById(req.params.id);
+    
+    if (!plant) {
+      return res.status(404).json({ success: false, error: 'Plant not found' });
+    }
+    
+    // Make sure user owns plant
+    if (plant.user.toString() !== req.user.id) {
+      return res.status(401).json({ success: false, error: 'Not authorized to update this plant' });
+    }
+    
+    // Add to care history
+    plant.careHistory.unshift({
+      actionType: 'Pruned',
+      notes: notes || `Pruned${pruningType ? ` - ${pruningType}` : ''}`,
+      date: Date.now()
+    });
+    
+    // Update last pruned date
+    plant.lastPruned = Date.now();
+    
+    await plant.save();
+    
+    res.status(200).json({
+      success: true,
+      data: plant,
+      message: 'Plant pruned successfully'
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ success: false, error: 'Server Error' });
+  }
+};
+
+// @desc    Get plant care schedule
+// @route   GET /api/plants/:id/schedule
+// @access  Private
+exports.getPlantSchedule = async (req, res, next) => {
+  try {
+    const plant = await Plant.findById(req.params.id);
+    
+    if (!plant) {
+      return res.status(404).json({ success: false, error: 'Plant not found' });
+    }
+    
+    // Make sure user owns plant
+    if (plant.user.toString() !== req.user.id) {
+      return res.status(401).json({ success: false, error: 'Not authorized to access this plant' });
+    }
+    
+    const now = new Date();
+    
+    // Calculate next care dates
+    const schedule = {
+      nextWatering: plant.lastWatered ? 
+        new Date(new Date(plant.lastWatered).getTime() + (plant.wateringFrequency * 24 * 60 * 60 * 1000)) : null,
+      nextFertilizing: plant.lastFertilized ? 
+        new Date(new Date(plant.lastFertilized).getTime() + (plant.fertilizerFrequency * 24 * 60 * 60 * 1000)) : null,
+      nextPruning: plant.lastPruned ? 
+        new Date(new Date(plant.lastPruned).getTime() + (plant.pruningFrequency * 24 * 60 * 60 * 1000)) : null,
+      
+      // Days until next care
+      daysUntilWatering: plant.lastWatered ? 
+        Math.ceil((new Date(plant.lastWatered).getTime() + (plant.wateringFrequency * 24 * 60 * 60 * 1000) - now.getTime()) / (24 * 60 * 60 * 1000)) : 0,
+      daysUntilFertilizing: plant.lastFertilized ? 
+        Math.ceil((new Date(plant.lastFertilized).getTime() + (plant.fertilizerFrequency * 24 * 60 * 60 * 1000) - now.getTime()) / (24 * 60 * 60 * 1000)) : 0,
+      daysUntilPruning: plant.lastPruned ? 
+        Math.ceil((new Date(plant.lastPruned).getTime() + (plant.pruningFrequency * 24 * 60 * 60 * 1000) - now.getTime()) / (24 * 60 * 60 * 1000)) : 0,
+    };
+    
+    res.status(200).json({
+      success: true,
+      data: schedule
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ success: false, error: 'Server Error' });
+  }
+};

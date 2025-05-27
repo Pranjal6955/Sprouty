@@ -153,13 +153,14 @@ exports.updatePassword = async (req, res, next) => {
 // @access  Private
 exports.getUserStats = async (req, res, next) => {
   try {
-    // Count total plants
-    const plantCount = await Plant.countDocuments({ user: req.user.id });
-    
-    // Count upcoming reminders
     const today = new Date();
     const nextWeek = new Date();
     nextWeek.setDate(today.getDate() + 7);
+    
+    // Get plant count
+    const plantCount = await Plant.countDocuments({
+      user: req.user.id
+    });
     
     const reminderCount = await Reminder.countDocuments({
       user: req.user.id,

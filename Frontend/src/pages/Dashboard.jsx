@@ -238,10 +238,28 @@ const Dashboard = () => {
   const handleWaterClick = async (e, plantId) => {
     e.stopPropagation(); // Prevent plant details modal from opening
     try {
-      // Add your watering logic here
       console.log('Watering plant:', plantId);
+      const response = await plantAPI.waterPlant(plantId, {
+        notes: 'Quick watering from dashboard'
+      });
+      
+      if (response.success) {
+        // Update the plant in local state
+        setPlants(prevPlants => 
+          prevPlants.map(p => 
+            p.id === plantId ? {
+              ...p,
+              lastWatered: formatDate(new Date())
+            } : p
+          )
+        );
+        
+        // Show success message (you can add a toast notification here)
+        console.log('Plant watered successfully');
+      }
     } catch (error) {
       console.error('Error watering plant:', error);
+      // You can add error handling/notification here
     }
   };
 
@@ -249,7 +267,23 @@ const Dashboard = () => {
     e.stopPropagation();
     try {
       console.log('Fertilizing plant:', plantId);
-      // Add your fertilizing logic here
+      const response = await plantAPI.fertilizePlant(plantId, {
+        notes: 'Quick fertilizing from dashboard'
+      });
+      
+      if (response.success) {
+        // Update the plant in local state
+        setPlants(prevPlants => 
+          prevPlants.map(p => 
+            p.id === plantId ? {
+              ...p,
+              lastFertilised: formatDate(new Date())
+            } : p
+          )
+        );
+        
+        console.log('Plant fertilized successfully');
+      }
     } catch (error) {
       console.error('Error fertilizing plant:', error);
     }
@@ -259,7 +293,23 @@ const Dashboard = () => {
     e.stopPropagation();
     try {
       console.log('Pruning plant:', plantId);
-      // Add your pruning logic here
+      const response = await plantAPI.prunePlant(plantId, {
+        notes: 'Quick pruning from dashboard'
+      });
+      
+      if (response.success) {
+        // Update the plant in local state
+        setPlants(prevPlants => 
+          prevPlants.map(p => 
+            p.id === plantId ? {
+              ...p,
+              lastPruning: formatDate(new Date())
+            } : p
+          )
+        );
+        
+        console.log('Plant pruned successfully');
+      }
     } catch (error) {
       console.error('Error pruning plant:', error);
     }

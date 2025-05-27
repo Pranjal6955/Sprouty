@@ -463,3 +463,49 @@ exports.getPlantDetails = async (accessToken) => {
     }
   }
 };
+
+/**
+ * Get plant care recommendations based on plant details
+ */
+exports.getPlantCareRecommendations = (plantDetails) => {
+  const recommendations = {
+    watering: "Water when the top inch of soil feels dry to touch.",
+    fertilizing: "Feed with balanced liquid fertilizer every 2-4 weeks during growing season.",
+    pruning: "Remove dead or yellowing leaves as needed. Prune for shape in spring.",
+    sunlight: "Provide bright, indirect light for optimal growth.",
+    soil: "Use well-draining potting mix with good organic content.",
+    humidity: "Maintain moderate humidity levels (40-60%).",
+    temperature: "Keep in temperatures between 65-80°F (18-27°C)."
+  };
+  
+  // Customize recommendations based on plant family if available
+  if (plantDetails.taxonomy?.family) {
+    const family = plantDetails.taxonomy.family.toLowerCase();
+    
+    if (family.includes('cactaceae') || family.includes('succulent')) {
+      recommendations.watering = "Water sparingly, allow soil to dry completely between waterings.";
+      recommendations.humidity = "Prefers low humidity environments.";
+    } else if (family.includes('araceae')) {
+      recommendations.humidity = "Enjoys higher humidity levels (50-70%).";
+      recommendations.watering = "Keep soil consistently moist but not waterlogged.";
+    } else if (family.includes('ficus') || family.includes('moraceae')) {
+      recommendations.pruning = "Prune regularly to maintain shape. Can handle heavy pruning.";
+      recommendations.sunlight = "Prefers bright, indirect to direct light.";
+    }
+  }
+  
+  return recommendations;
+};
+
+/**
+ * Calculate next care date based on frequency
+ */
+exports.calculateNextCareDate = (lastCareDate, frequencyDays) => {
+  if (!lastCareDate || !frequencyDays) return null;
+  
+  const lastDate = new Date(lastCareDate);
+  const nextDate = new Date(lastDate);
+  nextDate.setDate(lastDate.getDate() + frequencyDays);
+  
+  return nextDate;
+};
