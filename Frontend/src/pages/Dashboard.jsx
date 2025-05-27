@@ -53,7 +53,7 @@ const Dashboard = () => {
             temperature: `${Math.round(data.data.temperature)}°C`,
             windSpeed: `${data.data.wind_speed} km/h`,
             humidity: `${data.data.humidity}%`,
-            uv: data.data.uv || "6"
+            uv: data.data.uv
           };
           setWeatherData(formattedWeather);
         }
