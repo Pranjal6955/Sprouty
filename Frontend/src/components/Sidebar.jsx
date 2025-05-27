@@ -36,13 +36,15 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen, activeNavItem, setActiveNavItem })
       case 'Home':
         navigate('/dashboard');
         break;
+      case 'Garden Log':
+        navigate('/gardenLog');
+        break;
       case 'Reminders':
         navigate('/reminder');
         break;
       case 'Profile':
         navigate('/profile');
         break;
-      // Add other navigation cases as needed
       default:
         break;
     }
@@ -76,7 +78,7 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen, activeNavItem, setActiveNavItem })
               icon={<Book size={20} />} 
               label="Garden Log" 
               isActive={activeNavItem === 'Garden Log'} 
-              onClick={() => setActiveNavItem('Garden Log')}
+              onClick={() => handleNavigation('Garden Log')}
             />
             <NavItem 
               icon={<Bell size={20} />} 

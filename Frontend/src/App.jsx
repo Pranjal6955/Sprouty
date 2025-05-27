@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage';
 import Dashboard from './pages/Dashboard';
 import Reminder from './pages/Reminder';
 import Profile from './pages/Profile';
+import GardenLog from './pages/GardenLog';
 import { ThemeProvider } from './components/ThemeProvider';
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/reminder" element={<Reminder />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/gardenLog" element={<GardenLog />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>
