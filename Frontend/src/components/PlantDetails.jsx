@@ -30,7 +30,7 @@ const PlantDetails = ({ plant, onClose }) => {
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-18rem)]">
+        <div className="p-6 overflow-y-auto scrollbar-hide max-h-[calc(90vh-18rem)]">
           {/* Quick Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
             <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
