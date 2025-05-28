@@ -17,8 +17,8 @@ const initCronJobs = () => {
       return;
     }
     
-    // Run every hour to check for due reminders
-    cron.schedule('0 * * * *', async () => {
+    // Run every 5 minutes to check for due reminders (more frequent for better UX)
+    cron.schedule('*/5 * * * *', async () => {
       try {
         console.log('Running reminder check...');
         const currentTime = new Date();
@@ -27,10 +27,11 @@ const initCronJobs = () => {
         const dueReminders = await Reminder.find({
           nextReminder: { 
             $lte: currentTime,
-            $ne: null // Exclude null dates
+            $ne: null
           },
           active: true,
-          completed: false
+          completed: false,
+          notificationSent: false // Only get unnotified reminders
         }).populate('plant').populate('user');
         
         console.log(`Found ${dueReminders.length} due reminders`);
@@ -44,8 +45,8 @@ const initCronJobs = () => {
               continue;
             }
             
-            // Send notification to user
-            if (reminder.user.email) {
+            // Send email notification if enabled
+            if (reminder.notificationMethods.includes('email') && reminder.user.email) {
               await sendReminderEmail(
                 reminder.user.email,
                 reminder,
@@ -54,18 +55,11 @@ const initCronJobs = () => {
               console.log(`Sent reminder email to ${reminder.user.email} for plant: ${reminder.plant.name}`);
             }
             
-            // Update next reminder date based on frequency
-            const nextDate = calculateNextReminderDate(reminder);
-            if (nextDate && !isNaN(nextDate.getTime())) {
-              reminder.nextReminder = nextDate;
-              reminder.notificationSent = true;
-              await reminder.save();
-              console.log(`Rescheduled reminder for ${reminder.plant.name} to ${nextDate}`);
-            } else {
-              console.warn(`Invalid next date calculated for reminder ${reminder._id}, disabling reminder`);
-              reminder.active = false;
-              await reminder.save();
-            }
+            // Mark notification as ready to be picked up by frontend
+            reminder.notificationSent = false; // Keep false so frontend can pick it up
+            await reminder.save();
+            
+            console.log(`Prepared reminder notification for ${reminder.plant.name}`);
             
           } catch (reminderError) {
             console.error(`Error processing individual reminder ${reminder._id}:`, reminderError.message);

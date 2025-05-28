@@ -9,30 +9,34 @@ exports.createReminder = async (req, res, next) => {
     // Add user to req.body
     req.body.user = req.user.id;
     
-    // Validate required dates
-    if (!req.body.scheduledDate) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'scheduledDate is required' 
-      });
-    }
+    // Map frontend data to backend schema
+    const reminderData = {
+      user: req.user.id,
+      plant: req.body.plant,
+      type: req.body.type,
+      title: req.body.title || `${req.body.type} reminder`,
+      notes: req.body.notes,
+      scheduledDate: new Date(req.body.scheduledDate),
+      recurring: req.body.recurring !== false,
+      frequency: req.body.frequency || 'weekly',
+      notificationMethods: req.body.notificationMethods || ['popup']
+    };
     
-    // Validate date format
-    const scheduledDate = new Date(req.body.scheduledDate);
-    if (isNaN(scheduledDate.getTime())) {
+    // Validate required dates
+    if (!reminderData.scheduledDate || isNaN(reminderData.scheduledDate.getTime())) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Invalid scheduledDate format' 
+        error: 'Valid scheduledDate is required' 
       });
     }
     
     // Set nextReminder to scheduledDate for recurring reminders
-    if (req.body.recurring !== false) { // Default to true if not specified
-      req.body.nextReminder = scheduledDate;
+    if (reminderData.recurring) {
+      reminderData.nextReminder = reminderData.scheduledDate;
     }
     
     // Check if plant exists and belongs to user
-    const plant = await Plant.findById(req.body.plant);
+    const plant = await Plant.findById(reminderData.plant);
     
     if (!plant) {
       return res.status(404).json({ success: false, error: 'Plant not found' });
@@ -43,7 +47,10 @@ exports.createReminder = async (req, res, next) => {
       return res.status(401).json({ success: false, error: 'Not authorized to set reminders for this plant' });
     }
     
-    const reminder = await Reminder.create(req.body);
+    const reminder = await Reminder.create(reminderData);
+    
+    // Populate plant data for response
+    await reminder.populate('plant', 'name nickname species mainImage');
     
     res.status(201).json({
       success: true,
@@ -246,6 +253,63 @@ exports.completeReminder = async (req, res, next) => {
     });
   } catch (err) {
     console.error('Error completing reminder:', err.message);
+    res.status(500).json({ success: false, error: 'Server Error' });
+  }
+};
+
+// @desc    Get due reminders for current user
+// @route   GET /api/reminders/due
+// @access  Private
+exports.getDueReminders = async (req, res, next) => {
+  try {
+    const currentTime = new Date();
+    
+    const dueReminders = await Reminder.find({
+      user: req.user.id,
+      active: true,
+      completed: false,
+      nextReminder: { $lte: currentTime },
+      notificationSent: false
+    }).populate({
+      path: 'plant',
+      select: 'name nickname species mainImage'
+    });
+    
+    res.status(200).json({
+      success: true,
+      count: dueReminders.length,
+      data: dueReminders
+    });
+  } catch (err) {
+    console.error('Error getting due reminders:', err.message);
+    res.status(500).json({ success: false, error: 'Server Error' });
+  }
+};
+
+// @desc    Mark reminder notification as sent
+// @route   PUT /api/reminders/:id/notification-sent
+// @access  Private
+exports.markNotificationSent = async (req, res, next) => {
+  try {
+    const reminder = await Reminder.findById(req.params.id);
+    
+    if (!reminder) {
+      return res.status(404).json({ success: false, error: 'Reminder not found' });
+    }
+    
+    if (reminder.user.toString() !== req.user.id) {
+      return res.status(401).json({ success: false, error: 'Not authorized' });
+    }
+    
+    reminder.notificationSent = true;
+    await reminder.save();
+    
+    res.status(200).json({
+      success: true,
+      data: reminder
+    });
+  } catch (err) {
+    console.error('Error marking notification sent:', err.message);
     res.status(500).json({ success: false, error: 'Server Error' });
   }
 };

@@ -6,7 +6,7 @@ const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'you
 const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'your-upload-preset';
 
 // Create axios instance with base URL
-const api = axios.create({
+const axiosInstance = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
@@ -14,7 +14,7 @@ const api = axios.create({
 });
 
 // Add a request interceptor to include the auth token in requests
-api.interceptors.request.use(
+axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('authToken');
     if (token) {
@@ -86,7 +86,7 @@ export const authAPI = {
       console.log(`Including Firebase UID in registration: ${userData.firebaseUid}`);
     }
     
-    const response = await api.post('/auth/register', userData);
+    const response = await axiosInstance.post('/auth/register', userData);
     return response.data;
   },
   
@@ -96,28 +96,28 @@ export const authAPI = {
       console.log(`Login with ${credentials.oAuthProvider} OAuth`);
     }
     
-    const response = await api.post('/auth/login', credentials);
+    const response = await axiosInstance.post('/auth/login', credentials);
     return response.data;
   },
   
   verifyToken: async () => {
-    const response = await api.get('/auth/verify-token');
+    const response = await axiosInstance.get('/auth/verify-token');
     return response.data;
   },
 
   forgotPassword: async (email) => {
-    const response = await api.post('/auth/forgotpassword', { email });
+    const response = await axiosInstance.post('/auth/forgotpassword', { email });
     return response.data;
   },
   
   resetPassword: async (resetToken, password) => {
-    const response = await api.put(`/auth/resetpassword/${resetToken}`, { password });
+    const response = await axiosInstance.put(`/auth/resetpassword/${resetToken}`, { password });
     return response.data;
   },
 
   // New method to link Firebase and backend accounts if needed
   linkAccounts: async (firebaseUid) => {
-    const response = await api.post('/auth/link-accounts', { firebaseUid });
+    const response = await axiosInstance.post('/auth/link-accounts', { firebaseUid });
     return response.data;
   }
 };
@@ -233,7 +233,7 @@ export const plantAPI = {
   // Create a new plant
   createPlant: async (plantData) => {
     try {
-      const response = await api.post('/plants', plantData);
+      const response = await axiosInstance.post('/plants', plantData);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -243,7 +243,7 @@ export const plantAPI = {
   // Get all plants for the current user
   getAllPlants: async () => {
     try {
-      const response = await api.get('/plants');
+      const response = await axiosInstance.get('/plants');
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -253,7 +253,7 @@ export const plantAPI = {
   // Get all plants (alias for getAllPlants for compatibility)
   getPlants: async () => {
     try {
-      const response = await api.get('/plants');
+      const response = await axiosInstance.get('/plants');
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -263,7 +263,7 @@ export const plantAPI = {
   // Get a specific plant by ID
   getPlant: async (plantId) => {
     try {
-      const response = await api.get(`/plants/${plantId}`);
+      const response = await axiosInstance.get(`/plants/${plantId}`);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -273,7 +273,7 @@ export const plantAPI = {
   // Update a plant
   updatePlant: async (plantId, updateData) => {
     try {
-      const response = await api.put(`/plants/${plantId}`, updateData);
+      const response = await axiosInstance.put(`/plants/${plantId}`, updateData);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -283,7 +283,7 @@ export const plantAPI = {
   // Delete a plant
   deletePlant: async (plantId) => {
     try {
-      const response = await api.delete(`/plants/${plantId}`);
+      const response = await axiosInstance.delete(`/plants/${plantId}`);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -293,7 +293,7 @@ export const plantAPI = {
   // Update plant care history
   updateCareHistory: async (plantId, careData) => {
     try {
-      const response = await api.put(`/plants/${plantId}/care`, careData);
+      const response = await axiosInstance.put(`/plants/${plantId}/care`, careData);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -303,7 +303,7 @@ export const plantAPI = {
   // Add growth milestone
   addGrowthMilestone: async (plantId, milestoneData) => {
     try {
-      const response = await api.post(`/plants/${plantId}/growth`, milestoneData);
+      const response = await axiosInstance.post(`/plants/${plantId}/growth`, milestoneData);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -333,7 +333,7 @@ export const plantAPI = {
         requestData = imageData;
       }
 
-      const response = await api.post('/plants/identify', requestData);
+      const response = await axiosInstance.post('/plants/identify', requestData);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -343,7 +343,7 @@ export const plantAPI = {
   // Search plant by name
   searchPlantByName: async (plantName) => {
     try {
-      const response = await api.get(`/plants/search?name=${encodeURIComponent(plantName)}`);
+      const response = await axiosInstance.get(`/plants/search?name=${encodeURIComponent(plantName)}`);
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -353,7 +353,7 @@ export const plantAPI = {
   // Plant care actions
   waterPlant: async (plantId, data = {}) => {
     try {
-      const response = await api.post(`/plants/${plantId}/water`, {
+      const response = await axiosInstance.post(`/plants/${plantId}/water`, {
         notes: data.notes,
         amount: data.amount
       });
@@ -366,7 +366,7 @@ export const plantAPI = {
 
   fertilizePlant: async (plantId, data = {}) => {
     try {
-      const response = await api.post(`/plants/${plantId}/fertilize`, {
+      const response = await axiosInstance.post(`/plants/${plantId}/fertilize`, {
         notes: data.notes,
         fertilizerType: data.fertilizerType
       });
@@ -379,7 +379,7 @@ export const plantAPI = {
 
   prunePlant: async (plantId, data = {}) => {
     try {
-      const response = await api.post(`/plants/${plantId}/prune`, {
+      const response = await axiosInstance.post(`/plants/${plantId}/prune`, {
         notes: data.notes,
         pruningType: data.pruningType
       });
@@ -392,7 +392,7 @@ export const plantAPI = {
 
   getPlantSchedule: async (plantId) => {
     try {
-      const response = await api.get(`/plants/${plantId}/schedule`);
+      const response = await axiosInstance.get(`/plants/${plantId}/schedule`);
       return response.data;
     } catch (error) {
       console.error('Error fetching plant schedule:', error);
@@ -496,4 +496,117 @@ export const weatherAPI = {
   }
 };
 
-export default api;
+// Add reminder API methods
+export const reminderAPI = {
+  // Get all reminders
+  getReminders: async () => {
+    try {
+      const response = await axiosInstance.get('/reminders');
+      console.log('Fetched reminders:', response.data); // Add debug logging
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching reminders:', error);
+      return { success: false, error: error.response?.data?.error || error.message };
+    }
+  },
+
+  // Create new reminder
+  createReminder: async (reminderData) => {
+    try {
+      // Map frequency strings to numbers that backend expects
+      const frequencyMap = {
+        'daily': 1,
+        'weekly': 7,
+        'biweekly': 14,
+        'monthly': 30,
+        'quarterly': 90,
+        'yearly': 365
+      };
+
+      // Transform the data to match backend schema
+      const transformedData = {
+        plant: reminderData.plant,
+        type: reminderData.type,
+        title: reminderData.title || `${reminderData.type} reminder`,
+        notes: reminderData.notes || `${reminderData.type} reminder for plant`,
+        scheduledDate: reminderData.scheduledDate,
+        recurring: reminderData.recurring !== false,
+        frequency: frequencyMap[reminderData.frequency] || frequencyMap['weekly'],
+        notificationMethods: reminderData.notificationMethods || ['popup']
+      };
+
+      console.log('Creating reminder with data:', transformedData);
+      const response = await axiosInstance.post('/reminders', transformedData);
+      console.log('Created reminder response:', response.data); // Add debug logging
+      return response.data;
+    } catch (error) {
+      console.error('Error creating reminder:', error);
+      console.error('Error response:', error.response?.data);
+      return { success: false, error: error.response?.data?.error || error.message };
+    }
+  },
+
+  // Delete reminder
+  deleteReminder: async (reminderId) => {
+    try {
+      const response = await axiosInstance.delete(`/reminders/${reminderId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting reminder:', error);
+      return { success: false, error: error.response?.data?.error || error.message };
+    }
+  },
+
+  // Get due reminders
+  getDueReminders: async () => {
+    try {
+      const response = await axiosInstance.get('/reminders/due');
+      console.log('Fetched due reminders:', response.data); // Add debug logging
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching due reminders:', error);
+      return { success: false, error: error.response?.data?.error || error.message };
+    }
+  },
+
+  // Mark notification as sent
+  markNotificationSent: async (reminderId) => {
+    try {
+      const response = await axiosInstance.put(`/reminders/${reminderId}/notification-sent`);
+      return response.data;
+    } catch (error) {
+      console.error('Error marking notification sent:', error);
+      return { success: false, error: error.response?.data?.error || error.message };
+    }
+  },
+
+  // Complete reminder
+  completeReminder: async (reminderId) => {
+    try {
+      const response = await axiosInstance.put(`/reminders/${reminderId}/complete`);
+      return response.data;
+    } catch (error) {
+      console.error('Error completing reminder:', error);
+      return { success: false, error: error.response?.data?.error || error.message };
+    }
+  }
+};
+
+// Export uploadToCloudinary for use in other components
+export { uploadToCloudinary };
+
+// Update the main api object to include reminder methods and additional exports
+const apiService = {
+  // Reminder methods (for backward compatibility)
+  getReminders: reminderAPI.getReminders,
+  createReminder: reminderAPI.createReminder,
+  deleteReminder: reminderAPI.deleteReminder,
+  getDueReminders: reminderAPI.getDueReminders,
+  markNotificationSent: reminderAPI.markNotificationSent,
+  completeReminder: reminderAPI.completeReminder,
+  
+  // Add utility function
+  uploadToCloudinary
+};
+
+export default apiService;

@@ -8,21 +8,26 @@ import Reminder from './pages/Reminder';
 import Profile from './pages/Profile';
 import GardenLog from './pages/GardenLog';
 import { ThemeProvider } from './components/ThemeProvider';
+import { NotificationProvider } from './contexts/NotificationContext';
+import NotificationPopup from './components/NotificationPopup';
 
 function App() {
   return (
     <ThemeProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/reminder" element={<Reminder />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/gardenLog" element={<GardenLog />} />
-        </Routes>
-      </BrowserRouter>
+      <NotificationProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/reminder" element={<Reminder />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/gardenLog" element={<GardenLog />} />
+          </Routes>
+          <NotificationPopup />
+        </BrowserRouter>
+      </NotificationProvider>
     </ThemeProvider>
   );
 }

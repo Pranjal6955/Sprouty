@@ -13,14 +13,16 @@ const ReminderSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['Watering', 'Fertilizing', 'Pruning', 'Repotting', 'Custom'],
+    enum: ['Water', 'Fertilize', 'Prune', 'Repot', 'Custom'], // Match frontend enum
     required: true
   },
   title: {
     type: String,
-    required: true
+    required: function() {
+      return !this.plant; // Only required if no plant reference
+    }
   },
-  description: {
+  notes: {
     type: String
   },
   scheduledDate: {
@@ -61,6 +63,11 @@ const ReminderSchema = new mongoose.Schema({
       },
       message: 'nextReminder must be a valid date'
     }
+  },
+  notificationMethods: {
+    type: [String],
+    enum: ['email', 'push', 'popup'],
+    default: ['popup']
   }
 }, {
   timestamps: true

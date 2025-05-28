@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Bell, Calendar, Clock, Droplets, Plus, Trash2, Loader } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import LogoOJT from '../assets/LogoOJT.png';
-import { reminderAPI, plantAPI } from '../services/api';
+import { plantAPI } from '../services/api';
+import { reminderAPI } from '../services/api';
 
 const Reminder = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -28,7 +29,7 @@ const Reminder = () => {
       try {
         setLoading(true);
         
-        // Fetch both reminders and plants
+        // Use the proper API methods
         const [reminderResponse, plantResponse] = await Promise.all([
           reminderAPI.getReminders(),
           plantAPI.getAllPlants()
@@ -71,7 +72,8 @@ const Reminder = () => {
         scheduledDate: scheduledDateTime.toISOString(),
         recurring: newReminder.recurring,
         frequency: newReminder.frequency,
-        notes: `${newReminder.type} reminder for plant`
+        notes: `${newReminder.type} reminder for plant`,
+        notificationMethods: ['popup'] // Enable popup notifications
       };
 
       const response = await reminderAPI.createReminder(reminderData);

@@ -4,10 +4,12 @@ const {
   createReminder,
   getReminders,
   getUpcomingReminders,
+  getDueReminders,
   getReminder,
   updateReminder,
   deleteReminder,
-  completeReminder
+  completeReminder,
+  markNotificationSent
 } = require('../controllers/reminderController');
 
 // Import auth middleware - FIX: Import the destructured protect function
@@ -25,6 +27,10 @@ router.route('/')
 router.route('/upcoming')
   .get(getUpcomingReminders);
 
+// Route for due reminders
+router.route('/due')
+  .get(getDueReminders);
+
 // Routes for /api/reminders/:id
 router.route('/:id')
   .get(getReminder)
@@ -34,5 +40,9 @@ router.route('/:id')
 // Route for completing a reminder
 router.route('/:id/complete')
   .put(completeReminder);
+
+// Route for marking notification as sent
+router.route('/:id/notification-sent')
+  .put(markNotificationSent);
 
 module.exports = router;
