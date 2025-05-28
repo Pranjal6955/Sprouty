@@ -501,12 +501,10 @@ const Dashboard = () => {
       />
 
       <div className="flex-1 overflow-hidden">
-        {/* Main Content Area */}
         <div className="flex h-full">
-          {/* Left Side - Main Dashboard */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto scrollbar-hide">
             <div className="p-6">
-              {/* Header */}
+              {/* Updated Header Section */}
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center">
                   <img 
@@ -518,14 +516,13 @@ const Dashboard = () => {
                 </div>
                 <div className="flex items-center gap-4">
                   <NotificationButton />
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={handleAddPlant}
-                      className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-sm"
-                    >
-                      <Plus size={20} className="mr-1" /> Add Plant
-                    </button>
-                  </div>
+                  <DarkModeToggle />
+                  <button 
+                    onClick={handleAddPlant}
+                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-sm"
+                  >
+                    <Plus size={20} className="mr-1" /> Add Plant
+                  </button>
                 </div>
               </div>
 
