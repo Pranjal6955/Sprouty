@@ -96,44 +96,76 @@ const Diagnose = () => {
         return;
       }
       
+      console.log('Image processed successfully. Base64 length:', base64Image.length);
+      
       const diagnosisData = {
         plantId: plantId || null,
         base64Image: base64Image,
         notes: notes.trim()
       };
 
-      console.log('Sending diagnosis request...');
-      const response = await diagnosisAPI.diagnoseDisease(diagnosisData);
+      console.log('Sending diagnosis request to backend API...');
+      console.log('Request data:', {
+        hasPlantId: !!plantId,
+        hasImage: !!base64Image,
+        hasNotes: !!notes.trim(),
+        imageSize: base64Image ? `${(base64Image.length * 0.75 / 1024).toFixed(2)} KB` : 'N/A'
+      });
+
+      // Add a timeout to automatically handle hanging requests
+      const timeoutId = setTimeout(() => {
+        if (loading) {
+          console.warn('Diagnosis request taking too long, might have stalled');
+          setError('The diagnosis is taking longer than expected. You may continue waiting or try again with a different image.');
+        }
+      }, 45000); // 45 seconds timeout warning
       
-      if (response.success) {
-        setDiagnosisResult(response.data);
+      try {
+        const response = await diagnosisAPI.diagnoseDisease(diagnosisData);
         
-        // Show service info if using mock data
-        if (response.data.serviceInfo && response.data.serviceInfo.usingMockData) {
-          console.log('Using mock data for diagnosis');
-        }
+        // Clear the timeout since we got a response
+        clearTimeout(timeoutId);
         
-        // Refresh diagnosis history if we have a plantId
-        if (plantId) {
-          await fetchDiagnosisHistory();
+        console.log('Diagnosis response received:', {
+          success: response.success,
+          hasData: !!response.data,
+          usingMockData: response.data?.serviceInfo?.usingMockData,
+          apiAvailable: response.data?.serviceInfo?.apiAvailable,
+          serviceMessage: response.data?.serviceInfo?.message
+        });
+        
+        if (response.success) {
+          setDiagnosisResult(response.data);
+          
+          // Show service info
+          if (response.data.serviceInfo) {
+            if (response.data.serviceInfo.usingMockData) {
+              console.log('⚠️ Using mock data:', response.data.serviceInfo.message);
+            } else {
+              console.log('✅ Real diagnosis completed');
+            }
+          }
+          
+          // Refresh diagnosis history if we have a plantId
+          if (plantId) {
+            await fetchDiagnosisHistory();
+          }
+        } else {
+          setError(response.error || 'Failed to diagnose plant disease');
         }
-      } else {
-        setError(response.error || 'Failed to diagnose plant disease');
+      } catch (err) {
+        // Clear the timeout in case of error
+        clearTimeout(timeoutId);
+        throw err; // Rethrow to be handled by the outer catch
       }
     } catch (err) {
       console.error('Diagnosis error:', err);
       
       // Handle specific error cases
-      if (err.error) {
-        if (err.error.includes('temporarily unavailable')) {
-          setError('The plant disease diagnosis service is currently unavailable. Please try again later.');
-        } else if (err.error.includes('API key') || err.error.includes('not configured')) {
-          setError('The disease diagnosis service is running in demo mode. Some features may be limited.');
-        } else if (err.error.includes('does not appear to contain a plant')) {
-          setError('The uploaded image does not appear to contain a plant. Please upload a clear image of a plant.');
-        } else {
-          setError(err.error);
-        }
+      if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else if (err.error) {
+        setError(err.error);
       } else if (err.message) {
         setError(err.message);
       } else {
@@ -300,10 +332,18 @@ const Diagnose = () => {
                     <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                       <div className="flex items-center">
                         <AlertTriangle size={16} className="text-yellow-500 mr-2 flex-shrink-0" />
-                        <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                          {diagnosisResult.serviceInfo.message || 
-                           "This is demonstration data. For real plant disease diagnosis, a Plant.ID API key is required."}
-                        </p>
+                        <div className="text-sm text-yellow-700 dark:text-yellow-300">
+                          <p>{diagnosisResult.serviceInfo.message || 
+                               "This is demonstration data. For real plant disease diagnosis, a Plant.ID API key is required."}</p>
+                          {diagnosisResult.serviceInfo.error?.includes('modifier') && (
+                            <p className="mt-1 text-xs">
+                              Note: The Plant.ID API format has been updated. Real diagnosis will work once the service is fully configured.
+                            </p>
+                          )}
+                          {diagnosisResult.serviceInfo.setupInstructions && (
+                            <p className="mt-1 text-xs">{diagnosisResult.serviceInfo.setupInstructions}</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}

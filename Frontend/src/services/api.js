@@ -614,73 +614,120 @@ export const reminderAPI = {
 
 // Add diagnosis API endpoints
 export const diagnosisAPI = {
-  // Diagnose plant disease from image
   diagnoseDisease: async (diagnosisData) => {
     try {
-      const response = await axiosInstance.post('/diagnosis/diagnose', diagnosisData);
+      // Log the type of data being sent for diagnosis
+      if (diagnosisData.base64Image) {
+        console.log('Sending base64 image for diagnosis. Length:', diagnosisData.base64Image.length);
+        console.log('First 20 chars of base64:', diagnosisData.base64Image.substring(0, 20) + '...');
+      } else if (diagnosisData.imageUrl) {
+        console.log('Sending image URL for diagnosis:', diagnosisData.imageUrl);
+      }
+
+      // Create an AbortController to allow aborting the request if it takes too long
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+        console.warn('Diagnosis request aborted due to timeout');
+      }, 60000); // 60 second hard timeout
+
+      console.log('Starting diagnosis API call...');
+      // Add timeout to prevent hanging requests
+      const response = await axiosInstance.post('/diagnosis/diagnose', diagnosisData, {
+        timeout: 60000, // 60 second timeout to allow for slow API responses
+        signal: controller.signal
+      });
+      
+      // Clear the abort timeout since we got a response
+      clearTimeout(timeoutId);
+      
+      console.log('Diagnosis response received successfully:', {
+        success: response.data.success,
+        dataPresent: !!response.data.data
+      });
+      
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      console.error('Error diagnosing plant disease:', error);
+      
+      // Check if the request was aborted due to timeout
+      if (error.name === 'AbortError' || error.code === 'ECONNABORTED') {
+        console.error('Diagnosis request timed out');
+        throw new Error('The diagnosis request timed out. Please try again with a smaller image or check your internet connection.');
+      }
+      
+      // Enhanced error handling for API key issues
+      if (error.response?.data?.error?.includes('api key') || 
+          error.response?.data?.error?.includes('API key')) {
+        throw new Error('Plant disease diagnosis requires a valid Plant.ID API key. Please contact the administrator to enable this feature.');
+      }
+      
+      // Handle network connectivity issues
+      if (!error.response) {
+        throw new Error('Could not connect to diagnosis service. Please check your internet connection and try again.');
+      }
+      
+      throw error;
     }
   },
 
-  // Get diagnosis history for a specific plant
   getPlantDiagnosisHistory: async (plantId) => {
     try {
       const response = await axiosInstance.get(`/diagnosis/plant/${plantId}`);
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      console.error('Error fetching diagnosis history:', error);
+      throw error;
     }
   },
 
-  // Get all diagnosis history for user
-  getDiagnosisHistory: async (page = 1, limit = 10, status = 'all') => {
+  getUserDiagnosisHistory: async (params = {}) => {
     try {
-      const response = await axiosInstance.get(`/diagnosis/history?page=${page}&limit=${limit}&status=${status}`);
+      const response = await axiosInstance.get('/diagnosis/history', { params });
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      console.error('Error fetching user diagnosis history:', error);
+      throw error;
     }
   },
 
-  // Get single diagnosis
   getDiagnosis: async (diagnosisId) => {
     try {
       const response = await axiosInstance.get(`/diagnosis/${diagnosisId}`);
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      console.error('Error fetching diagnosis:', error);
+      throw error;
     }
   },
 
-  // Update diagnosis (add notes, mark resolved)
   updateDiagnosis: async (diagnosisId, updateData) => {
     try {
       const response = await axiosInstance.put(`/diagnosis/${diagnosisId}`, updateData);
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      console.error('Error updating diagnosis:', error);
+      throw error;
     }
   },
 
-  // Delete diagnosis
   deleteDiagnosis: async (diagnosisId) => {
     try {
       const response = await axiosInstance.delete(`/diagnosis/${diagnosisId}`);
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      console.error('Error deleting diagnosis:', error);
+      throw error;
     }
   },
 
-  // Get diagnosis statistics
   getDiagnosisStats: async () => {
     try {
       const response = await axiosInstance.get('/diagnosis/stats');
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      console.error('Error fetching diagnosis stats:', error);
+      throw error;
     }
   }
 };

@@ -15,12 +15,23 @@ require('dotenv').config();
 
 // Check for required environment variables
 console.log('🔍 Checking environment variables...');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('MONGODB_URI available:', !!process.env.MONGODB_URI);
+console.log('JWT_SECRET available:', !!process.env.JWT_SECRET);
+console.log('WEATHER_API_KEY available:', !!process.env.WEATHER_API_KEY);
+
 if (!process.env.PLANT_ID_API_KEY) {
   console.warn('⚠️  Warning: PLANT_ID_API_KEY not found in environment variables');
   console.warn('   Plant disease diagnosis features will use mock data');
   console.warn('   To enable real diagnosis, add PLANT_ID_API_KEY to your .env file');
+  console.warn('   Get your API key from: https://web.plant.id/');
 } else {
   console.log('✅ Plant.ID API key found - disease diagnosis enabled');
+  // Test the API key format
+  const apiKey = process.env.PLANT_ID_API_KEY;
+  if (apiKey.length < 20) {
+    console.warn('⚠️  Warning: Plant.ID API key seems too short, please verify it');
+  }
 }
 
 // Initialize Express app
@@ -113,6 +124,15 @@ console.log('plantRoutes type:', typeof plantRoutes);
 console.log('reminderRoutes type:', typeof reminderRoutes);
 console.log('weatherRoutes type:', typeof weatherRoutes);
 console.log('diagnosisRoutes type:', typeof diagnosisRoutes);
+
+// Validate that all services are loaded properly
+console.log('🔍 Validating services...');
+console.log('Auth routes loaded:', typeof authRoutes === 'function');
+console.log('User routes loaded:', typeof userRoutes === 'function');
+console.log('Plant routes loaded:', typeof plantRoutes === 'function');
+console.log('Reminder routes loaded:', typeof reminderRoutes === 'function');
+console.log('Weather routes loaded:', typeof weatherRoutes === 'function');
+console.log('Diagnosis routes loaded:', typeof diagnosisRoutes === 'function');
 
 // Define Routes - with checks
 if (typeof authRoutes === 'function') {
