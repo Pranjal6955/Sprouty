@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, LogOut, User, Home, Book, Bell } from 'lucide-react';
+import { Menu, LogOut, User, Home, Book, Bell, X, Stethoscope } from 'lucide-react';
 import { auth } from '../firebase';
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
@@ -50,6 +50,14 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen, activeNavItem, setActiveNavItem })
     }
   };
 
+  const navItems = [
+    { id: 'Home', label: 'Home', icon: Home, path: '/' },
+    { id: 'Garden Log', label: 'Garden Log', icon: Book, path: '/garden' },
+    { id: 'Reminders', label: 'Reminders', icon: Bell, path: '/reminders' },
+    { id: 'Diagnose', label: 'Diagnose', icon: Stethoscope, path: '/diagnose' },
+    { id: 'Profile', label: 'Profile', icon: User, path: '/profile' },
+  ];
+
   return (
     <div className={`bg-white dark:bg-gray-800 h-full shadow-lg transition-all duration-300 ease-in-out ${
       isMenuOpen ? 'w-64' : 'w-16'
@@ -68,30 +76,15 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen, activeNavItem, setActiveNavItem })
       <div className="flex-1 px-2">
         {isMenuOpen && (
           <div className="space-y-4 mt-4">
-            <NavItem 
-              icon={<Home size={20} />} 
-              label="Home" 
-              isActive={activeNavItem === 'Home'} 
-              onClick={() => handleNavigation('Home')}
-            />
-            <NavItem 
-              icon={<Book size={20} />} 
-              label="Garden Log" 
-              isActive={activeNavItem === 'Garden Log'} 
-              onClick={() => handleNavigation('Garden Log')}
-            />
-            <NavItem 
-              icon={<Bell size={20} />} 
-              label="Reminders" 
-              isActive={activeNavItem === 'Reminders'} 
-              onClick={() => handleNavigation('Reminders')}
-            />
-            <NavItem 
-              icon={<User size={20} />} 
-              label="Profile" 
-              isActive={activeNavItem === 'Profile'} 
-              onClick={() => handleNavigation('Profile')}
-            />
+            {navItems.map((item) => (
+              <NavItem 
+                key={item.id}
+                icon={<item.icon size={20} />} 
+                label={item.label} 
+                isActive={activeNavItem === item.id} 
+                onClick={() => handleNavigation(item.id)}
+              />
+            ))}
           </div>
         )}
       </div>
