@@ -5,7 +5,7 @@ import Sidebar from '../components/Sidebar';
 import LogoOJT from '../assets/LogoOJT.png';
 import defaultProfile from '../assets/profile.png';
 import Webcam from 'react-webcam';
-import { userAPI } from '../services/api';
+import { plantAPI, userAPI } from '../services/api';
 
 const Profile = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -68,29 +68,41 @@ const Profile = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const [userResponse, plantsResponse, remindersResponse] = await Promise.all([
-          userAPI.getProfile(),
-          plantAPI.getAllPlants(),
-          reminderAPI.getReminders()
-        ]);
-
-        if (userResponse.success) {
-          const user = userResponse.data;
-          const plants = plantsResponse.data || [];
-          const reminders = remindersResponse.data || [];
-          
-          setUserProfile({
-            name: user.name,
-            email: user.email,
-            location: user.location || '',
-            joinDate: new Date(user.createdAt).toLocaleDateString(),
-            totalPlants: plants.length,
-            activeReminders: reminders.filter(r => r.active && !r.completed).length,
-            avatar: user.avatar
-          });
+        setLoading(true);
+        setError(null);
+        
+        // Check if we have the required API functions
+        if (!userAPI || typeof userAPI.getUserProfile !== 'function') {
+          console.error('userAPI or getUserProfile method not available');
+          throw new Error('User API service is not properly configured');
         }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
+        
+        const response = await userAPI.getUserProfile();
+        
+        if (response && response.success) {
+          setUserProfile(response.data);
+          
+          // Fetch plants if needed and plantAPI is available
+          if (plantAPI && typeof plantAPI.getAllPlants === 'function') {
+            try {
+              const plantsResponse = await plantAPI.getAllPlants();
+              if (plantsResponse && plantsResponse.success) {
+                setUserPlants(plantsResponse.data || []);
+              }
+            } catch (plantError) {
+              console.error('Error fetching user plants:', plantError);
+              // Non-critical error, don't set main error state
+            }
+          }
+        } else {
+          console.error('API response was not successful:', response);
+          setError(response?.error || 'Failed to fetch user data');
+        }
+      } catch (err) {
+        console.error('Error fetching user data:', err);
+        setError(err.message || 'Failed to load user data. Please try again.');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -508,4 +520,3 @@ const Profile = () => {
                       };
                       
                       export default Profile;
-   

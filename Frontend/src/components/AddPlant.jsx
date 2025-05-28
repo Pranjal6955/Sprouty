@@ -87,9 +87,19 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
       setApiResponse(response);
       console.log("Plant identification response:", response);
       
-      // Check if this is mock data
-      if (response.is_mock) {
-        console.log("Received mock data due to:", response.mock_reason);
+      // If the API service returned an error but we can still proceed
+      if (!response.success) {
+        setError(response.error || "Plant identification service is unavailable. You can still add your plant manually.");
+        setIsIdentifying(false);
+        
+        // If it's just an API service issue, we can still let the user add the plant manually
+        if (response.is_mock) {
+          console.log("Received mock data due to:", response.mock_reason);
+          // Set a placeholder image so the form can be submitted
+          setCapturedImage('manual-entry');
+          setSearchMode('manual');
+          return;
+        }
       }
       
       // Process the API response
@@ -219,6 +229,9 @@ const AddPlant = ({ onAddPlant, onCancel }) => {
       }
       
       setError(errorMessage);
+      // Set a placeholder image so the form can be submitted
+      setCapturedImage('manual-entry');
+      setSearchMode('manual');
     } finally {
       setIsIdentifying(false);
     }

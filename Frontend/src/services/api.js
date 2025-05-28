@@ -225,6 +225,39 @@ export const userAPI = {
       console.error('Get stats error:', error);
       throw error;
     }
+  },
+
+  // Get user profile data
+  getUserProfile: async () => {
+    try {
+      const response = await axiosInstance.get('/users/profile');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      return { success: false, error: error.response?.data?.error || error.message };
+    }
+  },
+  
+  // Update user profile
+  updateUserProfile: async (userData) => {
+    try {
+      const response = await axiosInstance.put('/users/profile', userData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      return { success: false, error: error.response?.data?.error || error.message };
+    }
+  },
+  
+  // Update user preferences
+  updateUserPreferences: async (preferences) => {
+    try {
+      const response = await axiosInstance.put('/users/preferences', preferences);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating user preferences:', error);
+      return { success: false, error: error.response?.data?.error || error.message };
+    }
   }
 };
 
@@ -318,30 +351,34 @@ export const plantAPI = {
   // Identify plant from image
   identifyPlant: async (imageData) => {
     try {
-      let requestData;
+      // Check if imageData is a URL or base64 string
+      const isUrl = typeof imageData === 'string' && (imageData.startsWith('http://') || imageData.startsWith('https://'));
       
-      // Check if imageData is a base64 string or URL
-      if (typeof imageData === 'string') {
-        if (imageData.startsWith('data:image/')) {
-          // It's a base64 image
-          const base64Data = imageData.split(',')[1]; // Remove data:image/jpeg;base64, prefix
-          requestData = { base64Image: base64Data };
-        } else if (imageData.startsWith('http') || imageData.startsWith('https')) {
-          // It's a URL
-          requestData = { imageUrl: imageData };
-        } else {
-          // Assume it's base64 without prefix
-          requestData = { base64Image: imageData };
-        }
-      } else {
-        // If it's an object, pass it as is
-        requestData = imageData;
-      }
+      const requestData = isUrl 
+        ? { imageUrl: imageData }
+        : { base64Image: imageData.split(',')[1] }; // Remove data:image/jpeg;base64, prefix
 
       const response = await axiosInstance.post('/plants/identify', requestData);
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      console.error('Error identifying plant:', error);
+      // Handle 503 errors gracefully
+      if (error.response?.status === 503) {
+        return { 
+          success: false, 
+          error: error.response?.data?.error || 'Plant identification service is temporarily unavailable', 
+          is_mock: true,
+          mock_reason: 'API service unavailable'
+        };
+      }
+      
+      // Handle other errors
+      return { 
+        success: false, 
+        error: error.response?.data?.error || error.message,
+        is_mock: true,
+        mock_reason: 'API error'
+      };
     }
   },
 
