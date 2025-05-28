@@ -52,11 +52,18 @@ const PlantLogCard = ({ plant, onNotesUpdate }) => {
 
   const health = getHealthStatus(plant);
 
+  const handleCardClick = (e) => {
+    // Don't open history if clicking on notes section or its children
+    if (!e.target.closest('.notes-section')) {
+      setShowHistory(true);
+    }
+  };
+
   return (
     <>
       <div 
         className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-4 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 cursor-pointer"
-        onClick={() => setShowHistory(true)}
+        onClick={handleCardClick}
       >
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
@@ -130,12 +137,16 @@ const PlantLogCard = ({ plant, onNotesUpdate }) => {
           </div>
         </div>
 
-        <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg relative group">
+        {/* Add notes-section class to prevent history popup */}
+        <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg relative group notes-section">
           <div className="flex justify-between items-start mb-2">
             <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100">Recent Notes</h4>
             {!isEditingNotes && (
               <button
-                onClick={() => setIsEditingNotes(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsEditingNotes(true);
+                }}
                 className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
               >
                 <Edit size={14} className="text-gray-500 dark:text-gray-400" />
