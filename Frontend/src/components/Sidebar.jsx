@@ -31,8 +31,14 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen, activeNavItem, setActiveNavItem })
   };
 
   const handleNavigation = (item) => {
+    console.log('Navigation triggered for:', item);
     setActiveNavItem(item);
+    
     switch(item) {
+      case 'Diagnose':
+        console.log('Navigating to diagnose page');
+        navigate('/diagnose'); // Removed { replace: true } and ensure no ID is appended
+        return;
       case 'Home':
         navigate('/dashboard');
         break;
@@ -46,16 +52,16 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen, activeNavItem, setActiveNavItem })
         navigate('/profile');
         break;
       default:
-        break;
+        return;
     }
   };
 
   const navItems = [
-    { id: 'Home', label: 'Home', icon: Home, path: '/' },
-    { id: 'Garden Log', label: 'Garden Log', icon: Book, path: '/garden' },
-    { id: 'Reminders', label: 'Reminders', icon: Bell, path: '/reminders' },
+    { id: 'Home', label: 'Home', icon: Home, path: '/dashboard' },
+    { id: 'Garden Log', label: 'Garden Log', icon: Book, path: '/gardenLog' },
+    { id: 'Reminders', label: 'Reminders', icon: Bell, path: '/reminder' },
     { id: 'Diagnose', label: 'Diagnose', icon: Stethoscope, path: '/diagnose' },
-    { id: 'Profile', label: 'Profile', icon: User, path: '/profile' },
+    { id: 'Profile', label: 'Profile', icon: User, path: '/profile' }
   ];
 
   return (

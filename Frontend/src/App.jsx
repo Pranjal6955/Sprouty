@@ -26,6 +26,7 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/gardenLog" element={<GardenLog />} />
             <Route path="/diagnose" element={<Diagnose />} />
+            <Route path="/diagnose/:plantId" element={<Diagnose />} />
           </Routes>
           <NotificationPopup />
         </BrowserRouter>
