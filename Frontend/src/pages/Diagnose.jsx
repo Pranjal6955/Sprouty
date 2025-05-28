@@ -114,19 +114,20 @@ const Diagnose = () => {
                     
                     {/* Disease Details */}
                     <div className="space-y-4">
-                      {{
-                        title: 'Description', 
-                        content: diagnosisResult.description 
-                      },
-                      {
-                        title: 'Cause', 
-                        content: diagnosisResult.cause 
-                      },
-                      {
-                        title: 'Classification', 
-                        content: diagnosisResult.classification?.join(' → ') 
-                      }
-                    }.map((item, index) => (
+                      {[
+                        {
+                          title: 'Description', 
+                          content: diagnosisResult.description 
+                        },
+                        {
+                          title: 'Cause', 
+                          content: diagnosisResult.cause 
+                        },
+                        {
+                          title: 'Classification', 
+                          content: diagnosisResult.classification?.join(' → ') 
+                        }
+                      ].map((item, index) => (
                         <div key={index}>
                           <h3 className="font-semibold text-gray-800 dark:text-white">{item.title}</h3>
                           <p className="text-gray-600 dark:text-gray-400 mt-1">{item.content}</p>
