@@ -211,11 +211,6 @@ exports.searchLocations = async (query) => {
       lon: location.lon
     }));
   } catch (error) {
-    // Return mock suggestions as fallback
-    const mockSuggestions = [
-      { name: query, region: 'Unknown', country: 'Unknown', displayName: `${query}, Unknown, Unknown`, lat: 0, lon: 0 }
-    ];
-    
-    return mockSuggestions;
+    throw error;
   }
 };
