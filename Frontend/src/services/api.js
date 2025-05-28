@@ -612,6 +612,79 @@ export const reminderAPI = {
   },
 };
 
+// Add diagnosis API endpoints
+export const diagnosisAPI = {
+  // Diagnose plant disease from image
+  diagnoseDisease: async (diagnosisData) => {
+    try {
+      const response = await axiosInstance.post('/diagnosis/diagnose', diagnosisData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Get diagnosis history for a specific plant
+  getPlantDiagnosisHistory: async (plantId) => {
+    try {
+      const response = await axiosInstance.get(`/diagnosis/plant/${plantId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Get all diagnosis history for user
+  getDiagnosisHistory: async (page = 1, limit = 10, status = 'all') => {
+    try {
+      const response = await axiosInstance.get(`/diagnosis/history?page=${page}&limit=${limit}&status=${status}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Get single diagnosis
+  getDiagnosis: async (diagnosisId) => {
+    try {
+      const response = await axiosInstance.get(`/diagnosis/${diagnosisId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Update diagnosis (add notes, mark resolved)
+  updateDiagnosis: async (diagnosisId, updateData) => {
+    try {
+      const response = await axiosInstance.put(`/diagnosis/${diagnosisId}`, updateData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Delete diagnosis
+  deleteDiagnosis: async (diagnosisId) => {
+    try {
+      const response = await axiosInstance.delete(`/diagnosis/${diagnosisId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  },
+
+  // Get diagnosis statistics
+  getDiagnosisStats: async () => {
+    try {
+      const response = await axiosInstance.get('/diagnosis/stats');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  }
+};
+
 // Export uploadToCloudinary for use in other components
 export { uploadToCloudinary };
 

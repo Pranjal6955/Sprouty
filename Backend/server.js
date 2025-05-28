@@ -8,9 +8,20 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const reminderRoutes = require('./routes/reminders');
 const weatherRoutes = require('./routes/weather');
+const diagnosisRoutes = require('./routes/diagnosisRoutes');
 const initCronJobs = require('./services/cronService');
 const firebase = require('./config/firebase'); // Initialize Firebase Admin SDK
 require('dotenv').config();
+
+// Check for required environment variables
+console.log('🔍 Checking environment variables...');
+if (!process.env.PLANT_ID_API_KEY) {
+  console.warn('⚠️  Warning: PLANT_ID_API_KEY not found in environment variables');
+  console.warn('   Plant disease diagnosis features will use mock data');
+  console.warn('   To enable real diagnosis, add PLANT_ID_API_KEY to your .env file');
+} else {
+  console.log('✅ Plant.ID API key found - disease diagnosis enabled');
+}
 
 // Initialize Express app
 const app = express();
@@ -101,6 +112,7 @@ console.log('userRoutes type:', typeof userRoutes);
 console.log('plantRoutes type:', typeof plantRoutes);
 console.log('reminderRoutes type:', typeof reminderRoutes);
 console.log('weatherRoutes type:', typeof weatherRoutes);
+console.log('diagnosisRoutes type:', typeof diagnosisRoutes);
 
 // Define Routes - with checks
 if (typeof authRoutes === 'function') {
@@ -131,6 +143,12 @@ if (typeof weatherRoutes === 'function') {
   app.use('/api/weather', weatherRoutes);
 } else {
   console.error('Warning: weatherRoutes is not a function');
+}
+
+if (typeof diagnosisRoutes === 'function') {
+  app.use('/api/diagnosis', diagnosisRoutes);
+} else {
+  console.error('Warning: diagnosisRoutes is not a function');
 }
 
 // Base route

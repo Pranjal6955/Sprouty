@@ -974,3 +974,143 @@ curl -X POST http://localhost:5000/api/plants/PLANT_ID/images \
 2. Replace `PLANT_ID` and `REMINDER_ID` with actual IDs from your database
 3. Adjust date formats as needed
 4. For file uploads, replace `/path/to/image.jpg` with the actual path to your image file
+
+## Plant Disease Diagnosis Endpoints
+
+### Diagnose Plant Disease (Health Assessment)
+Uses Plant.ID Health Assessment API for comprehensive disease and pest detection.
+
+```bash
+curl -X POST http://localhost:5000/api/diagnosis/diagnose \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "plantId": "PLANT_ID",
+    "base64Image": "BASE64_ENCODED_IMAGE_DATA",
+    "notes": "Plant showing brown spots on leaves"
+  }'
+```
+
+**Example with image URL:**
+```bash
+curl -X POST http://localhost:5000/api/diagnosis/diagnose \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "plantId": "PLANT_ID",
+    "imageUrl": "https://example.com/plant-image.jpg",
+    "notes": "Suspicious spots appearing on leaves"
+  }'
+```
+
+**Expected Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "diagnosis": {
+      "_id": "60d5f8b77d213e3a2caef2d1",
+      "plant": "60d5f8b77d213e3a2caef2b4",
+      "user": "60d5f8b77d213e3a2caef2b3",
+      "isHealthy": false,
+      "healthProbability": 0.3,
+      "diseases": [
+        {
+          "name": "Leaf spot disease",
+          "common_names": ["Brown spot", "Leaf blight"],
+          "probability": 0.85,
+          "severity": "high",
+          "description": "Fungal disease causing brown spots on leaves",
+          "cause": "High humidity and poor air circulation",
+          "treatment": {
+            "chemical": "Apply copper-based fungicide",
+            "organic": "Use neem oil treatment",
+            "cultural": "Improve air circulation; Water at soil level"
+          },
+          "prevention": "Ensure good air circulation and avoid overhead watering",
+          "classification": ["Fungal", "Leaf disease"]
+        }
+      ],
+      "recommendations": {
+        "immediate_actions": [
+          "Isolate plant immediately to prevent spread",
+          "Remove severely affected plant parts",
+          "Apply appropriate treatment as soon as possible"
+        ],
+        "preventive_measures": [
+          "Ensure proper air circulation around plant",
+          "Avoid overhead watering when possible"
+        ],
+        "treatment_priority": "high"
+      }
+    },
+    "summary": {
+      "isHealthy": false,
+      "diseaseCount": 1,
+      "pestCount": 0,
+      "overallHealth": "critical",
+      "treatmentPriority": "high"
+    },
+    "serviceInfo": {
+      "usingMockData": false,
+      "apiAvailable": true
+    }
+  }
+}
+```
+
+**Response when image doesn't contain a plant:**
+```json
+{
+  "success": false,
+  "error": "The uploaded image does not appear to contain a plant. Please upload a clear image of a plant."
+}
+```
+
+**Response when using mock data (no API key):**
+```json
+{
+  "success": true,
+  "data": {
+    "diagnosis": {
+      "diseases": [
+        {
+          "name": "Leaf spot disease",
+          "description": "This is a mock disease diagnosis result. Please configure your Plant.ID API key to get real disease identification results."
+        }
+      ]
+    },
+    "serviceInfo": {
+      "usingMockData": true,
+      "apiAvailable": false
+    }
+  }
+}
+```
+
+### Environment Variables Required
+
+For the disease diagnosis feature to work with real data, add this to your `.env` file:
+
+```bash
+# Plant.ID API for Disease Diagnosis
+# Get your API key from: https://web.plant.id/
+PLANT_ID_API_KEY=your_plant_id_api_key_here
+```
+
+### API Key Setup Instructions
+
+1. Go to [https://web.plant.id/](https://web.plant.id/)
+2. Sign up for an account
+3. Choose a plan (they offer free tier with limited requests)
+4. Get your API key from the dashboard
+5. Add it to your `.env` file as `PLANT_ID_API_KEY=your_key_here`
+6. Restart your server
+
+### Supported Image Formats and Requirements
+
+- **Formats**: JPG, PNG, WebP
+- **Size limit**: 5MB maximum
+- **Resolution**: Minimum 256x256 pixels recommended
+- **Content**: Image should clearly show the plant or affected plant parts
+- **Quality**: Clear, well-lit images work best

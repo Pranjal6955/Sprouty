@@ -351,8 +351,12 @@ const Dashboard = () => {
   const handleDiagnose = async (e, plantId) => {
     e.stopPropagation();
     try {
-      // Navigate to the plant diagnosis page with the plant ID
-      navigate(`/diagnose/${plantId}`);
+      // Navigate to the plant diagnosis page with or without plant ID
+      if (plantId) {
+        navigate(`/diagnose/${plantId}`);
+      } else {
+        navigate('/diagnose');
+      }
     } catch (error) {
       console.error('Error navigating to diagnosis:', error);
     }
