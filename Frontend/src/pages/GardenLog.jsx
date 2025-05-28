@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import { Search, Droplets, AlertCircle, Scissors, Flower, Edit, Check, X, Loader } from 'lucide-react';
 import { plantAPI } from '../services/api';
+import PlantHistoryLog from '../components/PlantHistoryLog';
 
 const PlantLogCard = ({ plant, onNotesUpdate }) => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [editedNotes, setEditedNotes] = useState(plant.notes || '');
+  const [showHistory, setShowHistory] = useState(false);
 
   const handleNotesSubmit = async () => {
     try {
@@ -51,125 +53,136 @@ const PlantLogCard = ({ plant, onNotesUpdate }) => {
   const health = getHealthStatus(plant);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-4 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-4">
-          <div className="relative">
-            <img 
-              src={plant.mainImage || plant.image || 'https://via.placeholder.com/64x64/e5e7eb/9ca3af?text=Plant'} 
-              alt={plant.name} 
-              className="w-16 h-16 rounded-xl object-cover ring-2 ring-green-100 dark:ring-green-900"
-              onError={(e) => {
-                e.target.src = 'https://via.placeholder.com/64x64/e5e7eb/9ca3af?text=Plant';
-              }}
-            />
-            <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white dark:border-gray-800 ${
-              health === 'Good' ? 'bg-green-500' :
-              health === 'Fair' ? 'bg-yellow-500' :
-              'bg-red-500'
-            }`} />
-          </div>
-          <div>
-            <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">{plant.name}</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-              {plant.species || plant.nickname || 'Unknown species'}
-            </p>
-          </div>
-        </div>
-        <span className={`px-4 py-1.5 rounded-full text-sm font-medium ${
-          health === 'Good' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-          health === 'Fair' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
-          'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-        }`}>
-          {health}
-        </span>
-      </div>
-
-      <div className="grid grid-cols-2 gap-6 mb-6">
-        <div className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-700/30 p-3 rounded-lg">
-          <Droplets className="text-blue-500" size={20} />
-          <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Last Watered</p>
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-              {plant.lastWatered ? formatDate(plant.lastWatered) : getLastCareAction(plant.careHistory, 'Watered')}
-            </span>
-          </div>
-        </div>
-        <div className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-700/30 p-3 rounded-lg">
-          <Flower className="text-purple-500" size={20} />
-          <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Last Fertilised</p>
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-              {plant.lastFertilized ? formatDate(plant.lastFertilized) : getLastCareAction(plant.careHistory, 'Fertilized')}
-            </span>
-          </div>
-        </div>
-        <div className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-700/30 p-3 rounded-lg">
-          <Scissors className="text-green-500" size={20} />
-          <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Last Pruning</p>
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-              {plant.lastPruned ? formatDate(plant.lastPruned) : getLastCareAction(plant.careHistory, 'Pruned')}
-            </span>
-          </div>
-        </div>
-        <div className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-700/30 p-3 rounded-lg">
-          <AlertCircle className="text-yellow-500" size={20} />
-          <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Date Added</p>
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-              {formatDate(plant.dateAdded || plant.createdAt)}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg relative group">
-        <div className="flex justify-between items-start mb-2">
-          <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100">Recent Notes</h4>
-          {!isEditingNotes && (
-            <button
-              onClick={() => setIsEditingNotes(true)}
-              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
-            >
-              <Edit size={14} className="text-gray-500 dark:text-gray-400" />
-            </button>
-          )}
-        </div>
-
-        {isEditingNotes ? (
-          <div className="space-y-3">
-            <textarea
-              value={editedNotes}
-              onChange={(e) => setEditedNotes(e.target.value)}
-              className="w-full p-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-600 text-sm text-gray-600 dark:text-gray-300 focus:border-green-500 dark:focus:border-green-500 focus:ring-1 focus:ring-green-500"
-              rows={3}
-              placeholder="Add notes about your plant..."
-            />
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={handleCancel}
-                className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center text-sm"
-              >
-                <X size={16} className="mr-1" />
-                Cancel
-              </button>
-              <button
-                onClick={handleNotesSubmit}
-                className="p-1.5 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 flex items-center text-sm"
-              >
-                <Check size={16} className="mr-1" />
-                Save
-              </button>
+    <>
+      <div 
+        className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 mb-4 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 cursor-pointer"
+        onClick={() => setShowHistory(true)}
+      >
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <img 
+                src={plant.mainImage || plant.image || 'https://via.placeholder.com/64x64/e5e7eb/9ca3af?text=Plant'} 
+                alt={plant.name} 
+                className="w-16 h-16 rounded-xl object-cover ring-2 ring-green-100 dark:ring-green-900"
+                onError={(e) => {
+                  e.target.src = 'https://via.placeholder.com/64x64/e5e7eb/9ca3af?text=Plant';
+                }}
+              />
+              <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white dark:border-gray-800 ${
+                health === 'Good' ? 'bg-green-500' :
+                health === 'Fair' ? 'bg-yellow-500' :
+                'bg-red-500'
+              }`} />
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">{plant.name}</h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                {plant.species || plant.nickname || 'Unknown species'}
+              </p>
             </div>
           </div>
-        ) : (
-          <p className="text-sm text-gray-600 dark:text-gray-300">
-            {plant.notes || 'No notes added yet. Click edit to add notes about your plant.'}
-          </p>
-        )}
+          <span className={`px-4 py-1.5 rounded-full text-sm font-medium ${
+            health === 'Good' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+            health === 'Fair' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
+            'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+          }`}>
+            {health}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-6 mb-6">
+          <div className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-700/30 p-3 rounded-lg">
+            <Droplets className="text-blue-500" size={20} />
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Last Watered</p>
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                {plant.lastWatered ? formatDate(plant.lastWatered) : getLastCareAction(plant.careHistory, 'Watered')}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-700/30 p-3 rounded-lg">
+            <Flower className="text-purple-500" size={20} />
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Last Fertilised</p>
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                {plant.lastFertilized ? formatDate(plant.lastFertilized) : getLastCareAction(plant.careHistory, 'Fertilized')}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-700/30 p-3 rounded-lg">
+            <Scissors className="text-green-500" size={20} />
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Last Pruning</p>
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                {plant.lastPruned ? formatDate(plant.lastPruned) : getLastCareAction(plant.careHistory, 'Pruned')}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-700/30 p-3 rounded-lg">
+            <AlertCircle className="text-yellow-500" size={20} />
+            <div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Date Added</p>
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                {formatDate(plant.dateAdded || plant.createdAt)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg relative group">
+          <div className="flex justify-between items-start mb-2">
+            <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100">Recent Notes</h4>
+            {!isEditingNotes && (
+              <button
+                onClick={() => setIsEditingNotes(true)}
+                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+              >
+                <Edit size={14} className="text-gray-500 dark:text-gray-400" />
+              </button>
+            )}
+          </div>
+
+          {isEditingNotes ? (
+            <div className="space-y-3">
+              <textarea
+                value={editedNotes}
+                onChange={(e) => setEditedNotes(e.target.value)}
+                className="w-full p-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-600 text-sm text-gray-600 dark:text-gray-300 focus:border-green-500 dark:focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                rows={3}
+                placeholder="Add notes about your plant..."
+              />
+              <div className="flex justify-end space-x-2">
+                <button
+                  onClick={handleCancel}
+                  className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center text-sm"
+                >
+                  <X size={16} className="mr-1" />
+                  Cancel
+                </button>
+                <button
+                  onClick={handleNotesSubmit}
+                  className="p-1.5 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 flex items-center text-sm"
+                >
+                  <Check size={16} className="mr-1" />
+                  Save
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              {plant.notes || 'No notes added yet. Click edit to add notes about your plant.'}
+            </p>
+          )}
+        </div>
       </div>
-    </div>
+
+      <PlantHistoryLog 
+        isOpen={showHistory}
+        onClose={() => setShowHistory(false)}
+        plant={plant}
+      />
+    </>
   );
 };
 
