@@ -214,9 +214,9 @@ const PlantLogCard = ({ plant, onNotesUpdate, onStatusUpdate }) => {
           <div className="flex items-center space-x-3 bg-gray-50 dark:bg-gray-700/30 p-3 rounded-lg">
             <AlertCircle className="text-yellow-500" size={20} />
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Date Added</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Health Status</p>
               <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                {formatDate(plant.dateAdded || plant.createdAt)}
+                {plant.health || plant.status || 'Healthy'}
               </span>
             </div>
           </div>

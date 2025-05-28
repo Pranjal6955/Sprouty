@@ -20,7 +20,9 @@ const Reminder = () => {
     scheduledDate: "",
     time: "",
     recurring: true,
-    frequency: "weekly"
+    frequency: "weekly",
+    notes: "",
+    notificationMethods: ["popup"]
   });
 
   const [activeSection, setActiveSection] = useState('upcoming');
@@ -42,9 +44,9 @@ const Reminder = () => {
         console.log('Reminder response:', reminderResponse);
         console.log('Plant response:', plantResponse);
         
-        // Handle reminder response - check for both success flag and direct data
+        // Handle reminder response - backend returns { success: true, data: [...] }
         if (reminderResponse.success !== false) {
-          const reminderData = reminderResponse.data || reminderResponse;
+          const reminderData = reminderResponse.data || [];
           setReminders(Array.isArray(reminderData) ? reminderData : []);
           console.log('Set reminders:', reminderData);
         } else {
@@ -52,9 +54,9 @@ const Reminder = () => {
           setError('Failed to load reminders: ' + reminderResponse.error);
         }
         
-        // Handle plant response - check for both success flag and direct data
+        // Handle plant response - backend returns { success: true, data: [...] }
         if (plantResponse.success !== false) {
-          const plantData = plantResponse.data || plantResponse;
+          const plantData = plantResponse.data || [];
           setPlants(Array.isArray(plantData) ? plantData : []);
           console.log('Set plants:', plantData);
         } else {
@@ -93,8 +95,8 @@ const Reminder = () => {
         scheduledDate: scheduledDateTime.toISOString(),
         recurring: newReminder.recurring,
         frequency: newReminder.frequency,
-        notes: `${newReminder.type} reminder for plant`,
-        notificationMethods: ['popup'] // Enable popup notifications
+        notes: newReminder.notes || `${newReminder.type} reminder for plant`,
+        notificationMethods: newReminder.notificationMethods
       };
 
       console.log('Sending reminder data to API:', reminderData);
@@ -102,7 +104,7 @@ const Reminder = () => {
       console.log('Create reminder response:', response);
       
       if (response.success !== false) {
-        const newReminderData = response.data || response;
+        const newReminderData = response.data;
         setReminders(prev => [...prev, newReminderData]);
         setShowAddReminder(false);
         setNewReminder({
@@ -111,7 +113,9 @@ const Reminder = () => {
           scheduledDate: "",
           time: "",
           recurring: true,
-          frequency: "weekly"
+          frequency: "weekly",
+          notes: "",
+          notificationMethods: ["popup"]
         });
         setError('');
         console.log('Reminder created successfully');
@@ -129,8 +133,9 @@ const Reminder = () => {
     try {
       const response = await reminderAPI.deleteReminder(reminderId);
       
-      if (response.success) {
+      if (response.success !== false) {
         setReminders(reminders.filter(reminder => reminder._id !== reminderId));
+        setCompletedReminders(completedReminders.filter(reminder => reminder._id !== reminderId));
       }
     } catch (err) {
       console.error('Error deleting reminder:', err);
@@ -140,7 +145,7 @@ const Reminder = () => {
 
   const handleMarkComplete = async (reminderId) => {
     try {
-      const response = await reminderAPI.updateReminder(reminderId, { completed: true });
+      const response = await reminderAPI.completeReminder(reminderId);
       if (response.success !== false) {
         const completedReminder = reminders.find(r => r._id === reminderId);
         setReminders(reminders.filter(r => r._id !== reminderId));
@@ -168,17 +173,27 @@ const Reminder = () => {
     }
   };
 
-  const getPlantName = (plantId) => {
-    if (!plantId) return 'Unknown Plant';
+  const getPlantName = (plantRef) => {
+    if (!plantRef) return 'Unknown Plant';
     
-    // Handle both string IDs and plant objects
-    let actualPlantId = plantId;
-    if (typeof plantId === 'object' && plantId._id) {
-      actualPlantId = plantId._id;
+    // If plant is populated (object), get name from it
+    if (typeof plantRef === 'object' && plantRef.name) {
+      return plantRef.nickname || plantRef.name;
     }
     
-    const plant = plants.find(p => p._id === actualPlantId || p.id === actualPlantId);
+    // If plant is just an ID, find it in our plants array
+    const plant = plants.find(p => p._id === plantRef || p.id === plantRef);
     return plant ? (plant.nickname || plant.name) : 'Unknown Plant';
+  };
+
+  const getFrequencyDisplay = (frequency) => {
+    if (typeof frequency === 'number') {
+      return frequency === 1 ? 'Daily' :
+             frequency === 7 ? 'Weekly' :
+             frequency === 30 ? 'Monthly' :
+             `Every ${frequency} days`;
+    }
+    return frequency || 'Weekly';
   };
 
   if (loading) {
@@ -294,7 +309,7 @@ const Reminder = () => {
                             {getPlantName(reminder.plant)}
                           </h3>
                           <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {reminder.type} - {reminder.recurring ? `Every ${reminder.frequency} days` : 'Once'}
+                            {reminder.type} - {reminder.recurring ? getFrequencyDisplay(reminder.frequency) : 'Once'}
                           </p>
                         </div>
                       </div>
@@ -359,7 +374,7 @@ const Reminder = () => {
                       <option value="">Select a plant...</option>
                       {plants.map(plant => (
                         <option key={plant._id} value={plant._id}>
-                          {plant.name}
+                          {plant.nickname || plant.name}
                         </option>
                       ))}
                     </select>

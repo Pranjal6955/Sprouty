@@ -8,7 +8,7 @@ import { plantAPI } from '../services/api';
 
 const PlantDetails = ({ plant, onClose, onUpdate }) => {
   const [isEditingStatus, setIsEditingStatus] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState(plant.health);
+  const [selectedStatus, setSelectedStatus] = useState(plant.health || plant.status);
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateError, setUpdateError] = useState(null);
 
@@ -28,7 +28,7 @@ const PlantDetails = ({ plant, onClose, onUpdate }) => {
     setUpdateError(null);
 
     try {
-      console.log('Updating plant status from', plant.health, 'to', selectedStatus);
+      console.log('Updating plant status from', plant.health || plant.status, 'to', selectedStatus);
       
       const response = await plantAPI.updatePlant(plant.id, {
         status: selectedStatus
@@ -36,7 +36,7 @@ const PlantDetails = ({ plant, onClose, onUpdate }) => {
 
       console.log('Status update response:', response);
 
-      if (response.success) {
+      if (response.success !== false) {
         // Update the plant data if onUpdate callback is provided
         if (onUpdate) {
           onUpdate({
@@ -65,7 +65,7 @@ const PlantDetails = ({ plant, onClose, onUpdate }) => {
   };
 
   const getCurrentStatusStyle = () => {
-    const status = statusOptions.find(s => s.value === plant.health);
+    const status = statusOptions.find(s => s.value === (plant.health || plant.status));
     return status || statusOptions[0];
   };
 
@@ -167,7 +167,7 @@ const PlantDetails = ({ plant, onClose, onUpdate }) => {
               ) : (
                 <div className="flex items-center justify-between">
                   <p className={`font-medium ${getCurrentStatusStyle().color}`}>
-                    {plant.health}
+                    {plant.health || plant.status}
                   </p>
                   <button
                     onClick={() => setIsEditingStatus(true)}

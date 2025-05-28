@@ -236,7 +236,8 @@ export const plantAPI = {
       const response = await axiosInstance.post('/plants', plantData);
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      console.error('Error creating plant:', error);
+      return { success: false, error: error.response?.data?.error || error.message };
     }
   },
 
@@ -246,7 +247,8 @@ export const plantAPI = {
       const response = await axiosInstance.get('/plants');
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      console.error('Error fetching plants:', error);
+      return { success: false, error: error.response?.data?.error || error.message };
     }
   },
 
@@ -256,7 +258,8 @@ export const plantAPI = {
       const response = await axiosInstance.get('/plants');
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      console.error('Error fetching plants:', error);
+      return { success: false, error: error.response?.data?.error || error.message };
     }
   },
 
@@ -273,38 +276,11 @@ export const plantAPI = {
   // Update a plant
   updatePlant: async (plantId, updateData) => {
     try {
-      console.log('Updating plant:', plantId, 'with data:', updateData);
-      
-      // Ensure we're sending the correct field name for status
-      if (updateData.health) {
-        updateData.status = updateData.health;
-        delete updateData.health;
-      }
-      
       const response = await axiosInstance.put(`/plants/${plantId}`, updateData);
-      console.log('Update response:', response.data);
-      
       return response.data;
     } catch (error) {
-      console.error('Update plant error details:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        message: error.message
-      });
-      
-      // Provide more specific error messages
-      if (error.response?.status === 404) {
-        throw new Error('Plant not found');
-      } else if (error.response?.status === 401) {
-        throw new Error('Not authorized to update this plant');
-      } else if (error.response?.status === 400) {
-        throw new Error(error.response?.data?.error || 'Invalid plant data');
-      } else if (error.response?.status === 500) {
-        throw new Error('Server error occurred while updating plant');
-      } else {
-        throw new Error(error.response?.data?.error || error.message || 'Failed to update plant');
-      }
+      console.error('Error updating plant:', error);
+      return { success: false, error: error.response?.data?.error || error.message };
     }
   },
 
@@ -314,7 +290,8 @@ export const plantAPI = {
       const response = await axiosInstance.delete(`/plants/${plantId}`);
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      console.error('Error deleting plant:', error);
+      return { success: false, error: error.response?.data?.error || error.message };
     }
   },
 
@@ -530,7 +507,7 @@ export const reminderAPI = {
   getReminders: async () => {
     try {
       const response = await axiosInstance.get('/reminders');
-      console.log('Fetched reminders:', response.data); // Add debug logging
+      console.log('Fetched reminders:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching reminders:', error);
@@ -538,20 +515,10 @@ export const reminderAPI = {
     }
   },
 
-  // Create new reminder
+  // Create new reminder - updated to match backend schema
   createReminder: async (reminderData) => {
     try {
-      // Map frequency strings to numbers that backend expects
-      const frequencyMap = {
-        'daily': 1,
-        'weekly': 7,
-        'biweekly': 14,
-        'monthly': 30,
-        'quarterly': 90,
-        'yearly': 365
-      };
-
-      // Transform the data to match backend schema
+      // Transform the data to match backend schema exactly
       const transformedData = {
         plant: reminderData.plant,
         type: reminderData.type,
@@ -559,13 +526,16 @@ export const reminderAPI = {
         notes: reminderData.notes || `${reminderData.type} reminder for plant`,
         scheduledDate: reminderData.scheduledDate,
         recurring: reminderData.recurring !== false,
-        frequency: frequencyMap[reminderData.frequency] || frequencyMap['weekly'],
+        frequency: reminderData.frequency === 'daily' ? 1 : 
+                  reminderData.frequency === 'weekly' ? 7 :
+                  reminderData.frequency === 'monthly' ? 30 :
+                  parseInt(reminderData.frequency) || 7,
         notificationMethods: reminderData.notificationMethods || ['popup']
       };
 
       console.log('Creating reminder with data:', transformedData);
       const response = await axiosInstance.post('/reminders', transformedData);
-      console.log('Created reminder response:', response.data); // Add debug logging
+      console.log('Created reminder response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error creating reminder:', error);
@@ -589,10 +559,21 @@ export const reminderAPI = {
   getDueReminders: async () => {
     try {
       const response = await axiosInstance.get('/reminders/due');
-      console.log('Fetched due reminders:', response.data); // Add debug logging
+      console.log('Fetched due reminders:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching due reminders:', error);
+      return { success: false, error: error.response?.data?.error || error.message };
+    }
+  },
+
+  // Get upcoming reminders
+  getUpcomingReminders: async () => {
+    try {
+      const response = await axiosInstance.get('/reminders/upcoming');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching upcoming reminders:', error);
       return { success: false, error: error.response?.data?.error || error.message };
     }
   },
@@ -622,7 +603,7 @@ export const reminderAPI = {
   // Update reminder
   updateReminder: async (reminderId, updateData) => {
     try {
-      const response = await axiosInstance.patch(`/reminders/${reminderId}`, updateData);
+      const response = await axiosInstance.put(`/reminders/${reminderId}`, updateData);
       return response.data;
     } catch (error) {
       console.error('Error updating reminder:', error);

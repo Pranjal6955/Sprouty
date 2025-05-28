@@ -17,10 +17,11 @@ const Profile = () => {
   const [userProfile, setUserProfile] = useState({
     name: '',
     email: '',
-    avatar: defaultProfile,
+    location: '',
     joinDate: '',
     totalPlants: 0,
-    activeReminders: 0
+    activeReminders: 0,
+    avatar: null
   });
 
   const [editForm, setEditForm] = useState({ ...userProfile });
@@ -65,67 +66,36 @@ const Profile = () => {
 
   // Fetch user profile data on component mount
   useEffect(() => {
-    fetchUserProfile();
-    fetchUserStats();
+    const fetchUserData = async () => {
+      try {
+        const [userResponse, plantsResponse, remindersResponse] = await Promise.all([
+          userAPI.getProfile(),
+          plantAPI.getAllPlants(),
+          reminderAPI.getReminders()
+        ]);
+
+        if (userResponse.success) {
+          const user = userResponse.data;
+          const plants = plantsResponse.data || [];
+          const reminders = remindersResponse.data || [];
+          
+          setUserProfile({
+            name: user.name,
+            email: user.email,
+            location: user.location || '',
+            joinDate: new Date(user.createdAt).toLocaleDateString(),
+            totalPlants: plants.length,
+            activeReminders: reminders.filter(r => r.active && !r.completed).length,
+            avatar: user.avatar
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+    fetchUserData();
   }, []);
-
-  const fetchUserProfile = async () => {
-    try {
-      setLoading(true);
-      const response = await userAPI.getProfile();
-      
-      if (response.success) {
-        const userData = {
-          name: response.data.name,
-          email: response.data.email,
-          avatar: response.data.avatar || defaultProfile,
-          joinDate: new Date(response.data.createdAt).toLocaleDateString(),
-          location: response.data.location || '',
-          totalPlants: 0, // Will be fetched separately
-          activeReminders: 0 // Will be fetched separately
-        };
-        
-        setUserProfile(userData);
-        setEditForm(userData);
-      }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      setError('Failed to load profile data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchUserStats = async () => {
-    try {
-      console.log('Fetching user stats...');
-      const response = await userAPI.getStats();
-      console.log('Stats response:', response);
-      
-      if (response.success) {
-        const statsData = {
-          totalPlants: response.data.totalPlants || 0,
-          activeReminders: response.data.upcomingReminders || 0
-        };
-        
-        console.log('Setting stats:', statsData);
-        
-        setUserProfile(prev => ({
-          ...prev,
-          ...statsData
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching user stats:', error);
-      // Don't show error for stats, just log it
-      // Set default values
-      setUserProfile(prev => ({
-        ...prev,
-        totalPlants: 0,
-        activeReminders: 0
-      }));
-    }
-  };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
@@ -512,24 +482,30 @@ const Profile = () => {
                         <Upload size={20} className="mr-2" />
                         Upload & Save Image
                       </button>
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleImageUpload}
-                        accept="image/*"
-                        className="hidden"
-                        disabled={saving}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default Profile;
+                                            <input
+                                              type="file"
+                                              accept="image/*"
+                                              ref={fileInputRef}
+                                              style={{ display: 'none' }}
+                                              onChange={handleImageUpload}
+                                              disabled={saving}
+                                            />
+                                          </div>
+                                        </div>
+                                      )}
+                                      {error && (
+                                        <div className="mt-4 text-red-600 dark:text-red-400 text-sm text-center">
+                                          {error}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      };
+                      
+                      export default Profile;
+   

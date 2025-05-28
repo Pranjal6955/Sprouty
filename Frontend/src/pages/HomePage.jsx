@@ -135,7 +135,7 @@ const HomePage = () => {
                 <Bell className="h-8 w-8" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">Smart Reminders</h3>
-              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">Never forget to water again with intelligent care schedules tailored to each plant's needs.</p>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">Never forget to water, fertilize, or prune again with intelligent care schedules tailored to each plant's needs.</p>
             </div>
             
             {/* Feature 3 */}

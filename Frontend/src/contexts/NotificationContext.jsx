@@ -44,7 +44,7 @@ export const NotificationProvider = ({ children }) => {
           const newNotifications = dueReminders.map(reminder => {
             console.log('Processing due reminder:', reminder);
             
-            // Handle plant data - could be populated object or just ID
+            // Handle plant data - backend populates plant object
             let plantName = 'Unknown Plant';
             let plantImage = null;
             
@@ -59,7 +59,7 @@ export const NotificationProvider = ({ children }) => {
             }
             
             return {
-              id: `reminder-${reminder._id || reminder.id}`,
+              id: `reminder-${reminder._id}`,
               type: 'reminder',
               title: `${reminder.type} Reminder`,
               message: `Time to ${reminder.type.toLowerCase()} your ${plantName}!`,
@@ -67,7 +67,7 @@ export const NotificationProvider = ({ children }) => {
               plantImage: plantImage,
               reminderType: reminder.type,
               timestamp: new Date(),
-              reminderId: reminder._id || reminder.id,
+              reminderId: reminder._id,
               reminderData: reminder // Store full reminder data
             };
           });
@@ -84,8 +84,8 @@ export const NotificationProvider = ({ children }) => {
           setTimeout(async () => {
             for (const reminder of dueReminders) {
               try {
-                await reminderAPI.markNotificationSent(reminder._id || reminder.id);
-                console.log('Marked notification as sent for reminder:', reminder._id || reminder.id);
+                await reminderAPI.markNotificationSent(reminder._id);
+                console.log('Marked notification as sent for reminder:', reminder._id);
               } catch (markError) {
                 console.error('Error marking notification as sent:', markError);
               }

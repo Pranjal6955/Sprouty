@@ -112,7 +112,7 @@ const Dashboard = () => {
       try {
         const response = await reminderAPI.getDueReminders();
         if (response.success !== false) {
-          const reminders = response.data || response;
+          const reminders = response.data || [];
           setDueReminders(Array.isArray(reminders) ? reminders : []);
           
           // Only log when there are actual reminders to avoid console spam
