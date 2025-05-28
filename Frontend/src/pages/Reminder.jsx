@@ -23,6 +23,9 @@ const Reminder = () => {
     frequency: "weekly"
   });
 
+  const [activeSection, setActiveSection] = useState('upcoming');
+  const [completedReminders, setCompletedReminders] = useState([]);
+
   // Fetch reminders and plants on component mount
   useEffect(() => {
     const fetchData = async () => {
@@ -135,6 +138,20 @@ const Reminder = () => {
     }
   };
 
+  const handleMarkComplete = async (reminderId) => {
+    try {
+      const response = await reminderAPI.updateReminder(reminderId, { completed: true });
+      if (response.success !== false) {
+        const completedReminder = reminders.find(r => r._id === reminderId);
+        setReminders(reminders.filter(r => r._id !== reminderId));
+        setCompletedReminders([...completedReminders, { ...completedReminder, completed: true }]);
+      }
+    } catch (err) {
+      console.error('Error marking reminder as complete:', err);
+      setError('Failed to mark reminder as complete');
+    }
+  };
+
   const formatDate = (dateString) => {
     try {
       return new Date(dateString).toLocaleDateString();
@@ -220,29 +237,56 @@ const Reminder = () => {
             </div>
           )}
 
+          {/* Tab Navigation */}
+          <div className="flex space-x-4 mb-6">
+            <button
+              className={`px-4 py-2 rounded-lg ${
+                activeSection === 'upcoming'
+                  ? 'bg-green-500 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+              onClick={() => setActiveSection('upcoming')}
+            >
+              Upcoming Reminders
+            </button>
+            <button
+              className={`px-4 py-2 rounded-lg ${
+                activeSection === 'completed'
+                  ? 'bg-green-500 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+              onClick={() => setActiveSection('completed')}
+            >
+              Completed Reminders
+            </button>
+          </div>
+
           {/* Main Content */}
           <div className="grid gap-6">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
               <div className="flex justify-between items-center">
                 <div className="flex items-center">
                   <Bell className="text-green-500 mr-2" />
-                  <h2 className="text-xl font-semibold text-gray-800 dark:text-white">My Reminders</h2>
+                  <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+                    {activeSection === 'upcoming' ? 'Upcoming Reminders' : 'Completed Reminders'}
+                  </h2>
                 </div>
               </div>
 
               {/* Reminders List */}
               <div className="mt-6 space-y-4">
-                {reminders.length === 0 ? (
+                {(activeSection === 'upcoming' ? reminders : completedReminders).length === 0 ? (
                   <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                     <Bell size={48} className="mx-auto mb-4 text-gray-300" />
-                    <p>No reminders set yet. Add your first reminder!</p>
+                    <p>{activeSection === 'upcoming' ? 'No upcoming reminders' : 'No completed reminders'}</p>
                   </div>
                 ) : (
-                  reminders.map(reminder => (
+                  (activeSection === 'upcoming' ? reminders : completedReminders).map(reminder => (
                     <div 
                       key={reminder._id || reminder.id}
                       className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700"
                     >
+                      {/* Existing reminder content */}
                       <div className="flex items-center space-x-4">
                         <Droplets className="text-blue-500" />
                         <div>
@@ -252,11 +296,6 @@ const Reminder = () => {
                           <p className="text-sm text-gray-600 dark:text-gray-400">
                             {reminder.type} - {reminder.recurring ? `Every ${reminder.frequency} days` : 'Once'}
                           </p>
-                          {reminder.notes && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              {reminder.notes}
-                            </p>
-                          )}
                         </div>
                       </div>
                       <div className="flex items-center space-x-4">
@@ -270,12 +309,29 @@ const Reminder = () => {
                             <span className="text-sm">{formatTime(reminder.scheduledDate)}</span>
                           </div>
                         </div>
-                        <button 
-                          onClick={() => handleDeleteReminder(reminder._id || reminder.id)}
-                          className="text-red-500 hover:text-red-600 p-2"
-                        >
-                          <Trash2 size={20} />
-                        </button>
+                        {activeSection === 'upcoming' ? (
+                          <>
+                            <button 
+                              onClick={() => handleMarkComplete(reminder._id)}
+                              className="text-green-500 hover:text-green-600 p-2"
+                            >
+                              ✓
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteReminder(reminder._id)}
+                              className="text-red-500 hover:text-red-600 p-2"
+                            >
+                              <Trash2 size={20} />
+                            </button>
+                          </>
+                        ) : (
+                          <button 
+                            onClick={() => handleDeleteReminder(reminder._id)}
+                            className="text-red-500 hover:text-red-600 p-2"
+                          >
+                            <Trash2 size={20} />
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))

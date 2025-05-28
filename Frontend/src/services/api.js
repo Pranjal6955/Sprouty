@@ -617,7 +617,18 @@ export const reminderAPI = {
       console.error('Error completing reminder:', error);
       return { success: false, error: error.response?.data?.error || error.message };
     }
-  }
+  },
+
+  // Update reminder
+  updateReminder: async (reminderId, updateData) => {
+    try {
+      const response = await axiosInstance.patch(`/reminders/${reminderId}`, updateData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating reminder:', error);
+      throw error;
+    }
+  },
 };
 
 // Export uploadToCloudinary for use in other components
