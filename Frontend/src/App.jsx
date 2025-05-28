@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Reminder from './pages/Reminder';
 import Profile from './pages/Profile';
 import GardenLog from './pages/GardenLog';
+import Diagnose from './pages/Diagnose';
 import { ThemeProvider } from './components/ThemeProvider';
 import { NotificationProvider } from './contexts/NotificationContext';
 import NotificationPopup from './components/NotificationPopup';
@@ -24,6 +25,7 @@ function App() {
             <Route path="/reminder" element={<Reminder />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/gardenLog" element={<GardenLog />} />
+            <Route path="/diagnose" element={<Diagnose />} />
           </Routes>
           <NotificationPopup />
         </BrowserRouter>
