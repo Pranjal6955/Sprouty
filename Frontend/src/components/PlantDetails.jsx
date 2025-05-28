@@ -1,11 +1,74 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   X, Calendar, Droplets, ThermometerSun, Wind, Sun, 
   Ruler, FileText, Leaf, AlertTriangle, Info, 
-  FlowerIcon, Sprout, ShieldAlert, Globe
+  FlowerIcon, Sprout, ShieldAlert, Globe, Edit2, Check, XCircle
 } from 'lucide-react';
+import { plantAPI } from '../services/api';
 
-const PlantDetails = ({ plant, onClose }) => {
+const PlantDetails = ({ plant, onClose, onUpdate }) => {
+  const [isEditingStatus, setIsEditingStatus] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState(plant.health);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState(null);
+
+  const statusOptions = [
+    { value: 'Healthy', color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30' },
+    { value: 'Needs Attention', color: 'text-yellow-600 dark:text-yellow-400', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30' },
+    { value: 'Critical', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30' }
+  ];
+
+  const handleStatusUpdate = async () => {
+    if (selectedStatus === plant.health) {
+      setIsEditingStatus(false);
+      return;
+    }
+
+    setIsUpdating(true);
+    setUpdateError(null);
+
+    try {
+      console.log('Updating plant status from', plant.health, 'to', selectedStatus);
+      
+      const response = await plantAPI.updatePlant(plant.id, {
+        status: selectedStatus
+      });
+
+      console.log('Status update response:', response);
+
+      if (response.success) {
+        // Update the plant data if onUpdate callback is provided
+        if (onUpdate) {
+          onUpdate({
+            ...plant,
+            health: selectedStatus,
+            status: selectedStatus
+          });
+        }
+        setIsEditingStatus(false);
+        console.log('Plant status updated successfully');
+      } else {
+        setUpdateError('Failed to update plant status. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error updating plant status:', error);
+      setUpdateError(error.message || 'Failed to update plant status. Please try again.');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const cancelStatusEdit = () => {
+    setSelectedStatus(plant.health);
+    setIsEditingStatus(false);
+    setUpdateError(null);
+  };
+
+  const getCurrentStatusStyle = () => {
+    const status = statusOptions.find(s => s.value === plant.health);
+    return status || statusOptions[0];
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4 animate-fadeIn">
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg w-full max-w-4xl max-h-[90vh] overflow-hidden">
@@ -31,6 +94,20 @@ const PlantDetails = ({ plant, onClose }) => {
 
         {/* Content */}
         <div className="p-6 overflow-y-auto scrollbar-hide max-h-[calc(90vh-18rem)]">
+          {/* Error Message */}
+          {updateError && (
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg flex items-center">
+              <AlertTriangle size={16} className="text-red-500 mr-2 flex-shrink-0" />
+              <p className="text-sm text-red-700 dark:text-red-400">{updateError}</p>
+              <button 
+                onClick={() => setUpdateError(null)}
+                className="ml-auto text-red-500 hover:text-red-700"
+              >
+                <XCircle size={16} />
+              </button>
+            </div>
+          )}
+
           {/* Quick Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
             <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
@@ -52,11 +129,55 @@ const PlantDetails = ({ plant, onClose }) => {
                 <Leaf size={16} className="mr-2 text-green-500" />
                 <span className="text-sm">Health</span>
               </div>
-              <p className={`font-medium ${
-                plant.health === 'Healthy' ? 'text-green-600 dark:text-green-400' :
-                plant.health === 'Needs Attention' ? 'text-yellow-600 dark:text-yellow-400' :
-                'text-red-600 dark:text-red-400'
-              }`}>{plant.health}</p>
+              {isEditingStatus ? (
+                <div className="space-y-2">
+                  <select
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    className="w-full p-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    disabled={isUpdating}
+                  >
+                    {statusOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.value}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={handleStatusUpdate}
+                      disabled={isUpdating}
+                      className="flex-1 p-1 bg-green-500 text-white rounded text-xs hover:bg-green-600 disabled:opacity-50 flex items-center justify-center"
+                    >
+                      {isUpdating ? (
+                        <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <Check size={12} />
+                      )}
+                    </button>
+                    <button
+                      onClick={cancelStatusEdit}
+                      disabled={isUpdating}
+                      className="flex-1 p-1 bg-gray-500 text-white rounded text-xs hover:bg-gray-600 disabled:opacity-50 flex items-center justify-center"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <p className={`font-medium ${getCurrentStatusStyle().color}`}>
+                    {plant.health}
+                  </p>
+                  <button
+                    onClick={() => setIsEditingStatus(true)}
+                    className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    title="Edit status"
+                  >
+                    <Edit2 size={12} />
+                  </button>
+                </div>
+              )}
             </div>
             <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
               <div className="flex items-center text-gray-600 dark:text-gray-300 mb-1">

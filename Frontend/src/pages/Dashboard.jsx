@@ -717,7 +717,17 @@ const Dashboard = () => {
       {selectedPlant && (
         <PlantDetails 
           plant={selectedPlant} 
-          onClose={() => setSelectedPlant(null)} 
+          onClose={() => setSelectedPlant(null)}
+          onUpdate={(updatedPlant) => {
+            // Update the plant in the plants list
+            setPlants(prevPlants => 
+              prevPlants.map(p => 
+                p.id === updatedPlant.id ? updatedPlant : p
+              )
+            );
+            // Update the selected plant for the modal
+            setSelectedPlant(updatedPlant);
+          }}
         />
       )}
 

@@ -130,20 +130,48 @@ exports.getPlant = async (req, res, next) => {
 // @access  Private
 exports.updatePlant = async (req, res, next) => {
   try {
+    console.log('Update plant request:', {
+      plantId: req.params.id,
+      userId: req.user.id,
+      updateData: req.body
+    });
+
     let plant = await Plant.findById(req.params.id);
     
     if (!plant) {
+      console.log('Plant not found:', req.params.id);
       return res.status(404).json({ success: false, error: 'Plant not found' });
     }
     
     // Make sure user owns plant
     if (plant.user.toString() !== req.user.id) {
+      console.log('Unauthorized update attempt:', {
+        plantOwner: plant.user.toString(),
+        requestUser: req.user.id
+      });
       return res.status(401).json({ success: false, error: 'Not authorized to update this plant' });
     }
+
+    // Validate status field if it's being updated
+    if (req.body.status && !['Healthy', 'Needs Attention', 'Critical', 'Sick', 'Dormant'].includes(req.body.status)) {
+      console.log('Invalid status value:', req.body.status);
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid status value. Must be one of: Healthy, Needs Attention, Critical, Sick, Dormant' 
+      });
+    }
+
+    // Log the update operation
+    console.log('Updating plant with data:', req.body);
     
     plant = await Plant.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true
+    });
+
+    console.log('Plant updated successfully:', {
+      plantId: plant._id,
+      newStatus: plant.status
     });
     
     res.status(200).json({
@@ -151,11 +179,31 @@ exports.updatePlant = async (req, res, next) => {
       data: plant
     });
   } catch (err) {
-    console.error(err.message);
+    console.error('Update plant error:', {
+      error: err.message,
+      stack: err.stack,
+      plantId: req.params.id,
+      updateData: req.body
+    });
+
+    // Handle validation errors
+    if (err.name === 'ValidationError') {
+      const messages = Object.values(err.errors).map(error => error.message);
+      return res.status(400).json({
+        success: false,
+        error: 'Validation Error: ' + messages.join(', ')
+      });
+    }
+
     if (err.kind === 'ObjectId') {
       return res.status(404).json({ success: false, error: 'Plant not found' });
     }
-    res.status(500).json({ success: false, error: 'Server Error' });
+    
+    res.status(500).json({ 
+      success: false, 
+      error: 'Server Error while updating plant',
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 };
 

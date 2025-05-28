@@ -1,33 +1,76 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
-import { Search, Droplets, AlertCircle, Scissors, Flower, Edit, Check, X, Loader } from 'lucide-react';
+import { Search, Droplets, AlertCircle, Scissors, Flower, Edit, Check, X, Loader, Edit2 } from 'lucide-react';
 import { plantAPI } from '../services/api';
 import PlantHistoryLog from '../components/PlantHistoryLog';
 
-const PlantLogCard = ({ plant, onNotesUpdate }) => {
+const PlantLogCard = ({ plant, onNotesUpdate, onStatusUpdate }) => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [editedNotes, setEditedNotes] = useState(plant.notes || '');
   const [showHistory, setShowHistory] = useState(false);
+  const [isEditingStatus, setIsEditingStatus] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState(plant.status || plant.health || 'Healthy');
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  const statusOptions = [
+    { value: 'Healthy', color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30' },
+    { value: 'Needs Attention', color: 'text-yellow-600 dark:text-yellow-400', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30' },
+    { value: 'Critical', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30' },
+    { value: 'Sick', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30' },
+    { value: 'Dormant', color: 'text-gray-600 dark:text-gray-400', bgColor: 'bg-gray-100 dark:bg-gray-900/30' }
+  ];
 
   const handleNotesSubmit = async () => {
     try {
-      await onNotesUpdate(plant.id, editedNotes);
+      await onNotesUpdate(plant._id || plant.id, editedNotes);
       setIsEditingNotes(false);
     } catch (error) {
       console.error('Error updating notes:', error);
     }
   };
 
-  const handleCancel = () => {
+  const handleNotesCancel = () => {
     setEditedNotes(plant.notes || '');
     setIsEditingNotes(false);
   };
 
+  const handleStatusUpdate = async () => {
+    const currentStatus = plant.status || plant.health || 'Healthy';
+    if (selectedStatus === currentStatus) {
+      setIsEditingStatus(false);
+      return;
+    }
+
+    setIsUpdatingStatus(true);
+    try {
+      await onStatusUpdate(plant._id || plant.id, selectedStatus);
+      setIsEditingStatus(false);
+    } catch (error) {
+      console.error('Error updating status:', error);
+      // Reset to current status on error
+      setSelectedStatus(currentStatus);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const cancelStatusEdit = () => {
+    setSelectedStatus(plant.status || plant.health || 'Healthy');
+    setIsEditingStatus(false);
+  };
+
   // Calculate health status based on plant data
   const getHealthStatus = (plant) => {
-    if (plant.status === 'Sick') return 'Poor';
-    if (plant.status === 'Needs Attention') return 'Fair';
+    const status = plant.status || plant.health || 'Healthy';
+    if (status === 'Sick' || status === 'Critical') return 'Poor';
+    if (status === 'Needs Attention') return 'Fair';
     return 'Good';
+  };
+
+  const getCurrentStatusStyle = () => {
+    const currentStatus = plant.status || plant.health || 'Healthy';
+    const status = statusOptions.find(s => s.value === currentStatus);
+    return status || statusOptions[0];
   };
 
   // Format date strings
@@ -82,13 +125,57 @@ const PlantLogCard = ({ plant, onNotesUpdate }) => {
               </p>
             </div>
           </div>
-          <span className={`px-4 py-1.5 rounded-full text-sm font-medium ${
-            health === 'Good' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-            health === 'Fair' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
-            'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-          }`}>
-            {health}
-          </span>
+          
+          {/* Status with edit functionality */}
+          <div onClick={(e) => e.stopPropagation()}>
+            {isEditingStatus ? (
+              <div className="flex items-center space-x-2">
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  disabled={isUpdatingStatus}
+                >
+                  {statusOptions.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.value}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleStatusUpdate}
+                  disabled={isUpdatingStatus}
+                  className="p-1 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
+                >
+                  {isUpdatingStatus ? (
+                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <Check size={12} />
+                  )}
+                </button>
+                <button
+                  onClick={cancelStatusEdit}
+                  disabled={isUpdatingStatus}
+                  className="p-1 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <span className={`px-4 py-1.5 rounded-full text-sm font-medium ${getCurrentStatusStyle().bgColor} ${getCurrentStatusStyle().color}`}>
+                  {plant.status || plant.health || 'Healthy'}
+                </span>
+                <button
+                  onClick={() => setIsEditingStatus(true)}
+                  className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  title="Edit status"
+                >
+                  <Edit2 size={12} />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-6 mb-6">
@@ -135,7 +222,10 @@ const PlantLogCard = ({ plant, onNotesUpdate }) => {
             <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100">Recent Notes</h4>
             {!isEditingNotes && (
               <button
-                onClick={() => setIsEditingNotes(true)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsEditingNotes(true);
+                }}
                 className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
               >
                 <Edit size={14} className="text-gray-500 dark:text-gray-400" />
@@ -144,7 +234,7 @@ const PlantLogCard = ({ plant, onNotesUpdate }) => {
           </div>
 
           {isEditingNotes ? (
-            <div className="space-y-3">
+            <div className="space-y-3" onClick={(e) => e.stopPropagation()}>
               <textarea
                 value={editedNotes}
                 onChange={(e) => setEditedNotes(e.target.value)}
@@ -154,7 +244,7 @@ const PlantLogCard = ({ plant, onNotesUpdate }) => {
               />
               <div className="flex justify-end space-x-2">
                 <button
-                  onClick={handleCancel}
+                  onClick={handleNotesCancel}
                   className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center text-sm"
                 >
                   <X size={16} className="mr-1" />
@@ -251,7 +341,6 @@ const GardenLog = () => {
     try {
       console.log('Updating notes for plant:', plantId, 'New notes:', newNotes);
       
-      // Check if plantAPI and updatePlant method exist
       if (!plantAPI || typeof plantAPI.updatePlant !== 'function') {
         throw new Error('Plant API service is not properly configured');
       }
@@ -273,16 +362,35 @@ const GardenLog = () => {
       }
     } catch (error) {
       console.error('Error updating plant notes:', error);
+      throw error;
+    }
+  };
+
+  const handleStatusUpdate = async (plantId, newStatus) => {
+    try {
+      console.log('Updating status for plant:', plantId, 'New status:', newStatus);
       
-      // Show user-friendly error message
-      let errorMessage = 'Failed to update notes. Please try again.';
-      if (error.message?.includes('Plant API service is not properly configured')) {
-        errorMessage = 'Plant API service is not available. Please refresh the page.';
-      } else if (error.message) {
-        errorMessage = error.message;
+      if (!plantAPI || typeof plantAPI.updatePlant !== 'function') {
+        throw new Error('Plant API service is not properly configured');
       }
       
-      setError(errorMessage);
+      const response = await plantAPI.updatePlant(plantId, { status: newStatus });
+      
+      if (response && response.success) {
+        // Update local state
+        setPlantLogs(prevLogs =>
+          prevLogs.map(plant =>
+            plant._id === plantId || plant.id === plantId
+              ? { ...plant, status: newStatus, health: newStatus }
+              : plant
+          )
+        );
+        console.log('Status updated successfully');
+      } else {
+        throw new Error(response?.error || 'Failed to update status');
+      }
+    } catch (error) {
+      console.error('Error updating plant status:', error);
       throw error;
     }
   };
@@ -378,6 +486,7 @@ const GardenLog = () => {
                   key={plant._id || plant.id} 
                   plant={plant} 
                   onNotesUpdate={handleNotesUpdate}
+                  onStatusUpdate={handleStatusUpdate}
                 />
               ))}
             </div>

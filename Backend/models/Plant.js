@@ -61,7 +61,10 @@ const PlantSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Healthy', 'Needs Attention', 'Sick', 'Dormant'],
+    enum: {
+      values: ['Healthy', 'Needs Attention', 'Critical', 'Sick', 'Dormant'],
+      message: 'Status must be one of: Healthy, Needs Attention, Critical, Sick, Dormant'
+    },
     default: 'Healthy'
   },
   notes: {
