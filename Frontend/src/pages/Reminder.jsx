@@ -28,6 +28,7 @@ const Reminder = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        console.log('Fetching reminders and plants...');
         
         // Use the proper API methods
         const [reminderResponse, plantResponse] = await Promise.all([
@@ -35,12 +36,27 @@ const Reminder = () => {
           plantAPI.getAllPlants()
         ]);
         
-        if (reminderResponse.success) {
-          setReminders(reminderResponse.data);
+        console.log('Reminder response:', reminderResponse);
+        console.log('Plant response:', plantResponse);
+        
+        // Handle reminder response - check for both success flag and direct data
+        if (reminderResponse.success !== false) {
+          const reminderData = reminderResponse.data || reminderResponse;
+          setReminders(Array.isArray(reminderData) ? reminderData : []);
+          console.log('Set reminders:', reminderData);
+        } else {
+          console.error('Failed to fetch reminders:', reminderResponse.error);
+          setError('Failed to load reminders: ' + reminderResponse.error);
         }
         
-        if (plantResponse.success) {
-          setPlants(plantResponse.data);
+        // Handle plant response - check for both success flag and direct data
+        if (plantResponse.success !== false) {
+          const plantData = plantResponse.data || plantResponse;
+          setPlants(Array.isArray(plantData) ? plantData : []);
+          console.log('Set plants:', plantData);
+        } else {
+          console.error('Failed to fetch plants:', plantResponse.error);
+          setError('Failed to load plants: ' + plantResponse.error);
         }
         
       } catch (err) {
@@ -63,6 +79,8 @@ const Reminder = () => {
     }
 
     try {
+      console.log('Creating reminder with data:', newReminder);
+      
       // Combine date and time
       const scheduledDateTime = new Date(`${newReminder.scheduledDate}T${newReminder.time}`);
       
@@ -76,10 +94,13 @@ const Reminder = () => {
         notificationMethods: ['popup'] // Enable popup notifications
       };
 
+      console.log('Sending reminder data to API:', reminderData);
       const response = await reminderAPI.createReminder(reminderData);
+      console.log('Create reminder response:', response);
       
-      if (response.success) {
-        setReminders([...reminders, response.data]);
+      if (response.success !== false) {
+        const newReminderData = response.data || response;
+        setReminders(prev => [...prev, newReminderData]);
         setShowAddReminder(false);
         setNewReminder({
           plant: "",
@@ -90,6 +111,10 @@ const Reminder = () => {
           frequency: "weekly"
         });
         setError('');
+        console.log('Reminder created successfully');
+      } else {
+        console.error('Failed to create reminder:', response.error);
+        setError('Failed to create reminder: ' + response.error);
       }
     } catch (err) {
       console.error('Error creating reminder:', err);
@@ -127,8 +152,16 @@ const Reminder = () => {
   };
 
   const getPlantName = (plantId) => {
-    const plant = plants.find(p => p._id === plantId);
-    return plant ? plant.name : 'Unknown Plant';
+    if (!plantId) return 'Unknown Plant';
+    
+    // Handle both string IDs and plant objects
+    let actualPlantId = plantId;
+    if (typeof plantId === 'object' && plantId._id) {
+      actualPlantId = plantId._id;
+    }
+    
+    const plant = plants.find(p => p._id === actualPlantId || p.id === actualPlantId);
+    return plant ? (plant.nickname || plant.name) : 'Unknown Plant';
   };
 
   if (loading) {
@@ -207,7 +240,7 @@ const Reminder = () => {
                 ) : (
                   reminders.map(reminder => (
                     <div 
-                      key={reminder._id}
+                      key={reminder._id || reminder.id}
                       className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-100 dark:border-gray-700"
                     >
                       <div className="flex items-center space-x-4">
@@ -217,8 +250,13 @@ const Reminder = () => {
                             {getPlantName(reminder.plant)}
                           </h3>
                           <p className="text-sm text-gray-600 dark:text-gray-400">
-                            {reminder.type} - {reminder.recurring ? `${reminder.frequency}` : 'Once'}
+                            {reminder.type} - {reminder.recurring ? `Every ${reminder.frequency} days` : 'Once'}
                           </p>
+                          {reminder.notes && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              {reminder.notes}
+                            </p>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center space-x-4">
@@ -233,7 +271,7 @@ const Reminder = () => {
                           </div>
                         </div>
                         <button 
-                          onClick={() => handleDeleteReminder(reminder._id)}
+                          onClick={() => handleDeleteReminder(reminder._id || reminder.id)}
                           className="text-red-500 hover:text-red-600 p-2"
                         >
                           <Trash2 size={20} />

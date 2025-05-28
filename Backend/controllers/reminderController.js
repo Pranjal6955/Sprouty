@@ -73,11 +73,17 @@ exports.createReminder = async (req, res, next) => {
 // @access  Private
 exports.getReminders = async (req, res, next) => {
   try {
-    const reminders = await Reminder.find({ user: req.user.id })
-      .populate({
-        path: 'plant',
-        select: 'name images mainImage'
-      });
+    const reminders = await Reminder.find({ 
+      user: req.user.id,
+      active: true 
+    })
+    .populate({
+      path: 'plant',
+      select: 'name nickname species mainImage'
+    })
+    .sort({ scheduledDate: 1 });
+    
+    console.log(`Found ${reminders.length} reminders for user ${req.user.id}`);
     
     res.status(200).json({
       success: true,
@@ -85,7 +91,7 @@ exports.getReminders = async (req, res, next) => {
       data: reminders
     });
   } catch (err) {
-    console.error(err.message);
+    console.error('Error fetching reminders:', err.message);
     res.status(500).json({ success: false, error: 'Server Error' });
   }
 };
@@ -268,17 +274,34 @@ exports.getDueReminders = async (req, res, next) => {
       user: req.user.id,
       active: true,
       completed: false,
-      nextReminder: { $lte: currentTime },
-      notificationSent: false
+      $or: [
+        { nextReminder: { $lte: currentTime } },
+        { scheduledDate: { $lte: currentTime } }
+      ]
     }).populate({
       path: 'plant',
       select: 'name nickname species mainImage'
+    }).sort({ scheduledDate: 1 });
+    
+    // Only return reminders that haven't been notified in the last 10 minutes
+    const tenMinutesAgo = new Date(currentTime.getTime() - 10 * 60 * 1000);
+    const filteredReminders = dueReminders.filter(reminder => {
+      // If notificationSent is true and reminder was updated recently, skip it
+      if (reminder.notificationSent && reminder.updatedAt > tenMinutesAgo) {
+        return false;
+      }
+      return true;
     });
+    
+    // Only log when there are reminders to avoid spam
+    if (filteredReminders.length > 0) {
+      console.log(`Found ${filteredReminders.length} due reminders for user ${req.user.id}`);
+    }
     
     res.status(200).json({
       success: true,
-      count: dueReminders.length,
-      data: dueReminders
+      count: filteredReminders.length,
+      data: filteredReminders
     });
   } catch (err) {
     console.error('Error getting due reminders:', err.message);

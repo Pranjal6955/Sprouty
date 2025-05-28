@@ -25,13 +25,12 @@ const initCronJobs = () => {
         
         // Find reminders that are due - with proper date validation
         const dueReminders = await Reminder.find({
-          nextReminder: { 
-            $lte: currentTime,
-            $ne: null
-          },
+          $or: [
+            { nextReminder: { $lte: currentTime, $ne: null } },
+            { scheduledDate: { $lte: currentTime } }
+          ],
           active: true,
-          completed: false,
-          notificationSent: false // Only get unnotified reminders
+          completed: false
         }).populate('plant').populate('user');
         
         console.log(`Found ${dueReminders.length} due reminders`);
@@ -55,11 +54,10 @@ const initCronJobs = () => {
               console.log(`Sent reminder email to ${reminder.user.email} for plant: ${reminder.plant.name}`);
             }
             
-            // Mark notification as ready to be picked up by frontend
-            reminder.notificationSent = false; // Keep false so frontend can pick it up
-            await reminder.save();
+            // Don't mark as sent here - let the frontend notification system handle it
+            // This allows the due reminders endpoint to pick them up
             
-            console.log(`Prepared reminder notification for ${reminder.plant.name}`);
+            console.log(`Processed reminder for ${reminder.plant.name}`);
             
           } catch (reminderError) {
             console.error(`Error processing individual reminder ${reminder._id}:`, reminderError.message);

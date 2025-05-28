@@ -14,6 +14,8 @@ import LogoOJT from '../assets/LogoOJT.png';
 import { DarkModeToggle } from '../components/ThemeProvider';
 import PlantDetails from '../components/PlantDetails';
 import EditPlant from '../components/EditPlant';
+import { useNotifications } from '../contexts/NotificationContext';
+import { reminderAPI } from '../services/api';
 
 const Dashboard = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -32,8 +34,12 @@ const Dashboard = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [editingPlant, setEditingPlant] = useState(null);
-  const [notifications, setNotifications] = useState(0); // Changed from 3 to 0
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [dueReminders, setDueReminders] = useState([]);
   const navigate = useNavigate();
+
+  // Get notifications from context
+  const { notifications, clearNotification } = useNotifications();
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Not yet set';
@@ -100,8 +106,34 @@ const Dashboard = () => {
       }
     };
 
+    // Fetch due reminders for dashboard display
+    const fetchDueReminders = async () => {
+      try {
+        const response = await reminderAPI.getDueReminders();
+        if (response.success !== false) {
+          const reminders = response.data || response;
+          setDueReminders(Array.isArray(reminders) ? reminders : []);
+          
+          // Only log when there are actual reminders to avoid console spam
+          if (reminders.length > 0) {
+            console.log('Dashboard: Found due reminders:', reminders.length);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching due reminders:', error);
+      }
+    };
+
     initializeWeather();
     fetchPlants();
+    fetchDueReminders();
+    
+    // Refresh due reminders every 10 minutes instead of 5 to reduce API calls
+    const interval = setInterval(() => {
+      fetchDueReminders();
+    }, 10 * 60 * 1000); // 10 minutes
+    
+    return () => clearInterval(interval);
   }, []);
 
   const handleLogout = async () => {
@@ -315,17 +347,148 @@ const Dashboard = () => {
     }
   };
 
-  // Notification Bell component
-  const NotificationBell = () => (
-    <button className="relative p-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
-      <Bell size={24} /> {/* Increased from 20 to 24 */}
-      {notifications > 0 && (
-        <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center"> {/* Adjusted position and size */}
-          {notifications > 9 ? '9+' : notifications}
-        </span>
-      )}
-    </button>
-  );
+  // Notification Button component
+  const NotificationButton = () => {
+    const totalNotifications = (notifications ? notifications.length : 0) + dueReminders.length;
+    
+    return (
+      <div className="relative">
+        <button
+          onClick={() => setShowNotifications(!showNotifications)}
+          className="relative p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 transition-colors"
+        >
+          <Bell size={24} />
+          {totalNotifications > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              {totalNotifications > 9 ? '9+' : totalNotifications}
+            </span>
+          )}
+        </button>
+
+        {/* Notification Dropdown */}
+        {showNotifications && (
+          <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="font-medium text-gray-900 dark:text-gray-100">Notifications</h3>
+            </div>
+            
+            <div className="max-h-96 overflow-y-auto">
+              {/* Due Reminders */}
+              {dueReminders.map(reminder => (
+                <div key={`reminder-${reminder._id}`} className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0">
+                      {reminder.plant?.mainImage ? (
+                        <img
+                          src={reminder.plant.mainImage}
+                          alt={reminder.plant.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                          <Droplets className="w-5 h-5 text-blue-500" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {reminder.type} Reminder
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        Time to {reminder.type.toLowerCase()} your {reminder.plant?.nickname || reminder.plant?.name || 'plant'}!
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Due: {new Date(reminder.scheduledDate).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="flex-shrink-0">
+                      <button
+                        onClick={async () => {
+                          try {
+                            await reminderAPI.completeReminder(reminder._id);
+                            setDueReminders(prev => prev.filter(r => r._id !== reminder._id));
+                          } catch (error) {
+                            console.error('Error completing reminder:', error);
+                          }
+                        }}
+                        className="text-green-600 hover:text-green-800 text-xs"
+                      >
+                        Mark Done
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Regular Notifications from Context */}
+              {notifications && notifications.length > 0 && notifications.map(notification => (
+                <div key={notification.id} className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0">
+                      {notification.plantImage ? (
+                        <img
+                          src={notification.plantImage}
+                          alt={notification.plantName}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                          <Bell className="w-5 h-5 text-gray-500" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {notification.title}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        {notification.message}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {notification.timestamp.toLocaleTimeString()}
+                      </p>
+                    </div>
+                    <div className="flex-shrink-0">
+                      <button
+                        onClick={() => clearNotification(notification.id)}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {totalNotifications === 0 && (
+                <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                  <Bell className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                  <p>No notifications</p>
+                </div>
+              )}
+            </div>
+
+            {totalNotifications > 0 && (
+              <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={() => {
+                    // Clear all notifications
+                    if (notifications && notifications.length > 0) {
+                      notifications.forEach(n => clearNotification(n.id));
+                    }
+                    setShowNotifications(false);
+                  }}
+                  className="w-full text-sm text-center text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
+                >
+                  Clear All
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
@@ -336,38 +499,21 @@ const Dashboard = () => {
         setActiveNavItem={setActiveNavItem}
       />
 
-      {/* Main Content - Updated with scrollbar hiding classes */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide">
-        <div className="flex flex-col md:flex-row h-full">
-          {/* Left Side Content - Updated with scrollbar hiding classes */}
-          <div className="flex-1 p-6 overflow-y-auto scrollbar-hide">
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex items-center">
-                <img 
-                  src={LogoOJT} 
-                  alt="Sprouty Logo" 
-                  className="h-17 w-16"
-                />
-                <h1 className="text-2xl font-bold text-gray-800 dark:text-white ml-2">My Garden Dashboard</h1>
-              </div>
-              <div className="flex items-center gap-4">
-                <NotificationBell />
-                <DarkModeToggle />
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
-                </span>
-              </div>
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-6">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center">
+              <img 
+                src={LogoOJT} 
+                alt="Sprouty Logo" 
+                className="h-17 w-16"
+              />
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-white ml-2">Plant Dashboard</h1>
             </div>
-            
-            {/* Plants Section - Updated UI */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-all hover:shadow-md mb-6">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h2 className="text-xl font-semibold text-gray-800 dark:text-white">My Plants</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    {plants.length} {plants.length === 1 ? 'plant' : 'plants'} in your garden
-                  </p>
-                </div>
+            <div className="flex items-center gap-4">
+              <NotificationButton />
+              <div className="flex items-center gap-2">
                 <button 
                   onClick={handleAddPlant}
                   className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-sm"
@@ -375,245 +521,134 @@ const Dashboard = () => {
                   <Plus size={20} className="mr-1" /> Add Plant
                 </button>
               </div>
-
-              {plants.length === 0 ? (
-                <div className="text-center py-12 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-700 border-dashed">
-                  <Camera size={48} className="mx-auto mb-4 text-gray-400 dark:text-gray-500" />
-                  <p className="font-medium dark:text-gray-300">No plants yet. Add your first plant!</p>
-                  <p className="text-sm mt-1 dark:text-gray-400">Take a photo of your plants to start tracking them</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {plants.map(plant => (
-                    <div 
-                      key={plant.id} 
-                      className="group relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all duration-300 cursor-pointer"
-                      onClick={() => handlePlantClick(plant)}
-                    >
-                      {/* Plant Image */}
-                      <div className="aspect-square overflow-hidden bg-gray-100 dark:bg-gray-700">
-                        <img 
-                          src={plant.image} 
-                          alt={plant.name} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                      </div>
-                      
-                      {/* Quick Actions Overlay */}
-                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="flex gap-2 bg-black/20 backdrop-blur-sm p-1 rounded-lg">
-                          <button 
-                            className="p-1.5 rounded-lg hover:bg-green-500/80 transition-colors"
-                            onClick={(e) => handleWaterClick(e, plant.id)}
-                            title="Water Plant"
-                          >
-                            <Droplets size={16} className="text-white" />
-                          </button>
-                          <button 
-                            className="p-1.5 rounded-lg hover:bg-purple-500/80 transition-colors"
-                            onClick={(e) => handleFertilizeClick(e, plant.id)}
-                            title="Fertilize Plant"
-                          >
-                            <Flower size={16} className="text-white" />
-                          </button>
-                          <button 
-                            className="p-1.5 rounded-lg hover:bg-blue-500/80 transition-colors"
-                            onClick={(e) => handlePruningClick(e, plant.id)}
-                            title="Prune Plant"
-                          >
-                            <Scissors size={16} className="text-white" />
-                          </button>
-                          <div className="w-px h-4 my-auto bg-white/20"></div>
-                          <button 
-                            className="p-1.5 rounded-lg hover:bg-white/20 transition-colors"
-                            onClick={(e) => handleEditClick(e, plant)}
-                            title="Edit Plant"
-                          >
-                            <Edit size={16} className="text-white" />
-                          </button>
-                          <button 
-                            className="p-1.5 rounded-lg hover:bg-red-500/80 transition-colors"
-                            onClick={(e) => handleDeleteClick(e, plant.id)}
-                            title="Delete Plant"
-                          >
-                            <Trash2 size={16} className="text-white" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Plant Info */}
-                      <div className="p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h3 className="font-semibold text-gray-800 dark:text-white">{plant.nickname}</h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">{plant.species}</p>
-                          </div>
-                          <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            plant.health === 'Healthy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                            plant.health === 'Needs Attention' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                            'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                          }`}>
-                            {plant.health}
-                          </div>
-                        </div>
-
-                        {/* Plant Stats */}
-                        <div className="grid grid-cols-2 gap-3 mt-4 text-sm">
-                          <div className="flex items-center text-gray-600 dark:text-gray-300">
-                            <Droplets size={16} className="mr-2 text-blue-500" />
-                            <span>{plant.lastWatered}</span>
-                          </div>
-                          <div className="flex items-center text-gray-600 dark:text-gray-300">
-                            <Calendar size={16} className="mr-2 text-gray-400" />
-                            <span>Added {plant.dateAdded}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
-          
-          {/* Right Side - Weather Widget */}
-          <div className="md:w-80 lg:w-96 bg-white dark:bg-gray-800 border-l border-gray-100 dark:border-gray-700">
-            <div className="sticky top-0 p-6">
-              <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
-                <Cloud size={22} className="text-blue-500 mr-2" />
-                Weather
-              </h2>
-              {/* Weather & Location Section */}
-              <div className="bg-gradient-to-br from-blue-50 to-green-50 dark:from-gray-800/50 dark:to-gray-700/50 dark:border dark:border-gray-700 rounded-xl shadow-sm p-5 mb-6 transition-all hover:shadow-md">
-                {showLocationInput ? (
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-white">Where's your garden located?</h3>
-                    <form onSubmit={handleLocationSubmit} className="relative">
-                      <div className="flex items-center">
-                        <div className={`relative flex-1 ${isSearchFocused ? 'ring-2 ring-green-200 dark:ring-green-500' : ''} rounded-lg transition-all`}>
-                          <input
-                            type="text"
-                            value={location}
-                            onChange={(e) => handleLocationSearch(e.target.value)}
-                            onFocus={() => setIsSearchFocused(true)}
-                            onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-                            className="w-full px-4 py-3 border rounded-lg outline-none transition-colors bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
-                            placeholder="Search for a city..."
-                          />
-                          <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
-                        </div>
+
+          {/* Plants Section - Updated UI */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-all hover:shadow-md mb-6">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800 dark:text-white">My Plants</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  {plants.length} {plants.length === 1 ? 'plant' : 'plants'} in your garden
+                </p>
+              </div>
+              <button 
+                onClick={handleAddPlant}
+                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-sm"
+              >
+                <Plus size={20} className="mr-1" /> Add Plant
+              </button>
+            </div>
+
+            {plants.length === 0 ? (
+              <div className="text-center py-12 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-700 border-dashed">
+                <Camera size={48} className="mx-auto mb-4 text-gray-400 dark:text-gray-500" />
+                <p className="font-medium dark:text-gray-300">No plants yet. Add your first plant!</p>
+                <p className="text-sm mt-1 dark:text-gray-400">Take a photo of your plants to start tracking them</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {plants.map(plant => (
+                  <div 
+                    key={plant.id} 
+                    className="group relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all duration-300 cursor-pointer"
+                    onClick={() => handlePlantClick(plant)}
+                  >
+                    {/* Plant Image */}
+                    <div className="aspect-square overflow-hidden bg-gray-100 dark:bg-gray-700">
+                      <img 
+                        src={plant.image} 
+                        alt={plant.name} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                    
+                    {/* Quick Actions Overlay */}
+                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-2 bg-black/20 backdrop-blur-sm p-1 rounded-lg">
                         <button 
-                          type="submit" 
-                          className={`ml-3 bg-green-500 text-white p-3 rounded-lg hover:bg-green-600 transition-colors ${
-                            isSearching ? 'opacity-70 cursor-not-allowed' : ''
-                          }`}
-                          disabled={isSearching}
+                          className="p-1.5 rounded-lg hover:bg-green-500/80 transition-colors"
+                          onClick={(e) => handleWaterClick(e, plant.id)}
+                          title="Water Plant"
                         >
-                          {isSearching ? (
-                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          ) : (
-                            <ArrowRight size={20} />
-                          )}
+                          <Droplets size={16} className="text-white" />
+                        </button>
+                        <button 
+                          className="p-1.5 rounded-lg hover:bg-purple-500/80 transition-colors"
+                          onClick={(e) => handleFertilizeClick(e, plant.id)}
+                          title="Fertilize Plant"
+                        >
+                          <Flower size={16} className="text-white" />
+                        </button>
+                        <button 
+                          className="p-1.5 rounded-lg hover:bg-blue-500/80 transition-colors"
+                          onClick={(e) => handlePruningClick(e, plant.id)}
+                          title="Prune Plant"
+                        >
+                          <Scissors size={16} className="text-white" />
+                        </button>
+                        <div className="w-px h-4 my-auto bg-white/20"></div>
+                        <button 
+                          className="p-1.5 rounded-lg hover:bg-white/20 transition-colors"
+                          onClick={(e) => handleEditClick(e, plant)}
+                          title="Edit Plant"
+                        >
+                          <Edit size={16} className="text-white" />
+                        </button>
+                        <button 
+                          className="p-1.5 rounded-lg hover:bg-red-500/80 transition-colors"
+                          onClick={(e) => handleDeleteClick(e, plant.id)}
+                          title="Delete Plant"
+                        >
+                          <Trash2 size={16} className="text-white" />
                         </button>
                       </div>
-                      
-                      {searchResults.length > 0 && (
-                        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                          {searchResults.map((result) => (
-                            <div 
-                              key={result.id}
-                              onClick={() => handleLocationSelect(result)}
-                              className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0 flex items-center"
-                            >
-                              <MapPin size={16} className="text-gray-400 dark:text-gray-500 mr-2 flex-shrink-0" />
-                              <div>
-                                <div className="font-medium dark:text-gray-200">{result.name}</div>
-                                <div className="text-sm text-gray-500 dark:text-gray-400">{result.region}, {result.country}</div>
-                              </div>
-                            </div>
-                          ))}
+                    </div>
+
+                    {/* Plant Info */}
+                    <div className="p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="font-semibold text-gray-800 dark:text-white">{plant.nickname}</h3>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{plant.species}</p>
                         </div>
-                      )}
-                    </form>
-                    {error && <p className="text-red-500 mt-2 flex items-center"><AlertCircle size={16} className="mr-1" /> {error}</p>}
+                        <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          plant.health === 'Healthy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                          plant.health === 'Needs Attention' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                          'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                        }`}>
+                          {plant.health}
+                        </div>
+                      </div>
+
+                      {/* Plant Stats */}
+                      <div className="grid grid-cols-2 gap-3 mt-4 text-sm">
+                        <div className="flex items-center text-gray-600 dark:text-gray-300">
+                          <Droplets size={16} className="mr-2 text-blue-500" />
+                          <span>{plant.lastWatered}</span>
+                        </div>
+                        <div className="flex items-center text-gray-600 dark:text-gray-300">
+                          <Calendar size={16} className="mr-2 text-gray-400" />
+                          <span>Added {plant.dateAdded}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                ) : weatherData && (
-                  <div className="flex flex-col items-center text-center">
-                    <div className="flex items-center mb-1">
-                      <MapPin size={18} className="text-green-500 mr-1" />
-                      <h3 className="text-lg font-semibold text-gray-800 dark:text-white">{weatherData.location}</h3>
-                    </div>
-                    <p className="text-gray-500 dark:text-gray-300 mb-4 text-sm">{weatherData.localTime}</p>
-                    
-                    <div className="flex flex-col items-center mb-4">
-                      <img src={weatherData.icon} alt={weatherData.condition} className="h-20 w-20" />
-                      <p className="text-xl font-medium text-gray-800 dark:text-white mt-1">{weatherData.condition}</p>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3 w-full mt-2">
-                      <WeatherItem 
-                        icon={<Thermometer size={20} className="text-orange-500" />} 
-                        label="Temperature" 
-                        value={weatherData.temperature} 
-                        className="dark:bg-gray-700 dark:text-gray-200"
-                      />
-                      <WeatherItem 
-                        icon={<Wind size={20} className="text-blue-500" />} 
-                        label="Wind" 
-                        value={weatherData.windSpeed} 
-                        className="dark:bg-gray-700 dark:text-gray-200"
-                      />
-                      <WeatherItem 
-                        icon={<Droplets size={20} className="text-blue-400" />} 
-                        label="Humidity" 
-                        value={weatherData.humidity} 
-                        className="dark:bg-gray-700 dark:text-gray-200"
-                      />
-                      <WeatherItem 
-                        icon={<Sun size={20} className="text-yellow-500" />} 
-                        label="UV Index" 
-                        value={weatherData.uv} 
-                        className="dark:bg-gray-700 dark:text-gray-200"
-                      />
-                    </div>
-                    
-                    <button 
-                      onClick={() => setShowLocationInput(true)}
-                      className="mt-4 text-green-600 text-sm font-medium flex items-center justify-center hover:text-green-700 transition-colors bg-white py-1.5 px-3 rounded-full shadow-sm"
-                    >
-                      Change location <ChevronDown size={14} className="ml-1" />
-                    </button>
-                  </div>
-                )}
+                ))}
               </div>
-              
-              {/* Plant Care Tips Based on Weather */}
-              {weatherData && !showLocationInput && (
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
-                  <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-white flex items-center">
-                    <Umbrella size={18} className="text-green-500 mr-2" /> 
-                    Care Tips
-                  </h3>
-                  <div className="text-gray-700 dark:text-gray-300 text-sm space-y-3">
-                    <p>• {weatherData.temperature.includes("high") ? 
-                      "Water your plants more frequently due to high temperatures." : 
-                      "Maintain regular watering schedule in these conditions."}
-                    </p>
-                    <p>• {weatherData.condition.toLowerCase().includes("rain") ? 
-                      "Hold off on watering today - rain is providing natural hydration." : 
-                      "Ensure proper drainage for your potted plants."}
-                    </p>
-                    <p>• {parseInt(weatherData.uv) > 5 ? 
-                      "Consider moving sensitive plants to partial shade today." : 
-                      "Good light conditions for most plants today."}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Close notification dropdown when clicking outside */}
+      {showNotifications && (
+        <div 
+          className="fixed inset-0 z-40"
+          onClick={() => setShowNotifications(false)}
+        />
+      )}
 
       {/* Replace Camera Modal with AddPlant Component */}
       {showAddPlant && (
