@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Plus, Sun, Wind, Thermometer, MapPin, Camera, Cloud, 
   Umbrella, ArrowRight, AlertCircle, Droplets, ChevronDown, Calendar, Edit, Trash2, MoreVertical, AlertTriangle,
-  Bell, Flower, Scissors
+  Bell, Flower, Scissors, Stethoscope
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import { auth } from '../firebase';
@@ -348,6 +348,16 @@ const Dashboard = () => {
     }
   };
 
+  const handleDiagnose = async (e, plantId) => {
+    e.stopPropagation();
+    try {
+      // Navigate to the plant diagnosis page with the plant ID
+      navigate(`/diagnose/${plantId}`);
+    } catch (error) {
+      console.error('Error navigating to diagnosis:', error);
+    }
+  };
+
   // Notification Button component
   const NotificationButton = () => {
     const totalNotifications = (notifications ? notifications.length : 0) + dueReminders.length;
@@ -566,7 +576,7 @@ const Dashboard = () => {
                           />
                         </div>
                         
-                        {/* Quick Actions Overlay */}
+                        {/* Quick Actions Overlay - Update this section */}
                         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <div className="flex gap-2 bg-black/20 backdrop-blur-sm p-1 rounded-lg">
                             <button 
@@ -624,16 +634,25 @@ const Dashboard = () => {
                             </div>
                           </div>
 
-                          {/* Plant Stats */}
-                          <div className="grid grid-cols-2 gap-3 mt-4 text-sm">
-                            <div className="flex items-center text-gray-600 dark:text-gray-300">
-                              <Droplets size={16} className="mr-2 text-blue-500" />
-                              <span>{plant.lastWatered}</span>
+                          {/* Plant Stats with Diagnose Button */}
+                          <div className="mt-4">
+                            <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
+                              <div className="flex items-center text-gray-600 dark:text-gray-300">
+                                <Droplets size={16} className="mr-2 text-blue-500" />
+                                <span>{plant.lastWatered}</span>
+                              </div>
+                              <div className="flex items-center text-gray-600 dark:text-gray-300">
+                                <Calendar size={16} className="mr-2 text-gray-400" />
+                                <span>Added {plant.dateAdded}</span>
+                              </div>
                             </div>
-                            <div className="flex items-center text-gray-600 dark:text-gray-300">
-                              <Calendar size={16} className="mr-2 text-gray-400" />
-                              <span>Added {plant.dateAdded}</span>
-                            </div>
+                            <button
+                              onClick={(e) => handleDiagnose(e, plant.id)}
+                              className="w-full mt-2 flex items-center justify-center gap-2 px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition-colors"
+                            >
+                              <Stethoscope size={16} />
+                              <span>Diagnose Plant</span>
+                            </button>
                           </div>
                         </div>
                       </div>
