@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { auth } from '../firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { googleAuthService } from '../services/googleAuth';
 import LogoOJT from '../assets/LogoOJT.png';
 
 const Navbar = () => {
@@ -15,36 +14,12 @@ const Navbar = () => {
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
-    
-    // Listen for Firebase auth state changes
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        // User is signed in
-        const storedUser = localStorage.getItem('user');
-        if (!storedUser) {
-          // If no user in localStorage but Firebase has a user,
-          // store minimal info and redirect to login to complete setup
-          setUser({
-            name: firebaseUser.displayName || 'User',
-            email: firebaseUser.email,
-            firebaseOnly: true
-          });
-        }
-      } else {
-        // User is signed out
-        setUser(null);
-        localStorage.removeItem('user');
-        localStorage.removeItem('authToken');
-      }
-    });
-    
-    return () => unsubscribe();
   }, []);
 
   const handleLogout = async () => {
     try {
-      // Sign out from Firebase
-      await signOut(auth);
+      // Sign out from Google if using Google auth
+      await googleAuthService.signOut();
       
       // Clear localStorage
       localStorage.removeItem('user');
@@ -57,6 +32,11 @@ const Navbar = () => {
       navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
+      // Still clear storage and navigate even if logout fails
+      localStorage.removeItem('user');
+      localStorage.removeItem('authToken');
+      setUser(null);
+      navigate('/login');
     }
   };
 

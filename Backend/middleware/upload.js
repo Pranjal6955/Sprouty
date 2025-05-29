@@ -9,7 +9,7 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Configure memory storage for Firebase
+// Configure memory storage for local file processing
 const storage = multer.memoryStorage();
 
 // File filter - only allow images
@@ -31,8 +31,8 @@ const upload = multer({
   fileFilter: fileFilter
 });
 
-// Firebase upload middleware
-const uploadToFirebase = async (req, res, next) => {
+// Local upload middleware
+const uploadToLocal = async (req, res, next) => {
   try {
     if (!req.file && !req.files) return next();
     
@@ -41,15 +41,15 @@ const uploadToFirebase = async (req, res, next) => {
       const fileBuffer = req.file.buffer;
       const timestamp = Date.now();
       const filename = `${timestamp}-${req.file.originalname.replace(/\s+/g, '-')}`;
-      const filePath = `uploads/${req.user.id}/${filename}`;
+      const filePath = `${req.user.id}/${filename}`;
       
-      // Upload to Firebase Storage
+      // Upload to local storage
       const fileUrl = await uploadFile(fileBuffer, filePath, { 
         contentType: req.file.mimetype 
       });
       
       // Add URL to request
-      req.file.firebaseUrl = fileUrl;
+      req.file.localUrl = fileUrl;
     }
     
     // For multiple files upload
@@ -58,15 +58,15 @@ const uploadToFirebase = async (req, res, next) => {
         const fileBuffer = file.buffer;
         const timestamp = Date.now();
         const filename = `${timestamp}-${file.originalname.replace(/\s+/g, '-')}`;
-        const filePath = `uploads/${req.user.id}/${filename}`;
+        const filePath = `${req.user.id}/${filename}`;
         
-        // Upload to Firebase Storage
+        // Upload to local storage
         const fileUrl = await uploadFile(fileBuffer, filePath, { 
           contentType: file.mimetype 
         });
         
         // Add URL to file object
-        file.firebaseUrl = fileUrl;
+        file.localUrl = fileUrl;
         return file;
       });
       
@@ -82,10 +82,10 @@ const uploadToFirebase = async (req, res, next) => {
 // Export upload middlewares
 module.exports = {
   // For single image upload
-  single: [upload.single('image'), uploadToFirebase],
+  single: [upload.single('image'), uploadToLocal],
   
   // For multiple image upload, max 5 images
-  multiple: [upload.array('images', 5), uploadToFirebase],
+  multiple: [upload.array('images', 5), uploadToLocal],
   
   // Custom handler for upload errors
   handleUploadError: (err, req, res, next) => {

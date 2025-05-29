@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { auth } from '../firebase';
-import { createUserWithEmailAndPassword, updateProfile, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { FcGoogle } from 'react-icons/fc';
 import { authAPI } from '../services/api';
+import { googleAuthService } from '../services/googleAuth';
 import LogoOJT from '../assets/LogoOJT.png';
 import { useTheme } from '../components/ThemeProvider';
 
@@ -22,129 +21,170 @@ function Signup() {
     e.preventDefault();
     setError('');
     
-    if (name && email && password && confirmPassword) {
-      if (password !== confirmPassword) {
-        setError('Passwords do not match');
-        return;
-      }
-      
-      if (password.length < 8) {
-        setError('Password must be at least 8 characters long');
-        return;
-      }
-      
-      try {
-        setLoading(true);
-        
-        // Firebase Authentication
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const firebaseUser = userCredential.user;
-        
-        // Update Firebase profile with name
-        await updateProfile(firebaseUser, {
-          displayName: name
-        });
-        
-        // Backend Registration
-        try {
-          const backendAuth = await authAPI.register({
-            name,
-            email,
-            password,
-            firebaseUid: firebaseUser.uid
-          });
-          
-          // Store the backend token
-          localStorage.setItem('authToken', backendAuth.token);
-          
-          // Store user information
-          localStorage.setItem('user', JSON.stringify({
-            id: backendAuth.user.id,
-            name: backendAuth.user.name,
-            email: backendAuth.user.email,
-            firebaseUid: firebaseUser.uid
-          }));
-          
-          setLoading(false);
-          navigate('/dashboard'); // Redirect to dashboard after successful signup
-        } catch (backendError) {
-          console.error('Backend registration failed:', backendError);
-          
-          // If backend registration fails, delete the Firebase user
-          try {
-            await firebaseUser.delete();
-          } catch (deleteError) {
-            console.error('Failed to delete Firebase user after backend registration failure:', deleteError);
-          }
-          
-          setLoading(false);
-          
-          if (backendError.response && backendError.response.data) {
-            setError(backendError.response.data.error || 'Failed to register on server');
-          } else {
-            setError('Failed to register account on server');
-          }
-        }
-        
-      } catch (error) {
-        setLoading(false);
-        if (error.code === 'auth/email-already-in-use') {
-          setError('Email already in use');
-        } else {
-          setError('Failed to create an account: ' + error.message);
-        }
-      }
-    } else {
+    // Validation
+    if (!name || !email || !password || !confirmPassword) {
       setError('Please fill in all fields');
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      console.log('Starting registration process...');
+      
+      const registrationData = {
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        password: password,
+        authProvider: 'local'
+      };
+
+      console.log('Registration data:', { ...registrationData, password: '[HIDDEN]' });
+      
+      const backendAuth = await authAPI.register(registrationData);
+      
+      console.log('Registration successful:', backendAuth);
+      
+      // Store the backend token
+      if (backendAuth.token) {
+        localStorage.setItem('authToken', backendAuth.token);
+      }
+      
+      // Store user information
+      if (backendAuth.user) {
+        localStorage.setItem('user', JSON.stringify({
+          id: backendAuth.user.id || backendAuth.user._id,
+          name: backendAuth.user.name,
+          email: backendAuth.user.email,
+          authProvider: backendAuth.user.authProvider || 'local'
+        }));
+      }
+      
+      setLoading(false);
+      navigate('/dashboard');
+      
+    } catch (error) {
+      setLoading(false);
+      console.error('Registration error details:', error);
+      
+      let errorMessage = 'Failed to register account';
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      // Handle specific error cases
+      if (error.response?.status === 400) {
+        if (errorMessage.includes('email')) {
+          errorMessage = 'This email is already registered. Please use a different email or try logging in.';
+        }
+      } else if (error.response?.status === 500) {
+        errorMessage = 'Server error. Please try again later.';
+      } else if (!error.response) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      }
+      
+      setError(errorMessage);
     }
   };
 
-  // Google Auth handler
   const handleGoogleSignUp = async () => {
     setError('');
     setLoading(true);
-    const provider = new GoogleAuthProvider();
+    
     try {
-      // Firebase Google Auth
-      const result = await signInWithPopup(auth, provider);
-      const firebaseUser = result.user;
-      
-      // After Firebase auth succeeds, register with the backend
+      // Try One Tap first
       try {
-        const backendAuth = await authAPI.register({
-          name: firebaseUser.displayName || 'Google User',
-          email: firebaseUser.email,
-          password: crypto.randomUUID(), // Generate random password for OAuth users
-          oAuthProvider: 'google',
-          oAuthToken: await firebaseUser.getIdToken(),
-          firebaseUid: firebaseUser.uid
-        });
-        
-        // Store the backend token
-        localStorage.setItem('authToken', backendAuth.token);
-        
-        // Store user information
-        localStorage.setItem('user', JSON.stringify({
-          id: backendAuth.user.id,
-          name: backendAuth.user.name || firebaseUser.displayName,
-          email: backendAuth.user.email || firebaseUser.email,
-          firebaseUid: firebaseUser.uid
-        }));
-        
-        setLoading(false);
-        navigate('/dashboard');
-      } catch (backendError) {
-        console.error('Backend registration failed after Google sign-up:', backendError);
-        
-        // If backend registration fails, log the user out of firebase
-        await auth.signOut();
-        
-        setLoading(false);
-        setError('Google sign-up failed on server. Please try again.');
+        const idToken = await googleAuthService.signInWithPopup();
+        await processGoogleAuth(idToken);
+        return;
+      } catch (oneTapError) {
+        console.log('One Tap failed, showing manual button');
       }
+
+      const buttonId = 'google-signup-button-' + Date.now();
+      const tempDiv = document.createElement('div');
+      tempDiv.id = buttonId;
+      tempDiv.style.position = 'fixed';
+      tempDiv.style.top = '-1000px';
+      document.body.appendChild(tempDiv);
+
+      await googleAuthService.renderSignInButton(buttonId, {
+        callback: async (response) => {
+          document.body.removeChild(tempDiv);
+          if (response.credential) {
+            await processGoogleAuth(response.credential);
+          } else {
+            setLoading(false);
+            setError('No credential received from Google');
+          }
+        }
+      });
+
+      setTimeout(() => {
+        const button = tempDiv.querySelector('div[role="button"]');
+        if (button) {
+          button.click();
+        } else {
+          document.body.removeChild(tempDiv);
+          setLoading(false);
+          setError('Could not initialize Google Sign-In');
+        }
+      }, 500);
+
     } catch (error) {
       setLoading(false);
+      console.error('Google sign-up error:', error);
       setError('Google sign-up failed: ' + error.message);
+    }
+  };
+
+  const processGoogleAuth = async (idToken) => {
+    try {
+      const response = await authAPI.googleAuth(idToken);
+      
+      if (response.token) {
+        localStorage.setItem('authToken', response.token);
+      }
+      
+      if (response.user) {
+        localStorage.setItem('user', JSON.stringify(response.user));
+      }
+      
+      setLoading(false);
+      navigate('/dashboard');
+    } catch (error) {
+      setLoading(false);
+      console.error('Backend auth error:', error);
+      
+      let errorMessage = 'Google sign-up failed';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+      
+      setError(errorMessage);
     }
   };
 
@@ -165,7 +205,7 @@ function Signup() {
         </div>
         
         {error && (
-          <div className="p-3 text-sm text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 rounded-lg">
+          <div className="p-3 text-sm text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 rounded-lg border border-red-200 dark:border-red-800">
             {error}
           </div>
         )}
@@ -206,8 +246,8 @@ function Signup() {
               required
               className="w-full px-4 py-3 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 dark:bg-gray-700 dark:text-white"
             />
-            {password && password.length < 8 && (
-              <p className="text-sm text-red-500 dark:text-red-400">Password must be at least 8 characters long.</p>
+            {password && password.length < 6 && (
+              <p className="text-sm text-red-500 dark:text-red-400">Password must be at least 6 characters long.</p>
             )}
           </div>
           <div className="space-y-2">
@@ -237,7 +277,12 @@ function Signup() {
             disabled={loading}
             className={`w-full px-4 py-3 text-white font-medium rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
-            {loading ? 'Signing Up...' : 'Sign Up'}
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                Signing Up...
+              </div>
+            ) : 'Sign Up'}
           </button>
         </form>
         <button

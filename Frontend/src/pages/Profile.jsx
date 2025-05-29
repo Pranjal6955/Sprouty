@@ -1,223 +1,193 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { User, Mail, Camera, Edit2, Save, X, Upload, Image as ImageIcon, MapPin, Calendar, Activity, 
-  Droplets, ThermometerSun, Scissors, AlertCircle, Sun } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Camera, Upload, X, Edit2, Save, Mail, MapPin, Calendar, Leaf, User, Trash2 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
-import LogoOJT from '../assets/LogoOJT.png';
-import defaultProfile from '../assets/profile.png';
+import { userAPI, uploadToCloudinary } from '../services/api';
 import Webcam from 'react-webcam';
-import { plantAPI, userAPI } from '../services/api';
 
 const Profile = () => {
+  const defaultProfile = "https://via.placeholder.com/150x150/e5e7eb/6b7280?text=User";
+  
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeNavItem, setActiveNavItem] = useState('Profile');
-  const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
   const [userProfile, setUserProfile] = useState({
     name: '',
     email: '',
+    avatar: '',
     location: '',
     joinDate: '',
     totalPlants: 0,
-    activeReminders: 0,
-    avatar: null
+    activeReminders: 0
   });
-
-  const [editForm, setEditForm] = useState({ ...userProfile });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: ''
+  });
+  const [saving, setSaving] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
-  const [selectedSection, setSelectedSection] = useState('overview');
+  const webcamRef = useRef(null);
+  const fileInputRef = useRef(null);
   const [activities] = useState([
     {
-      icon: <Droplets size={16} className="text-blue-500" />,
-      text: "Watered Monstera",
-      time: "2 hours ago",
-      type: "water"
+      icon: <Leaf className="text-green-500" size={16} />,
+      text: "Added new plant: Monstera Deliciosa",
+      time: "2 hours ago"
     },
     {
-      icon: <ThermometerSun size={16} className="text-orange-500" />,
-      text: "Moved Snake Plant to more sunlight",
-      time: "Yesterday",
-      type: "care"
+      icon: <Calendar className="text-blue-500" size={16} />,
+      text: "Watered Peace Lily",
+      time: "1 day ago"
     },
     {
-      icon: <Scissors size={16} className="text-green-500" />,
-      text: "Pruned Peace Lily",
-      time: "2 days ago",
-      type: "maintenance"
-    },
-    {
-      icon: <AlertCircle size={16} className="text-yellow-500" />,
-      text: "Added fertilizer to Pothos",
-      time: "3 days ago",
-      type: "nutrition"
-    },
-    {
-      icon: <Sun size={16} className="text-amber-500" />,
-      text: "Rotated Calathea for even growth",
-      time: "4 days ago",
-      type: "care"
+      icon: <User className="text-purple-500" size={16} />,
+      text: "Updated profile information",
+      time: "3 days ago"
     }
   ]);
 
-  const webcamRef = useRef(null);
-  const fileInputRef = useRef(null);
-
-  // Fetch user profile data on component mount
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Check if we have the required API functions
-        if (!userAPI || typeof userAPI.getUserProfile !== 'function') {
-          console.error('userAPI or getUserProfile method not available');
-          throw new Error('User API service is not properly configured');
-        }
-        
-        const response = await userAPI.getUserProfile();
-        
-        if (response && response.success) {
-          setUserProfile(response.data);
-          
-          // Fetch plants if needed and plantAPI is available
-          if (plantAPI && typeof plantAPI.getAllPlants === 'function') {
-            try {
-              const plantsResponse = await plantAPI.getAllPlants();
-              if (plantsResponse && plantsResponse.success) {
-                setUserPlants(plantsResponse.data || []);
-              }
-            } catch (plantError) {
-              console.error('Error fetching user plants:', plantError);
-              // Non-critical error, don't set main error state
-            }
-          }
-        } else {
-          console.error('API response was not successful:', response);
-          setError(response?.error || 'Failed to fetch user data');
-        }
-      } catch (err) {
-        console.error('Error fetching user data:', err);
-        setError(err.message || 'Failed to load user data. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserData();
+    fetchUserProfile();
   }, []);
+
+  const fetchUserProfile = async () => {
+    try {
+      setLoading(true);
+      const userData = JSON.parse(localStorage.getItem('user') || '{}');
+      
+      const response = await userAPI.getProfile();
+      if (response.success) {
+        const profileData = {
+          name: response.data.name || userData.name || '',
+          email: response.data.email || userData.email || '',
+          avatar: response.data.avatar || userData.avatar || '',
+          location: response.data.location || '',
+          joinDate: response.data.createdAt ? new Date(response.data.createdAt).toLocaleDateString() : 'Recently',
+          totalPlants: response.data.totalPlants || 0,
+          activeReminders: response.data.activeReminders || 0
+        };
+        
+        setUserProfile(profileData);
+        setEditForm({
+          name: profileData.name,
+          email: profileData.email
+        });
+      } else {
+        // Fallback to localStorage data
+        setUserProfile({
+          name: userData.name || 'User',
+          email: userData.email || '',
+          avatar: userData.avatar || '',
+          location: '',
+          joinDate: 'Recently',
+          totalPlants: 0,
+          activeReminders: 0
+        });
+        setEditForm({
+          name: userData.name || '',
+          email: userData.email || ''
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      setError('Failed to load profile data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
-    setError('');
     
     try {
-      const updateData = {
-        name: editForm.name,
-        avatar: editForm.avatar,
-        location: editForm.location
-      };
-      
-      const response = await userAPI.updateProfile(updateData);
-      
+      const response = await userAPI.updateProfile(editForm);
       if (response.success) {
-        setUserProfile({
-          ...userProfile,
-          ...updateData
-        });
+        setUserProfile(prev => ({
+          ...prev,
+          name: editForm.name,
+          email: editForm.email
+        }));
         setIsEditing(false);
-        
-        // Show success message
-        setError(''); // Clear any previous errors
-        // You could add a success message state if needed
+      } else {
+        setError(response.error || 'Failed to update profile');
       }
     } catch (error) {
       console.error('Error updating profile:', error);
-      setError('Failed to update profile. Please try again.');
+      setError('Failed to update profile');
     } finally {
       setSaving(false);
     }
   };
 
   const handleImageUpload = async (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Image size should be less than 5MB');
-        return;
-      }
-      
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        setError('Please select a valid image file');
-        return;
-      }
-      
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be less than 5MB');
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
       const reader = new FileReader();
-      reader.onloadend = async () => {
-        const newAvatar = reader.result;
-        
-        // Immediately save to database
+      reader.onload = async (e) => {
         try {
-          setSaving(true);
-          setError('');
-          
-          const updateData = {
-            name: userProfile.name,
-            avatar: newAvatar,
-            location: userProfile.location
-          };
-          
-          const response = await userAPI.updateProfile(updateData);
+          const imageData = e.target.result;
+          const response = await userAPI.updateProfile({ avatar: imageData });
           
           if (response.success) {
-            setUserProfile({ ...userProfile, avatar: newAvatar });
-            setEditForm({ ...editForm, avatar: newAvatar });
+            setUserProfile(prev => ({ ...prev, avatar: imageData }));
             setShowImageModal(false);
+          } else {
+            throw new Error(response.error || 'Failed to update profile picture');
           }
-        } catch (error) {
-          console.error('Error updating avatar:', error);
-          setError('Failed to update profile picture. Please try again.');
+        } catch (err) {
+          setError(err.message);
         } finally {
           setSaving(false);
         }
       };
       reader.readAsDataURL(file);
+    } catch (error) {
+      setError('Failed to process image');
+      setSaving(false);
     }
   };
 
   const handleCameraCapture = async () => {
-    const imageSrc = webcamRef.current.getScreenshot();
-    if (imageSrc) {
-      // Immediately save to database
-      try {
-        setSaving(true);
-        setError('');
-        
-        const updateData = {
-          name: userProfile.name,
-          avatar: imageSrc,
-          location: userProfile.location
-        };
-        
-        const response = await userAPI.updateProfile(updateData);
+    if (!webcamRef.current) return;
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      const imageSrc = webcamRef.current.getScreenshot();
+      if (imageSrc) {
+        const response = await userAPI.updateProfile({ avatar: imageSrc });
         
         if (response.success) {
-          setUserProfile({ ...userProfile, avatar: imageSrc });
-          setEditForm({ ...editForm, avatar: imageSrc });
-          setShowCamera(false);
+          setUserProfile(prev => ({ ...prev, avatar: imageSrc }));
           setShowImageModal(false);
+          setShowCamera(false);
+        } else {
+          throw new Error(response.error || 'Failed to update profile picture');
         }
-      } catch (error) {
-        console.error('Error updating avatar:', error);
-        setError('Failed to update profile picture. Please try again.');
-      } finally {
-        setSaving(false);
       }
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -261,7 +231,6 @@ const Profile = () => {
                   alt="Profile"
                   className="w-32 h-32 rounded-full object-cover border-4 border-white"
                   onError={(e) => {
-                    e.target.onerror = null;
                     e.target.src = defaultProfile;
                   }}
                 />
@@ -300,10 +269,10 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Main Content */}
+        {/* Profile Content */}
         <div className="p-6">
           <div className="grid gap-6">
-            {/* Quick Stats */}
+            {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
                 <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Plants</h3>
@@ -357,7 +326,10 @@ const Profile = () => {
                 <button 
                   onClick={() => {
                     setIsEditing(false);
-                    setError('');
+                    setEditForm({
+                      name: userProfile.name,
+                      email: userProfile.email
+                    });
                   }}
                   className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                 >
@@ -394,7 +366,10 @@ const Profile = () => {
                     type="button"
                     onClick={() => {
                       setIsEditing(false);
-                      setError('');
+                      setEditForm({
+                        name: userProfile.name,
+                        email: userProfile.email
+                      });
                     }}
                     className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
                     disabled={saving}
@@ -424,7 +399,7 @@ const Profile = () => {
           </div>
         )}
 
-        {/* Image Upload Modal */}
+        {/* Image Modal */}
         {showImageModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md">
@@ -494,23 +469,27 @@ const Profile = () => {
                         <Upload size={20} className="mr-2" />
                         Upload & Save Image
                       </button>
-                                            <input
-                                              type="file"
-                                              accept="image/*"
-                                              ref={fileInputRef}
-                                              style={{ display: 'none' }}
-                                              onChange={handleImageUpload}
-                                              disabled={saving}
-                                            />
+                                          <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            onChange={handleImageUpload}
+                                            accept="image/*"
+                                            className="hidden"
+                                          />
+                                        </div>
+                                          
+                                          <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                                            Supported formats: JPG, PNG, GIF (max 5MB)
                                           </div>
                                         </div>
                                       )}
-                                      {error && (
-                                        <div className="mt-4 text-red-600 dark:text-red-400 text-sm text-center">
-                                          {error}
-                                        </div>
-                                      )}
                                     </div>
+                                    
+                                    {error && (
+                                      <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg">
+                                        <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               )}

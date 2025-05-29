@@ -35,7 +35,7 @@ const HomePage = () => {
             </div>
             <div className="hidden md:flex items-center space-x-4">
               <DarkModeToggle />
-              <Link to="/Login" className="text-teal-600 dark:text-teal-400 font-medium hover:text-teal-800 dark:hover:text-teal-300">
+              <Link to="/login" className="text-teal-600 dark:text-teal-400 font-medium hover:text-teal-800 dark:hover:text-teal-300">
                 Login
               </Link>
               <Link to="/signup" className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-5 rounded-full transition duration-150">
@@ -62,7 +62,7 @@ const HomePage = () => {
             </div>
             <div className="pt-4 pb-3 border-t border-gray-200">
               <div className="flex items-center justify-center px-4 space-x-4 py-2">
-                <Link to="/" className="w-full text-teal-600 font-medium py-2 px-4 rounded-lg border border-teal-600 hover:bg-teal-50">
+                <Link to="/login" className="w-full text-teal-600 font-medium py-2 px-4 rounded-lg border border-teal-600 hover:bg-teal-50">
                   Login
                 </Link>
                 <Link to="/signup" className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-lg">
@@ -218,7 +218,7 @@ const HomePage = () => {
             <Link to="/signup" className="bg-white text-emerald-700 hover:bg-emerald-50 font-medium py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:-translate-y-1">
               Start Free Trial
             </Link>
-            <Link to="/" className="bg-emerald-800 text-white hover:bg-emerald-900 font-medium py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:-translate-y-1">
+            <Link to="/login" className="bg-emerald-800 text-white hover:bg-emerald-900 font-medium py-3 px-8 rounded-full shadow-lg transition duration-300 transform hover:-translate-y-1">
               Learn More
             </Link>
           </div>
