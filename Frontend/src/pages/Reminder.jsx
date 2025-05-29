@@ -644,7 +644,7 @@ const Reminder = () => {
   }
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar 
         isMenuOpen={isMenuOpen}
         setIsMenuOpen={setIsMenuOpen}
@@ -652,59 +652,90 @@ const Reminder = () => {
         setActiveNavItem={setActiveNavItem}
       />
 
-      <div className="flex-1 overflow-hidden">
-        <div className="p-4 md:p-6">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Reminders</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Keep track of your plant care schedule
-              </p>
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-6">
+          {/* Enhanced Header */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center">
+              <img src={LogoOJT} alt="Sprouty Logo" className="h-17 w-16" />
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-white ml-2">Plant Care Reminders</h1>
             </div>
-            <button
-              onClick={() => setShowAddReminder(true)}
-              className="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2"
-            >
-              <Plus size={20} />
-              Add Reminder
-            </button>
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={refreshData}
+                disabled={refreshing}
+                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 disabled:opacity-50"
+                title="Refresh reminders"
+              >
+                <RotateCcw size={20} className={refreshing ? 'animate-spin' : ''} />
+              </button>
+              <button 
+                onClick={() => setShowAddReminder(true)}
+                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-sm"
+              >
+                <Plus size={20} className="mr-1" /> Add Reminder
+              </button>
+            </div>
           </div>
 
-          {/* Filter and Sort Controls */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="flex-1 sm:flex-initial px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
-            >
-              <option value="all">All Types</option>
-              <option value="water">Water</option>
-              <option value="fertilize">Fertilize</option>
-              <option value="prune">Prune</option>
-              <option value="repot">Repot</option>
-            </select>
-            <div className="flex items-center gap-2">
-              <Search size={20} className="text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search reminders..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500">Sort by:</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+          {/* Enhanced Error Display */}
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
+              <AlertCircle className="text-red-500 mr-3 mt-0.5" size={20} />
+              <div>
+                <p className="text-red-600 font-medium">Error</p>
+                <p className="text-red-600 text-sm">{error}</p>
+              </div>
+              <button 
+                onClick={() => setError('')}
+                className="ml-auto text-red-400 hover:text-red-600"
               >
-                <option value="date">Date</option>
-                <option value="type">Type</option>
-                <option value="plant">Plant</option>
-              </select>
+                ×
+              </button>
+            </div>
+          )}
+
+          {/* Filter and Search Controls */}
+          <div className="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex items-center gap-2">
+                <Search size={20} className="text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search reminders..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                />
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Filter size={20} className="text-gray-400" />
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                >
+                  <option value="all">All Types</option>
+                  <option value="water">Water</option>
+                  <option value="fertilize">Fertilize</option>
+                  <option value="prune">Prune</option>
+                  <option value="repot">Repot</option>
+                </select>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">Sort by:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                >
+                  <option value="date">Date</option>
+                  <option value="type">Type</option>
+                  <option value="plant">Plant</option>
+                </select>
+              </div>
             </div>
           </div>
 

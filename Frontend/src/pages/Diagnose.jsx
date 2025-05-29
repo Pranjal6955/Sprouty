@@ -416,7 +416,7 @@ const Diagnose = () => {
   );
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar 
         isMenuOpen={isMenuOpen}
         setIsMenuOpen={setIsMenuOpen}
@@ -424,377 +424,274 @@ const Diagnose = () => {
         setActiveNavItem={setActiveNavItem}
       />
 
-      <div className="flex-1 overflow-hidden">
-        <div className="p-4 md:p-6">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Plant Diagnosis</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Check your plant's health
-              </p>
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        {/* Header */}
+        <div className="p-6">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <img src={LogoOJT} alt="Logo" className="h-17 w-16" />
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+                Plant Disease Diagnosis
+              </h1>
             </div>
-            {showDiagnosisResult && (
+            
+            {/* Add New Diagnosis Button when viewing results */}
+            {showDiagnosisResult && selectedPlant && (
               <button
                 onClick={startNewDiagnosis}
-                className="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2"
+                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 flex items-center"
               >
-                <Plus size={20} />
+                <Plus className="w-5 h-5 mr-2" />
                 New Diagnosis
               </button>
             )}
           </div>
+        </div>
 
-          {/* Main Content */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Upload Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 md:p-6">
-              {selectedPlant ? (
-                <div className="flex flex-col h-full">
-                  {/* Modified layout to have the diagnosis history next to results when in detail view */}
-                  <div className={`grid grid-cols-1 ${plantId && !showDiagnosisResult ? 'lg:grid-cols-2' : 'lg:grid-cols-1'} gap-6`}>
-                    {/* Left Section - Upload */}
-                    {!showDiagnosisResult && (
-                      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm flex flex-col">
-                        <div className="p-6 flex-1 flex flex-col overflow-auto">
-                          <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
-                              <Upload size={24} />
-                              Upload Image
-                            </h2>
-                            <button
-                              onClick={() => setSelectedPlant(null)}
-                              className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                            >
-                              <X size={20} />
-                            </button>
-                          </div>
+        {/* Main Content - Updated for full height */}
+        <div className="flex-1 overflow-auto p-6 pt-0">
+          {selectedPlant ? (
+            <div className="flex flex-col h-full">
+              {/* Modified layout to have the diagnosis history next to results when in detail view */}
+              <div className={`grid grid-cols-1 ${plantId && !showDiagnosisResult ? 'lg:grid-cols-2' : 'lg:grid-cols-1'} gap-6`}>
+                {/* Left Section - Upload */}
+                {!showDiagnosisResult && (
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm flex flex-col">
+                    <div className="p-6 flex-1 flex flex-col overflow-auto">
+                      <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
+                          <Upload size={24} />
+                          Upload Image
+                        </h2>
+                        <button
+                          onClick={() => setSelectedPlant(null)}
+                          className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                        >
+                          <X size={20} />
+                        </button>
+                      </div>
 
-                          <div className="space-y-6">
-                            {/* Plant Info */}
-                            <div className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
-                              <img
-                                src={selectedPlant.image || 'https://via.placeholder.com/64x64/e5e7eb/9ca3af?text=Plant'}
-                                alt={selectedPlant.name}
-                                className="w-16 h-16 rounded-full object-cover"
-                                onError={(e) => {
-                                  e.target.src = 'https://via.placeholder.com/64x64/e5e7eb/9ca3af?text=Plant';
-                                }}
-                              />
-                              <div>
-                                <h3 className="font-medium text-gray-900 dark:text-gray-100">
-                                  {selectedPlant.name}
-                                </h3>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                  {selectedPlant.species}
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* Image Upload/Capture Area */}
-                            {renderImageSection()}
-
-                            <input
-                              type="file"
-                              id="fileInput"
-                              className="hidden"
-                              accept="image/*"
-                              onChange={handleImageUpload}
-                            />
-
-                            {/* Notes Area */}
-                            <div className="space-y-2">
-                              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Diagnosis Notes
-                              </label>
-                              <textarea
-                                value={notes}
-                                onChange={(e) => setNotes(e.target.value)}
-                                placeholder="Describe any symptoms or concerns..."
-                                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
-                                rows="4"
-                              />
-                            </div>
-
-                            {error && (
-                              <div className="p-3 bg-red-50 dark:bg-red-900/30 rounded-lg">
-                                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-                              </div>
-                            )}
-
-                            <button
-                              onClick={handleDiagnose}
-                              disabled={!imagePreview || loading}
-                              className="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 disabled:opacity-50"
-                            >
-                              {loading ? (
-                                <span className="flex items-center justify-center">
-                                  <Loader className="animate-spin -ml-1 mr-2 h-5 w-5" />
-                                  Analyzing...
-                                </span>
-                              ) : (
-                                'Start Diagnosis'
-                              )}
-                            </button>
+                      <div className="space-y-6">
+                        {/* Plant Info */}
+                        <div className="flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+                          <img
+                            src={selectedPlant.image || 'https://via.placeholder.com/64x64/e5e7eb/9ca3af?text=Plant'}
+                            alt={selectedPlant.name}
+                            className="w-16 h-16 rounded-full object-cover"
+                            onError={(e) => {
+                              e.target.src = 'https://via.placeholder.com/64x64/e5e7eb/9ca3af?text=Plant';
+                            }}
+                          />
+                          <div>
+                            <h3 className="font-medium text-gray-900 dark:text-gray-100">
+                              {selectedPlant.name}
+                            </h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              {selectedPlant.species}
+                            </p>
                           </div>
                         </div>
-                      </div>
-                    )}
 
-                    {/* Main Grid for Results and History when in detail view */}
-                    <div className={`${plantId ? "grid grid-cols-1 lg:grid-cols-2 gap-6" : ""}`}>
-                      {/* Results Section */}
-                      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm flex flex-col">
-                        <div className="p-6 flex-1 flex flex-col overflow-auto">
-                          <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
-                              <Stethoscope size={24} />
-                              Diagnosis Results
-                            </h2>
-                            
-                            {diagnosisResult && (
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm text-gray-500 dark:text-gray-400">
-                                  {new Date(diagnosisResult.diagnosis.diagnosisDate || Date.now()).toLocaleDateString()}
+                        {/* Image Upload/Capture Area */}
+                        {renderImageSection()}
+
+                        <input
+                          type="file"
+                          id="fileInput"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                        />
+
+                        {/* Notes Area */}
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Diagnosis Notes
+                          </label>
+                          <textarea
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            placeholder="Describe any symptoms or concerns..."
+                            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+                            rows="4"
+                          />
+                        </div>
+
+                        {error && (
+                          <div className="p-3 bg-red-50 dark:bg-red-900/30 rounded-lg">
+                            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                          </div>
+                        )}
+
+                        <button
+                          onClick={handleDiagnose}
+                          disabled={!imagePreview || loading}
+                          className="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 disabled:opacity-50"
+                        >
+                          {loading ? (
+                            <span className="flex items-center justify-center">
+                              <Loader className="animate-spin -ml-1 mr-2 h-5 w-5" />
+                              Analyzing...
+                            </span>
+                          ) : (
+                            'Start Diagnosis'
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Main Grid for Results and History when in detail view */}
+                <div className={`${plantId ? "grid grid-cols-1 lg:grid-cols-2 gap-6" : ""}`}>
+                  {/* Results Section */}
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm flex flex-col">
+                    <div className="p-6 flex-1 flex flex-col overflow-auto">
+                      <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
+                          <Stethoscope size={24} />
+                          Diagnosis Results
+                        </h2>
+                        
+                        {diagnosisResult && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                              {new Date(diagnosisResult.diagnosis.diagnosisDate || Date.now()).toLocaleDateString()}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {loading ? (
+                        <div className="flex items-center justify-center h-64">
+                          <div className="text-center">
+                            <Loader className="h-12 w-12 animate-spin text-green-500 mx-auto" />
+                            <p className="mt-4 text-gray-600">Analyzing plant condition...</p>
+                          </div>
+                        </div>
+                      ) : diagnosisResult ? (
+                        <div className="space-y-6 overflow-y-auto max-h-[calc(100vh-20rem]">
+
+                          <div className="mb-6 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <div className="flex items-center mb-2">
+                              {diagnosisResult.summary.isHealthy ? (
+                                <CheckCircle className="text-green-500 dark:text-green-400 mr-2" size={24} />
+                              ) : (
+                                <AlertTriangle className="text-red-500 dark:text-red-400 mr-2" size={24} />
+                              )}
+                              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                                {diagnosisResult.summary.isHealthy ? 'Plant Appears Healthy' : 'Issues Detected'}
+                              </h3>
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-300">
+                              Overall Health: <span className="font-medium capitalize text-gray-900 dark:text-white">{diagnosisResult.summary.overallHealth}</span>
+                            </p>
+                            {diagnosisResult.summary.treatmentPriority !== 'low' && (
+                              <p className="text-sm mt-1">
+                                Treatment Priority: 
+                                <span className={`ml-1 px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(diagnosisResult.summary.treatmentPriority)}`}>
+                                  {diagnosisResult.summary.treatmentPriority.toUpperCase()}
                                 </span>
-                              </div>
+                              </p>
                             )}
                           </div>
 
-                          {loading ? (
-                            <div className="flex items-center justify-center h-64">
-                              <div className="text-center">
-                                <Loader className="h-12 w-12 animate-spin text-green-500 mx-auto" />
-                                <p className="mt-4 text-gray-600">Analyzing plant condition...</p>
-                              </div>
-                            </div>
-                          ) : diagnosisResult ? (
-                            <div className="space-y-6 overflow-y-auto max-h-[calc(100vh-20rem]">
-
-                              <div className="mb-6 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                                <div className="flex items-center mb-2">
-                                  {diagnosisResult.summary.isHealthy ? (
-                                    <CheckCircle className="text-green-500 dark:text-green-400 mr-2" size={24} />
-                                  ) : (
-                                    <AlertTriangle className="text-red-500 dark:text-red-400 mr-2" size={24} />
-                                  )}
-                                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                                    {diagnosisResult.summary.isHealthy ? 'Plant Appears Healthy' : 'Issues Detected'}
-                                  </h3>
-                                </div>
-                                <p className="text-sm text-gray-600 dark:text-gray-300">
-                                  Overall Health: <span className="font-medium capitalize text-gray-900 dark:text-white">{diagnosisResult.summary.overallHealth}</span>
-                                </p>
-                                {diagnosisResult.summary.treatmentPriority !== 'low' && (
-                                  <p className="text-sm mt-1">
-                                    Treatment Priority: 
-                                    <span className={`ml-1 px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(diagnosisResult.summary.treatmentPriority)}`}>
-                                      {diagnosisResult.summary.treatmentPriority.toUpperCase()}
-                                    </span>
-                                  </p>
-                                )}
-                              </div>
-
-                              {/* Diseases */}
-                              {diagnosisResult.diagnosis.diseases && diagnosisResult.diagnosis.diseases.length > 0 && (
-                                <div className="mb-6">
-                                  <h4 className="font-medium text-gray-900 dark:text-white mb-3">Detected Diseases</h4>
-                                  <div className="space-y-4">
-                                    {diagnosisResult.diagnosis.diseases.map((disease, index) => (
-                                      <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                                        <div className="flex justify-between items-start mb-2">
-                                          <h5 className="font-medium text-gray-900 dark:text-white">{disease.name}</h5>
-                                          <div className="flex items-center space-x-2">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(disease.severity)}`}>
-                                              {disease.severity}
-                                            </span>
-                                            <span className="text-sm text-gray-500">
-                                              {Math.round(disease.probability * 100)}% confidence
-                                            </span>
-                                          </div>
-                                        </div>
-                                        
-                                        {disease.common_names && disease.common_names.length > 0 && (
-                                          <div className="mb-2">
-                                            <p className="text-sm text-gray-600 dark:text-gray-300">
-                                              Also known as: <span className="text-gray-700 dark:text-gray-200">{disease.common_names.join(', ')}</span>
-                                            </p>
-                                          </div>
-                                        )}
-                                        
-                                        {disease.description && (
-                                          <p className="text-sm text-gray-600 dark:text-gray-300">{disease.description}</p>
-                                        )}
-                                        
-                                        {disease.treatment && Object.keys(disease.treatment).length > 0 && (
-                                          <div className="mt-3">
-                                            <h6 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Treatment Options:</h6>
-                                            <div className="space-y-1">
-                                              {Object.entries(disease.treatment).map(([type, treatment]) => (
-                                                treatment && (
-                                                  <div key={type} className="text-sm">
-                                                    <span className="font-medium capitalize text-gray-700 dark:text-gray-300">{type}:</span>
-                                                    <span className="ml-1 text-gray-600 dark:text-gray-300">{treatment}</span>
-                                                  </div>
-                                                )
-                                              ))}
-                                            </div>
-                                          </div>
-                                        )}
+                          {/* Diseases */}
+                          {diagnosisResult.diagnosis.diseases && diagnosisResult.diagnosis.diseases.length > 0 && (
+                            <div className="mb-6">
+                              <h4 className="font-medium text-gray-900 dark:text-white mb-3">Detected Diseases</h4>
+                              <div className="space-y-4">
+                                {diagnosisResult.diagnosis.diseases.map((disease, index) => (
+                                  <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                    <div className="flex justify-between items-start mb-2">
+                                      <h5 className="font-medium text-gray-900 dark:text-white">{disease.name}</h5>
+                                      <div className="flex items-center space-x-2">
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(disease.severity)}`}>
+                                          {disease.severity}
+                                        </span>
+                                        <span className="text-sm text-gray-500">
+                                          {Math.round(disease.probability * 100)}% confidence
+                                        </span>
                                       </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Recommendations */}
-                              {diagnosisResult.diagnosis.recommendations && (
-                                <div>
-                                  <h4 className="font-medium text-gray-900 dark:text-white mb-3">Recommendations</h4>
-                                  <div className="space-y-3">
-                                    {diagnosisResult.diagnosis.recommendations.immediate_actions && diagnosisResult.diagnosis.recommendations.immediate_actions.length > 0 && (
-                                      <div>
-                                        <h6 className="text-sm font-medium text-red-600 dark:text-red-400 mb-1">Immediate Actions:</h6>
-                                        <ul className="text-sm text-gray-600 dark:text-gray-300 list-disc list-inside space-y-1">
-                                          {diagnosisResult.diagnosis.recommendations.immediate_actions.map((action, index) => (
-                                            <li key={index}>{action}</li>
-                                          ))}
-                                        </ul>
+                                    </div>
+                                    
+                                    {disease.common_names && disease.common_names.length > 0 && (
+                                      <div className="mb-2">
+                                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                                          Also known as: <span className="text-gray-700 dark:text-gray-200">{disease.common_names.join(', ')}</span>
+                                        </p>
                                       </div>
                                     )}
                                     
-                                    {diagnosisResult.diagnosis.recommendations.preventive_measures && diagnosisResult.diagnosis.recommendations.preventive_measures.length > 0 && (
-                                      <div>
-                                        <h6 className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">Preventive Measures:</h6>
-                                        <ul className="text-sm text-gray-600 dark:text-gray-300 list-disc list-inside space-y-1">
-                                          {diagnosisResult.diagnosis.recommendations.preventive_measures.map((measure, index) => (
-                                            <li key={index}>{measure}</li>
+                                    {disease.description && (
+                                      <p className="text-sm text-gray-600 dark:text-gray-300">{disease.description}</p>
+                                    )}
+                                    
+                                    {disease.treatment && Object.keys(disease.treatment).length > 0 && (
+                                      <div className="mt-3">
+                                        <h6 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Treatment Options:</h6>
+                                        <div className="space-y-1">
+                                          {Object.entries(disease.treatment).map(([type, treatment]) => (
+                                            treatment && (
+                                              <div key={type} className="text-sm">
+                                                <span className="font-medium capitalize text-gray-700 dark:text-gray-300">{type}:</span>
+                                                <span className="ml-1 text-gray-600 dark:text-gray-300">{treatment}</span>
+                                              </div>
+                                            )
                                           ))}
-                                        </ul>
+                                        </div>
                                       </div>
                                     )}
                                   </div>
-                                </div>
-                              )}
+                                ))}
+                              </div>
                             </div>
-                          ) : (
-                            <div className="flex items-center justify-center h-64 text-gray-500">
-                              <div className="text-center">
-                                <AlertCircle className="h-12 w-12 mx-auto mb-4" />
-                                <p>Upload an image to see diagnosis results</p>
+                          )}
+
+                          {/* Recommendations */}
+                          {diagnosisResult.diagnosis.recommendations && (
+                            <div>
+                              <h4 className="font-medium text-gray-900 dark:text-white mb-3">Recommendations</h4>
+                              <div className="space-y-3">
+                                {diagnosisResult.diagnosis.recommendations.immediate_actions && diagnosisResult.diagnosis.recommendations.immediate_actions.length > 0 && (
+                                  <div>
+                                    <h6 className="text-sm font-medium text-red-600 dark:text-red-400 mb-1">Immediate Actions:</h6>
+                                    <ul className="text-sm text-gray-600 dark:text-gray-300 list-disc list-inside space-y-1">
+                                      {diagnosisResult.diagnosis.recommendations.immediate_actions.map((action, index) => (
+                                        <li key={index}>{action}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                                
+                                {diagnosisResult.diagnosis.recommendations.preventive_measures && diagnosisResult.diagnosis.recommendations.preventive_measures.length > 0 && (
+                                  <div>
+                                    <h6 className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">Preventive Measures:</h6>
+                                    <ul className="text-sm text-gray-600 dark:text-gray-300 list-disc list-inside space-y-1">
+                                      {diagnosisResult.diagnosis.recommendations.preventive_measures.map((measure, index) => (
+                                        <li key={index}>{measure}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )}
                         </div>
-                      </div>
-
-                      {/* Diagnosis History Section - Show side by side when in detail view */}
-                      {plantId && (showHistorySection || diagnosisHistory.length > 0) && (
-                        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm">
-                          <div className="p-6">
-                            <div className="flex justify-between items-center mb-4">
-                              <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
-                                <Calendar className="mr-2" size={20} />
-                                Diagnosis History
-                              </h2>
-                              <button 
-                                onClick={() => setShowHistorySection(!showHistorySection)}
-                                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                              >
-                                {showHistorySection ? 'Hide' : 'Show'}
-                              </button>
-                            </div>
-                            
-                            {showHistorySection && (
-                              historyLoading ? (
-                                <div className="flex justify-center p-6">
-                                  <Loader size={24} className="animate-spin text-green-500" />
-                                </div>
-                              ) : diagnosisHistory.length > 0 ? (
-                                <div className="space-y-4 mt-4">
-                                  {diagnosisHistory.map((diagnosis, index) => (
-                                    <div 
-                                      key={diagnosis._id} 
-                                      className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
-                                      onClick={() => viewDiagnosisDetails(diagnosis)}
-                                    >
-                                      <div className="flex justify-between items-start">
-                                        <div className="flex items-start space-x-4">
-                                          <div className="bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden w-16 h-16 flex-shrink-0">
-                                            {diagnosis.diagnosisImage && typeof diagnosis.diagnosisImage === 'string' && 
-                                             !diagnosis.diagnosisImage.includes('...') && 
-                                             diagnosis.diagnosisImage.startsWith('data:image') ? (
-                                              <img 
-                                                src={diagnosis.diagnosisImage} 
-                                                alt="Plant diagnosis" 
-                                                className="w-full h-full object-cover"
-                                                onError={(e) => {
-                                                  // If image fails to load, replace with icon
-                                                  e.target.style.display = 'none';
-                                                  e.target.parentNode.innerHTML = `
-                                                    <div class="w-full h-full flex items-center justify-center">
-                                                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><path d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16"></path><path d="M21 21H3"></path><path d="M21 16H3"></path><path d="M15 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"></path></svg>
-                                                    </div>
-                                                  `;
-                                                }}
-                                              />
-                                            ) : (
-                                              <div className="w-full h-full flex items-center justify-center">
-                                                <Stethoscope size={24} className="text-gray-400" />
-                                              </div>
-                                            )}
-                                          </div>
-                                          <div>
-                                            <h3 className="font-medium text-gray-900 dark:text-white">
-                                              {new Date(diagnosis.diagnosisDate).toLocaleDateString()} 
-                                              {diagnosis.diseases.length > 0 ? 
-                                                ` - ${diagnosis.diseases[0].name}` : 
-                                                ' - Healthy Check'}
-                                            </h3>
-                                            <div className="flex items-center mt-1">
-                                              <span className={`px-2 py-0.5 rounded-full text-xs ${
-                                                diagnosis.isHealthy ? 
-                                                  'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 
-                                                  'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                                              }`}>
-                                                {diagnosis.isHealthy ? 'Healthy' : 'Issues Detected'}
-                                              </span>
-                                              {diagnosis.diseases.length > 0 && (
-                                                <span className="ml-2 text-xs text-gray-500">
-                                                  {diagnosis.diseases.length} {diagnosis.diseases.length === 1 ? 'disease' : 'diseases'} detected
-                                                </span>
-                                              )}
-                                            </div>
-                                            {diagnosis.notes && (
-                                              <p className="mt-1 text-sm text-gray-600 dark:text-gray-300 line-clamp-1">
-                                                {diagnosis.notes}
-                                              </p>
-                                            )}
-                                          </div>
-                                        </div>
-                                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                                          {new Date(diagnosis.diagnosisDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                                  <FileText size={48} className="mx-auto mb-4" />
-                                  <p>No diagnosis history found for this plant</p>
-                                </div>
-                              )
-                            )}
+                      ) : (
+                        <div className="flex items-center justify-center h-64 text-gray-500">
+                          <div className="text-center">
+                            <AlertCircle className="h-12 w-12 mx-auto mb-4" />
+                            <p>Upload an image to see diagnosis results</p>
                           </div>
                         </div>
                       )}
                     </div>
                   </div>
-                  
-                  {/* Diagnosis History Section - Only show below results when not in detail view */}
-                  {!plantId && (showHistorySection || diagnosisHistory.length > 0) && (
-                    <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+
+                  {/* Diagnosis History Section - Show side by side when in detail view */}
+                  {plantId && (showHistorySection || diagnosisHistory.length > 0) && (
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm">
                       <div className="p-6">
                         <div className="flex justify-between items-center mb-4">
                           <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
@@ -894,88 +791,194 @@ const Diagnose = () => {
                     </div>
                   )}
                 </div>
-              ) : (
-                // Plant Grid View - Fixed syntax
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {plants.map((plant) => (
-                    <div key={plant._id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                      {/* Plant Image */}
-                      <div className="relative h-48">
-                        <img
-                          src={plant.image || 'https://via.placeholder.com/300x200/e5e7eb/9ca3af?text=Plant'}
-                          alt={plant.name}
-                          className="w-full h-full object-cover rounded-t-xl"
-                          onError={(e) => {
-                            e.target.src = 'https://via.placeholder.com/300x200/e5e7eb/9ca3af?text=Plant';
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent rounded-t-xl" />
-                        <div className="absolute bottom-4 left-4">
-                          <h3 className="text-xl font-bold text-white">{plant.name}</h3>
-                          <p className="text-sm text-gray-200">{plant.species}</p>
-                        </div>
-                      </div>
-                      
-                      {/* Plant Details */}
-                      <div className="p-4 space-y-4">
-                        {/* Health Status */}
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Health Status</span>
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            plant.health === 'Healthy' ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' :
-                            plant.health === 'Needs Attention' ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                            'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
-                          }`}>
-                            {plant.health}
-                          </span>
-                        </div>
-
-                        {/* Care Info */}
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div>
-                            <p className="text-gray-500 dark:text-gray-400">Last Watered</p>
-                            <p className="font-medium text-gray-900 dark:text-gray-100">
-                              {plant.lastWatered ? formatDate(plant.lastWatered) : 'Not yet watered'}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-gray-500 dark:text-gray-400">Last Fertilized</p>
-                            <p className="font-medium text-gray-900 dark:text-gray-100">
-                              {plant.lastFertilized ? formatDate(plant.lastFertilized) : 'Not yet fertilized'}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* View Diagnose Button */}
-                        <button
-                          onClick={(e) => {
-                            handleViewHistory(plant);
-                            e.preventDefault();
-                          }}
-                          className="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
-                        >
-                          <Stethoscope size={18} />
-                          View Diagnose History
-                        </button>
-                      </div>
+              </div>
+              
+              {/* Diagnosis History Section - Only show below results when not in detail view */}
+              {!plantId && (showHistorySection || diagnosisHistory.length > 0) && (
+                <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+                  <div className="p-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
+                        <Calendar className="mr-2" size={20} />
+                        Diagnosis History
+                      </h2>
+                      <button 
+                        onClick={() => setShowHistorySection(!showHistorySection)}
+                        className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                      >
+                        {showHistorySection ? 'Hide' : 'Show'}
+                      </button>
                     </div>
-                  ))}
+                    
+                    {showHistorySection && (
+                      historyLoading ? (
+                        <div className="flex justify-center p-6">
+                          <Loader size={24} className="animate-spin text-green-500" />
+                        </div>
+                      ) : diagnosisHistory.length > 0 ? (
+                        <div className="space-y-4 mt-4">
+                          {diagnosisHistory.map((diagnosis, index) => (
+                            <div 
+                              key={diagnosis._id} 
+                              className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                              onClick={() => viewDiagnosisDetails(diagnosis)}
+                            >
+                              <div className="flex justify-between items-start">
+                                <div className="flex items-start space-x-4">
+                                  <div className="bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden w-16 h-16 flex-shrink-0">
+                                    {diagnosis.diagnosisImage && typeof diagnosis.diagnosisImage === 'string' && 
+                                     !diagnosis.diagnosisImage.includes('...') && 
+                                     diagnosis.diagnosisImage.startsWith('data:image') ? (
+                                      <img 
+                                        src={diagnosis.diagnosisImage} 
+                                        alt="Plant diagnosis" 
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          // If image fails to load, replace with icon
+                                          e.target.style.display = 'none';
+                                          e.target.parentNode.innerHTML = `
+                                            <div class="w-full h-full flex items-center justify-center">
+                                              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><path d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16"></path><path d="M21 21H3"></path><path d="M21 16H3"></path><path d="M15 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"></path></svg>
+                                            </div>
+                                          `;
+                                        }}
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center">
+                                        <Stethoscope size={24} className="text-gray-400" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <h3 className="font-medium text-gray-900 dark:text-white">
+                                      {new Date(diagnosis.diagnosisDate).toLocaleDateString()} 
+                                      {diagnosis.diseases.length > 0 ? 
+                                        ` - ${diagnosis.diseases[0].name}` : 
+                                        ' - Healthy Check'}
+                                    </h3>
+                                    <div className="flex items-center mt-1">
+                                      <span className={`px-2 py-0.5 rounded-full text-xs ${
+                                        diagnosis.isHealthy ? 
+                                          'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 
+                                          'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                      }`}>
+                                        {diagnosis.isHealthy ? 'Healthy' : 'Issues Detected'}
+                                      </span>
+                                      {diagnosis.diseases.length > 0 && (
+                                        <span className="ml-2 text-xs text-gray-500">
+                                          {diagnosis.diseases.length} {diagnosis.diseases.length === 1 ? 'disease' : 'diseases'} detected
+                                        </span>
+                                      )}
+                                    </div>
+                                    {diagnosis.notes && (
+                                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-300 line-clamp-1">
+                                        {diagnosis.notes}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <span className="text-sm text-gray-500 dark:text-gray-400">
+                                  {new Date(diagnosis.diagnosisDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                          <FileText size={48} className="mx-auto mb-4" />
+                          <p>No diagnosis history found for this plant</p>
+                        </div>
+                      )
+                    )}
+                  </div>
                 </div>
               )}
             </div>
+          ) : (
+            // Plant Grid View - Fixed syntax
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {plants.map((plant) => (
+                <div key={plant._id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                  {/* Plant Image */}
+                  <div className="relative h-48">
+                    <img
+                      src={plant.image || 'https://via.placeholder.com/300x200/e5e7eb/9ca3af?text=Plant'}
+                      alt={plant.name}
+                      className="w-full h-full object-cover rounded-t-xl"
+                      onError={(e) => {
+                        e.target.src = 'https://via.placeholder.com/300x200/e5e7eb/9ca3af?text=Plant';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent rounded-t-xl" />
+                    <div className="absolute bottom-4 left-4">
+                      <h3 className="text-xl font-bold text-white">{plant.name}</h3>
+                      <p className="text-sm text-gray-200">{plant.species}</p>
+                    </div>
+                  </div>
+                  
+                  {/* Plant Details */}
+                  <div className="p-4 space-y-4">
+                    {/* Health Status */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Health Status</span>
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        plant.health === 'Healthy' ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' :
+                        plant.health === 'Needs Attention' ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                        'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                      }`}>
+                        {plant.health}
+                      </span>
+                    </div>
 
-            {/* Results Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 md:p-6">
-              {/* ...existing results content... */}
+                    {/* Care Info */}
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-500 dark:text-gray-400">Last Watered</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">
+                          {plant.lastWatered ? formatDate(plant.lastWatered) : 'Not yet watered'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500 dark:text-gray-400">Last Fertilized</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">
+                          {plant.lastFertilized ? formatDate(plant.lastFertilized) : 'Not yet fertilized'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* View Diagnose Button */}
+                    <button
+                      onClick={(e) => {
+                        handleViewHistory(plant);
+                        e.preventDefault();
+                      }}
+                      className="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Stethoscope size={18} />
+                      View Diagnose History
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-
-          {/* History Section */}
-          <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl p-4 md:p-6">
-            {/* ...existing history content... */}
-          </div>
+          )}
         </div>
       </div>
+      
+      {/* Add PlantDiagnoseLog component */}
+      {showDiagnoseHistory && selectedPlant && (
+        <PlantDiagnoseLog
+          isOpen={showDiagnoseHistory}
+          onClose={() => setShowDiagnoseHistory(false)}
+          plant={selectedPlant}
+          diagnoseHistory={diagnosisHistory}
+          onSelectDiagnosis={(diagnosis) => {
+            viewDiagnosisDetails(diagnosis);
+            setShowDiagnoseHistory(false);
+          }}
+        />
+      )}
     </div>
   );
 };
