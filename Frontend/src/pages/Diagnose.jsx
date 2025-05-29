@@ -5,6 +5,8 @@ import LogoOJT from '../assets/LogoOJT.png';
 import { Upload, Loader, AlertCircle, CheckCircle, AlertTriangle, Camera, FileText, Calendar, Stethoscope, X, Image } from 'lucide-react';
 import { diagnosisAPI, plantAPI } from '../services/api';
 import Webcam from 'react-webcam'; // Add this import
+import PlantHistoryLog from '../components/PlantHistoryLog';  // Add this import
+import PlantDiagnoseLog from '../components/PlantDiagnoseLog';  // Add this import
 
 const Diagnose = () => {
   const location = useLocation();
@@ -27,6 +29,8 @@ const Diagnose = () => {
   const [useCamera, setUseCamera] = useState(false);
   const videoRef = React.useRef(null);
   const streamRef = React.useRef(null);
+  const [showHistory, setShowHistory] = useState(false);  // Add this state
+  const [showDiagnoseHistory, setShowDiagnoseHistory] = useState(false);
 
   // Fetch plant data if plantId is provided
   useEffect(() => {
@@ -212,14 +216,20 @@ const Diagnose = () => {
   };
 
   const handleViewDiagnose = (plant) => {
-    // Instead of showing modal, navigate to a new view
-    setSelectedPlant(plant);
-    // Clear previous diagnosis data
-    setImagePreview(null);
-    setSelectedImage(null);
-    setDiagnosisResult(null);
-    setError(null);
-    setNotes('');
+    handleViewHistory(plant);
+  };
+
+  const handleViewHistory = async (plant) => {
+    try {
+      const response = await diagnosisAPI.getPlantDiagnosisHistory(plant._id);
+      if (response.success) {
+        setDiagnosisHistory(response.data);
+        setSelectedPlant(plant);
+        setShowDiagnoseHistory(true);
+      }
+    } catch (error) {
+      console.error('Error fetching diagnosis history:', error);
+    }
   };
 
   const getSeverityColor = (severity) => {
@@ -681,11 +691,14 @@ const Diagnose = () => {
 
                     {/* View Diagnose Button */}
                     <button
-                      onClick={() => handleViewDiagnose(plant)}
+                      onClick={(e) => {
+                        handleViewHistory(plant);
+                        e.preventDefault();
+                      }}
                       className="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
                     >
                       <Stethoscope size={18} />
-                      View Diagnose
+                      View Diagnose History
                     </button>
                   </div>
                 </div>
@@ -694,6 +707,15 @@ const Diagnose = () => {
           )}
         </div>
       </div>
+      {/* Add PlantDiagnoseLog component */}
+      {showDiagnoseHistory && selectedPlant && (
+        <PlantDiagnoseLog
+          isOpen={showDiagnoseHistory}
+          onClose={() => setShowDiagnoseHistory(false)}
+          plant={selectedPlant}
+          diagnoseHistory={diagnosisHistory}
+        />
+      )}
     </div>
   );
 };
