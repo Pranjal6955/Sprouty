@@ -3,6 +3,8 @@ import Sidebar from '../components/Sidebar';
 import { Search, Droplets, AlertCircle, Scissors, Flower, Edit, Check, X, Loader, Edit2, Stethoscope } from 'lucide-react';
 import { plantAPI, diagnosisAPI } from '../services/api';
 import PlantHistoryLog from '../components/PlantHistoryLog';
+import PlantDiagnoseLog from '../components/PlantDiagnoseLog';
+
 
 const PlantLogCard = ({ plant, onNotesUpdate }) => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
@@ -292,6 +294,13 @@ const PlantLogCard = ({ plant, onNotesUpdate }) => {
         isOpen={showHistory}
         onClose={() => setShowHistory(false)}
         plant={plant}
+      />
+            {/* Diagnose History Modal */}
+            <PlantDiagnoseLog
+        isOpen={showDiagnoseHistory}
+        onClose={() => setShowDiagnoseHistory(false)}
+        plant={plant}
+        diagnoseHistory={diagnoseHistory}
       />
     </>
   );
