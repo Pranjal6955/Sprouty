@@ -629,7 +629,7 @@ const Dashboard = () => {
                               <h3 className="font-semibold text-gray-800 dark:text-white">{plant.nickname}</h3>
                               <p className="text-sm text-gray-500 dark:text-gray-400">{plant.species}</p>
                             </div>
-                            <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            <div className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
                               plant.health === 'Healthy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
                               plant.health === 'Needs Attention' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
                               'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
