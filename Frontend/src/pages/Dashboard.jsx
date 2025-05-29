@@ -353,7 +353,7 @@ const Dashboard = () => {
     try {
       // Navigate to the plant diagnosis page with or without plant ID
       if (plantId) {
-        navigate(`/diagnose/${plantId}`);
+        navigate(`/diagnose/${plantId}`); // <-- FIX: Use backticks and no slashes, not a regex!
       } else {
         navigate('/diagnose');
       }
@@ -390,7 +390,7 @@ const Dashboard = () => {
             <div className="max-h-96 overflow-y-auto">
               {/* Due Reminders */}
               {dueReminders.map(reminder => (
-                <div key={`reminder-${reminder._id}`} className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                <div key={reminder._id} className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
                   <div className="flex items-start space-x-3">
                     <div className="flex-shrink-0">
                       {reminder.plant?.mainImage ? (
@@ -518,7 +518,7 @@ const Dashboard = () => {
         <div className="flex h-full">
           <div className="flex-1 overflow-y-auto scrollbar-hide">
             <div className="p-6">
-              {/* Updated Header Section */}
+              {/* Updated Header Section - Removed Add Plant button */}
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center">
                   <img 
@@ -531,12 +531,6 @@ const Dashboard = () => {
                 <div className="flex items-center gap-4">
                   <NotificationButton />
                   <DarkModeToggle />
-                  <button 
-                    onClick={handleAddPlant}
-                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-sm"
-                  >
-                    <Plus size={20} className="mr-1" /> Add Plant
-                  </button>
                 </div>
               </div>
 
