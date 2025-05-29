@@ -22,6 +22,16 @@ import Weather from '../components/Weather';
 import { processPlantImage, handleImageError } from '../utils/imageUtils';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+  
+  // Add this useEffect at the top of your component
+  useEffect(() => {
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) {
+      navigate('/', { replace: true });
+    }
+  }, [navigate]);
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [weatherData, setWeatherData] = useState(null);
   const [plants, setPlants] = useState([]);
@@ -41,7 +51,6 @@ const Dashboard = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [dueReminders, setDueReminders] = useState([]);
   const [healthFilter, setHealthFilter] = useState('All'); // Add this state
-  const navigate = useNavigate();
 
   // Get notifications from context
   const { notifications, clearNotification } = useNotifications();
