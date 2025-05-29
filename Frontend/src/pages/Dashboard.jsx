@@ -19,6 +19,7 @@ import EditPlant from '../components/EditPlant';
 import { useNotifications } from '../contexts/NotificationContext';
 import { reminderAPI } from '../services/api';
 import Weather from '../components/Weather';
+import { processPlantImage, handleImageError } from '../utils/imageUtils';
 
 const Dashboard = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -48,9 +49,9 @@ const Dashboard = () => {
   // Add status options constant
   const healthStatusOptions = [
     { value: 'All', label: 'All Plants' },
-    { value: 'Healthy', label: 'Healthy' },
-    { value: 'Needs Attention', label: 'Needs Attention' },
-    { value: 'Critical', label: 'Critical' }
+    { value: 'Healthy', label: 'Healthy', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+    { value: 'Needs Attention', label: 'Needs Attention', color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' },
+    { value: 'Critical', label: 'Critical', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' }
   ];
 
   const formatDate = (dateString) => {
@@ -103,9 +104,10 @@ const Dashboard = () => {
             name: plant.name,
             species: plant.species,
             nickname: plant.nickname || plant.name,
-            image: plant.mainImage,
+            image: processPlantImage(plant.mainImage || plant.image),
             notes: plant.notes,
-            health: plant.status,
+            health: plant.status, // Ensure health status is included
+            status: plant.status, // Include both for compatibility
             lastWatered: formatDate(plant.lastWatered),
             dateAdded: formatDate(plant.dateAdded || plant.createdAt),
             lastFertilised: formatDate(plant.lastFertilised),
@@ -368,7 +370,7 @@ const Dashboard = () => {
     e.stopPropagation(); // Prevent plant details modal from opening
     try {
       // Navigate to the diagnose page with the plant data
-      navigate(`/diagnose`, { 
+      navigate(`/diagnose/${plant.id}`, { 
         state: {
           plantId: plant.id,
           plantName: plant.name,
@@ -615,6 +617,7 @@ const Dashboard = () => {
                             src={plant.image} 
                             alt={plant.name} 
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            onError={(e) => handleImageError(e, plant.name)}
                           />
                         </div>
                         
@@ -672,7 +675,7 @@ const Dashboard = () => {
                               plant.health === 'Needs Attention' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
                               'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                             }`}>
-                              {plant.health}
+                              {plant.health || plant.status || 'Healthy'}
                             </div>
                           </div>
 

@@ -552,35 +552,43 @@ export { reminderAPI };
 export const diagnosisAPI = {
   diagnoseDisease: async (diagnosisData) => {
     try {
-      // Log the type of data being sent for diagnosis
-      if (diagnosisData.base64Image) {
-        console.log('Sending base64 image for diagnosis. Length:', diagnosisData.base64Image.length);
-        console.log('First 20 chars of base64:', diagnosisData.base64Image.substring(0, 20) + '...');
-      } else if (diagnosisData.imageUrl) {
-        console.log('Sending image URL for diagnosis:', diagnosisData.imageUrl);
-      }
+      // Need to declare variables before using them
+      let response;
+      let newHealthStatus = 'Healthy'; // Default to healthy
 
-      // Create an AbortController to allow aborting the request if it takes too long
+      // Make the diagnosis request
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-        console.warn('Diagnosis request aborted due to timeout');
-      }, 60000); // 60 second hard timeout
-
-      console.log('Starting diagnosis API call...');
-      // Add timeout to prevent hanging requests
-      const response = await axiosInstance.post('/diagnosis/diagnose', diagnosisData, {
-        timeout: 60000, // 60 second timeout to allow for slow API responses
-        signal: controller.signal
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+      
+      response = await axiosInstance.post('/diagnosis/diagnose', diagnosisData, {
+        signal: controller.signal,
+        timeout: 60000
       });
       
-      // Clear the abort timeout since we got a response
       clearTimeout(timeoutId);
       
-      console.log('Diagnosis response received successfully:', {
-        success: response.data.success,
-        dataPresent: !!response.data.data
-      });
+      if (response.data.success && diagnosisData.plantId) {
+        try {
+          // Determine health status based on diagnosis results
+          if (response.data.data && response.data.data.summary && !response.data.data.summary.isHealthy) {
+            // Set health based on treatment priority
+            if (response.data.data.summary.treatmentPriority === 'high') {
+              newHealthStatus = 'Critical';
+            } else {
+              newHealthStatus = 'Needs Attention';
+            }
+          }
+          
+          // Update plant status
+          await axiosInstance.put(`/plants/${diagnosisData.plantId}`, { 
+            status: newHealthStatus 
+          });
+          
+          console.log('Plant health status updated after diagnosis:', newHealthStatus);
+        } catch (updateError) {
+          console.error('Error updating plant health status after diagnosis:', updateError);
+        }
+      }
       
       return response.data;
     } catch (error) {
@@ -595,12 +603,7 @@ export const diagnosisAPI = {
       // Enhanced error handling for API key issues
       if (error.response?.data?.error?.includes('api key') || 
           error.response?.data?.error?.includes('API key')) {
-        throw new Error('Plant disease diagnosis requires a valid Plant.ID API key. Please contact the administrator to enable this feature.');
-      }
-      
-      // Handle network connectivity issues
-      if (!error.response) {
-        throw new Error('Could not connect to diagnosis service. Please check your internet connection and try again.');
+        throw new Error('Plant identification service API key error. Please contact support.');
       }
       
       throw error;

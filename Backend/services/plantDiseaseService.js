@@ -344,7 +344,7 @@ exports.extractDiagnosisData = (apiResponse) => {
       diseases = diseaseData.suggestions.map(disease => {
         console.log(`Disease: ${disease.name}, Probability: ${disease.probability}`);
         
-        // Create a standardized disease object that matches our expected format
+        // Create a standardized disease object that matches our expected schema format
         return {
           name: disease.name || "Unidentified Disease",
           common_names: disease.common_names || [],
@@ -355,7 +355,8 @@ exports.extractDiagnosisData = (apiResponse) => {
             chemical: disease.treatment?.chemical?.join('; ') || 'Consult with a plant specialist',
             organic: disease.treatment?.biological?.join('; ') || 'Ensure proper growing conditions',
             cultural: disease.treatment?.prevention?.join('; ') || 'Monitor plant health regularly',
-            prevention: disease.treatment?.prevention?.join('; ') || 'Practice good plant hygiene'
+            prevention: disease.treatment?.prevention?.join('; ') || 'Practice good plant hygiene',
+            biological: disease.treatment?.biological?.join('; ') || 'Consider natural remedies'
           },
           prevention: disease.treatment?.prevention?.join('; ') || "Regular monitoring",
           classification: disease.classification || [],

@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
-import { Search, Droplets, AlertCircle, Scissors, Flower, Edit, Check, X, Loader, Edit2 } from 'lucide-react';
-import { plantAPI } from '../services/api';
+import { Search, Droplets, AlertCircle, Scissors, Flower, Edit, Check, X, Loader, Edit2, Stethoscope } from 'lucide-react';
+import { plantAPI, diagnosisAPI } from '../services/api';
 import PlantHistoryLog from '../components/PlantHistoryLog';
+import PlantDiagnoseLog from '../components/PlantDiagnoseLog';
 
 const PlantLogCard = ({ plant, onNotesUpdate }) => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [editedNotes, setEditedNotes] = useState(plant.notes || '');
   const [showHistory, setShowHistory] = useState(false);
+  const [showDiagnoseHistory, setShowDiagnoseHistory] = useState(false);
+  const [diagnoseHistory, setDiagnoseHistory] = useState([]);
+  const [isLoadingDiagnosis, setIsLoadingDiagnosis] = useState(false);
 
   const getStatusStyle = (status) => {
     switch (status) {
@@ -43,6 +47,24 @@ const PlantLogCard = ({ plant, onNotesUpdate }) => {
   const handleNotesCancel = () => {
     setEditedNotes(plant.notes || '');
     setIsEditingNotes(false);
+  };
+
+  // Fetch diagnosis history when showing diagnose history
+  const handleShowDiagnoseHistory = async () => {
+    if (diagnoseHistory.length === 0) {
+      try {
+        setIsLoadingDiagnosis(true);
+        const response = await diagnosisAPI.getPlantDiagnosisHistory(plant._id || plant.id);
+        if (response.success) {
+          setDiagnoseHistory(response.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching diagnosis history:', error);
+      } finally {
+        setIsLoadingDiagnosis(false);
+      }
+    }
+    setShowDiagnoseHistory(true);
   };
 
   // Calculate health status based on plant data
@@ -109,7 +131,7 @@ const PlantLogCard = ({ plant, onNotesUpdate }) => {
 
   const handleCardClick = (e) => {
     // Don't open history if clicking on notes section or its children
-    if (!e.target.closest('.notes-section')) {
+    if (!e.target.closest('.notes-section') && !e.target.closest('.history-buttons')) {
       setShowHistory(true);
     }
   };
@@ -128,6 +150,7 @@ const PlantLogCard = ({ plant, onNotesUpdate }) => {
                 alt={plant.name} 
                 className="w-16 h-16 rounded-xl object-cover ring-2 ring-green-100 dark:ring-green-900"
                 onError={(e) => {
+                  console.log('Failed to load image for plant:', plant.name);
                   e.target.src = 'https://via.placeholder.com/64x64/e5e7eb/9ca3af?text=Plant';
                 }}
               />
@@ -239,12 +262,45 @@ const PlantLogCard = ({ plant, onNotesUpdate }) => {
             </p>
           )}
         </div>
+
+        {/* History Buttons */}
+        <div className="mt-4 flex items-center justify-between gap-3 history-buttons" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={() => setShowHistory(true)}
+            className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+          >
+            <Droplets size={16} />
+            <span>Care History</span>
+          </button>
+          
+          <button
+            onClick={handleShowDiagnoseHistory}
+            className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-1.5"
+            disabled={isLoadingDiagnosis}
+          >
+            {isLoadingDiagnosis ? (
+              <Loader size={16} className="animate-spin" />
+            ) : (
+              <Stethoscope size={16} />
+            )}
+            <span>Diagnose History</span>
+          </button>
+        </div>
       </div>
 
+      {/* Care History Modal */}
       <PlantHistoryLog 
         isOpen={showHistory}
         onClose={() => setShowHistory(false)}
         plant={plant}
+      />
+
+      {/* Diagnose History Modal */}
+      <PlantDiagnoseLog
+        isOpen={showDiagnoseHistory}
+        onClose={() => setShowDiagnoseHistory(false)}
+        plant={plant}
+        diagnoseHistory={diagnoseHistory}
       />
     </>
   );

@@ -19,7 +19,7 @@ const PlantDetails = ({ plant, onClose, onUpdate }) => {
   ];
 
   const handleStatusUpdate = async () => {
-    if (selectedStatus === plant.health) {
+    if (selectedStatus === plant.health || selectedStatus === plant.status) {
       setIsEditingStatus(false);
       return;
     }

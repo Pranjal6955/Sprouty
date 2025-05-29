@@ -285,10 +285,36 @@ exports.diagnosePlantDisease = async (req, res) => {
     await diagnosis.save();
 
     // Update plant health status if plant is specified and we have real diagnosis
-    if (plantId && !diagnosisData.isHealthy && !usingMockData) {
-      await Plant.findByIdAndUpdate(plantId, {
-        status: diagnosisData.overall_health === 'critical' ? 'Critical' : 'Needs Attention'
-      });
+    if (plantId && !diagnosisData.isHealthy) {
+      try {
+        // Determine appropriate health status based on diagnosis severity
+        const newStatus = diagnosisData.recommendations.treatment_priority === 'high' 
+          ? 'Critical' 
+          : 'Needs Attention';
+        
+        console.log(`Updating plant ${plantId} health status to ${newStatus} based on diagnosis`);
+        
+        await Plant.findByIdAndUpdate(plantId, {
+          status: newStatus
+        });
+        
+        console.log('Plant health status updated successfully');
+      } catch (statusUpdateError) {
+        console.error('Error updating plant health status after diagnosis:', statusUpdateError);
+      }
+    } else if (plantId && diagnosisData.isHealthy) {
+      // If the plant is healthy, make sure status reflects that
+      try {
+        console.log(`Setting plant ${plantId} health status to Healthy based on diagnosis`);
+        
+        await Plant.findByIdAndUpdate(plantId, {
+          status: 'Healthy'
+        });
+        
+        console.log('Plant health status updated to Healthy');
+      } catch (statusUpdateError) {
+        console.error('Error updating plant health status to Healthy:', statusUpdateError);
+      }
     }
 
     console.log('💾 Diagnosis saved to database');
