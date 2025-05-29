@@ -369,7 +369,7 @@ const Diagnose = () => {
         <div className="p-6">
           <div className="flex justify-between items-center">
             <div className="flex items-center">
-              <img src={LogoOJT} alt="Logo" className="h-10 w-10 mr-3" />
+              <img src={LogoOJT} alt="Logo" className="h-17 w-16" />
               <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
                 Plant Disease Diagnosis
               </h1>
