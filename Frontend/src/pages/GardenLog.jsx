@@ -25,10 +25,18 @@ const PlantLogCard = ({ plant, onNotesUpdate }) => {
 
   const handleNotesSubmit = async () => {
     try {
-      await onNotesUpdate(plant._id || plant.id, editedNotes);
-      setIsEditingNotes(false);
+      // Improved error handling and response checking
+      const response = await plantAPI.updatePlant(plant._id || plant.id, { notes: editedNotes });
+      
+      if (response && response.success !== false) {
+        setIsEditingNotes(false);
+      } else {
+        console.error('Failed to update notes:', response?.error || 'Unknown error');
+        throw new Error(response?.error || 'Failed to update notes');
+      }
     } catch (error) {
       console.error('Error updating notes:', error);
+      // Could add UI feedback here for the error
     }
   };
 
@@ -268,7 +276,8 @@ const GardenLog = () => {
         const response = await plantAPI.getAllPlants();
         console.log('Fetched plants for Garden Log:', response);
 
-        if (response && response.success) {
+        if (response && response.success !== false) {
+          // Changed from response.success to response.success !== false for more resilience
           setPlantLogs(response.data || []);
         } else {
           console.error('API response was not successful:', response);
@@ -308,7 +317,8 @@ const GardenLog = () => {
 
       const response = await plantAPI.updatePlant(plantId, { notes: newNotes });
 
-      if (response && response.success) {
+      if (response && response.success !== false) {
+        // Changed from response.success to response.success !== false
         // Update local state
         setPlantLogs(prevLogs =>
           prevLogs.map(plant =>

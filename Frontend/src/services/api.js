@@ -543,129 +543,10 @@ export const weatherAPI = {
   }
 };
 
-// Add reminder API methods
-export const reminderAPI = {
-  // Get all reminders
-  getReminders: async () => {
-    try {
-      const response = await axiosInstance.get('/reminders');
-      console.log('Fetched reminders:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching reminders:', error);
-      return { success: false, error: error.response?.data?.error || error.message };
-    }
-  },
-
-  // Create new reminder - updated to match backend schema
-  createReminder: async (reminderData) => {
-    try {
-      // Transform the data to match backend schema exactly
-      const transformedData = {
-        plant: reminderData.plant,
-        type: reminderData.type,
-        title: reminderData.title || `${reminderData.type} reminder`,
-        notes: reminderData.notes || `${reminderData.type} reminder for plant`,
-        scheduledDate: reminderData.scheduledDate,
-        recurring: reminderData.recurring !== false,
-        frequency: reminderData.frequency === 'daily' ? 1 : 
-                  reminderData.frequency === 'weekly' ? 7 :
-                  reminderData.frequency === 'monthly' ? 30 :
-                  parseInt(reminderData.frequency) || 7,
-        notificationMethods: reminderData.notificationMethods || ['popup']
-      };
-
-      console.log('Creating reminder with data:', transformedData);
-      const response = await axiosInstance.post('/reminders', transformedData);
-      console.log('Created reminder response:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Error creating reminder:', error);
-      console.error('Error response:', error.response?.data);
-      return { success: false, error: error.response?.data?.error || error.message };
-    }
-  },
-
-  // Delete reminder
-  deleteReminder: async (reminderId) => {
-    try {
-      const response = await axiosInstance.delete(`/reminders/${reminderId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error deleting reminder:', error);
-      return { success: false, error: error.response?.data?.error || error.message };
-    }
-  },
-
-  // Get due reminders
-  getDueReminders: async () => {
-    try {
-      const response = await axiosInstance.get('/reminders/due');
-      console.log('Fetched due reminders:', response.data);
-      
-      // Immediately handle notifications if due reminders exist
-      if (response.data?.data?.length > 0 && window.notificationManager) {
-        window.notificationManager.processDueReminders(response.data.data);
-      }
-      
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching due reminders:', error);
-      return { success: false, error: error.response?.data?.error || error.message };
-    }
-  },
-
-  // Get upcoming reminders
-  getUpcomingReminders: async () => {
-    try {
-      const response = await axiosInstance.get('/reminders/upcoming');
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching upcoming reminders:', error);
-      return { success: false, error: error.response?.data?.error || error.message };
-    }
-  },
-
-  // Mark notification as sent
-  markNotificationSent: async (reminderId) => {
-    try {
-     
-      const response = await axiosInstance.put(`/reminders/${reminderId}/notification-sent`);
-      return response.data;
-    } catch (error) {
-      console.error('Error marking notification sent:', error);
-      return { success: false, error: error.response?.data?.error || error.message };
-    }
-  },
-
-  // Complete reminder with notification update
-  completeReminder: async (reminderId) => {
-    try {
-      const response = await axiosInstance.put(`/reminders/${reminderId}/complete`);
-      
-      // Trigger notification update after completing a reminder
-      if (window.notificationManager) {
-        window.notificationManager.removeReminderNotification(reminderId);
-      }
-      
-      return response.data;
-    } catch (error) {
-      console.error('Error completing reminder:', error);
-      return { success: false, error: error.response?.data?.error || error.message };
-    }
-  },
-
-  // Update reminder
-  updateReminder: async (reminderId, updateData) => {
-    try {
-      const response = await axiosInstance.put(`/reminders/${reminderId}`, updateData);
-      return response.data;
-    } catch (error) {
-      console.error('Error updating reminder:', error);
-      throw error;
-    }
-  },
-};
+// Remove duplicate reminderAPI - use the one from reminderAPI.js instead
+// Import and re-export the consolidated reminderAPI
+import { reminderAPI } from './reminderAPI';
+export { reminderAPI };
 
 // Add diagnosis API endpoints
 export const diagnosisAPI = {
@@ -792,16 +673,19 @@ export { uploadToCloudinary };
 
 // Update the main api object to include reminder methods and additional exports
 const apiService = {
-  // Reminder methods (for backward compatibility)
-  getReminders: reminderAPI.getReminders,
-  createReminder: reminderAPI.createReminder,
-  deleteReminder: reminderAPI.deleteReminder,
-  getDueReminders: reminderAPI.getDueReminders,
-  markNotificationSent: reminderAPI.markNotificationSent,
-  completeReminder: reminderAPI.completeReminder,
+  // Reminder methods (for backward compatibility) - now using the imported reminderAPI
+  getReminders: () => reminderAPI.getReminders(),
+  createReminder: (data) => reminderAPI.createReminder(data),
+  deleteReminder: (id) => reminderAPI.deleteReminder(id),
+  getDueReminders: () => reminderAPI.getDueReminders(),
+  markNotificationSent: (id) => reminderAPI.markNotificationSent(id),
+  completeReminder: (id) => reminderAPI.completeReminder(id),
   
   // Add utility function
   uploadToCloudinary
 };
 
 export default apiService;
+
+// Create a simple api object for axios instance access (backward compatibility)
+export const api = axiosInstance;

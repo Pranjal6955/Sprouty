@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { reminderAPI } from '../services/api';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { reminderAPI } from '../services/reminderAPI';
 
 const NotificationContext = createContext();
 
@@ -14,13 +14,13 @@ export const useNotifications = () => {
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [isCheckingReminders, setIsCheckingReminders] = useState(false);
-  const [reminderNotifications, setReminderNotifications] = useState({});
+  const [lastCheck, setLastCheck] = useState(null);
+  const [error, setError] = useState(null);
   const notificationRef = useRef(null);
+  const intervalRef = useRef(null);
 
-  // Establish global reference for the notification manager
-  // This allows direct access from API service and other non-React components
+  // Enhanced notification manager with retry logic
   useEffect(() => {
-    // Create notification manager interface
     const notificationManager = {
       addNotification: (notification) => {
         addNotification(notification);
@@ -33,28 +33,27 @@ export const NotificationProvider = ({ children }) => {
           removeNotification(`reminder-${reminderId}`);
         }
       },
-      clearAllNotifications: clearAllNotifications
+      clearAllNotifications: clearAllNotifications,
+      retryFailedCheck: () => {
+        checkReminders();
+      }
     };
 
-    // Store reference in window for global access
     window.notificationManager = notificationManager;
     notificationRef.current = notificationManager;
 
-    // Cleanup function
     return () => {
       delete window.notificationManager;
     };
   }, []);
 
-  // Enhanced function to process reminder notifications
-  const processReminderNotifications = (reminders) => {
+  // Enhanced reminder processing with improved notification data
+  const processReminderNotifications = useCallback((reminders) => {
     if (!Array.isArray(reminders) || reminders.length === 0) return;
     
     console.log('Processing due reminders for notifications:', reminders.length);
     
-    // Create notifications for due reminders
     const newNotifications = reminders.map(reminder => {
-      // Extract plant information
       let plantName = 'Unknown Plant';
       let plantImage = null;
       
@@ -67,43 +66,61 @@ export const NotificationProvider = ({ children }) => {
         }
       }
       
-      // Create the notification object
+      // Determine if this is overdue or just due now
+      const isOverdue = new Date(reminder.scheduledDate) < new Date(Date.now() - 30 * 60 * 1000); // 30 minutes past
+      
       return {
         id: `reminder-${reminder._id}`,
         type: 'reminder',
-        title: `${reminder.type} Reminder`,
+        title: `${reminder.type} Reminder${isOverdue ? ' (Overdue)' : ''}`,
         message: `Time to ${reminder.type.toLowerCase()} your ${plantName}!`,
         plantName: plantName,
         plantImage: plantImage,
         reminderType: reminder.type,
         timestamp: new Date(),
         reminderId: reminder._id,
-        reminderData: reminder, // Store full reminder data
-        priority: 'high', // Mark reminders as high priority
-        autoClose: false // Don't auto close reminder notifications
+        reminderData: reminder,
+        priority: isOverdue ? 'high' : 'medium',
+        autoClose: false,
+        isOverdue,
+        scheduledFor: reminder.scheduledDate,
+        actions: [
+          {
+            label: 'Mark Done',
+            action: 'complete',
+            style: 'primary'
+          },
+          {
+            label: `Snooze ${isOverdue ? '1h' : '30m'}`,
+            action: 'snooze',
+            style: 'secondary',
+            duration: isOverdue ? 60 : 30
+          }
+        ]
       };
     });
 
-    // Update the state with new notifications, avoiding duplicates
+    // Update state with deduplication
     setNotifications(prev => {
-      const existingIds = prev.map(n => n.id);
-      const uniqueNew = newNotifications.filter(n => !existingIds.includes(n.id));
+      const existingIds = new Set(prev.map(n => n.id));
+      const uniqueNew = newNotifications.filter(n => !existingIds.has(n.id));
       
       if (uniqueNew.length > 0) {
         console.log('Adding new notifications:', uniqueNew.length);
         
-        // Mark notifications as sent to avoid duplicates
+        // Mark notifications as sent with batch processing
         setTimeout(async () => {
-          uniqueNew.forEach(async (notification) => {
+          const markingPromises = uniqueNew.map(async (notification) => {
             if (notification.reminderId) {
               try {
                 await reminderAPI.markNotificationSent(notification.reminderId);
-                console.log('Marked notification as sent for reminder:', notification.reminderId);
               } catch (error) {
                 console.error('Error marking notification as sent:', error);
               }
             }
           });
+          
+          await Promise.allSettled(markingPromises);
         }, 1000);
         
         return [...prev, ...uniqueNew];
@@ -111,75 +128,216 @@ export const NotificationProvider = ({ children }) => {
       
       return prev;
     });
-  };
+  }, []);
 
-  // Check for due reminders with better interval management
-  useEffect(() => {
-    let intervalId;
+  // Enhanced reminder checking with error handling and retry logic
+  const checkReminders = useCallback(async (isRetry = false) => {
+    if (isCheckingReminders && !isRetry) return;
     
-    const checkReminders = async () => {
-      if (isCheckingReminders) return;
+    setIsCheckingReminders(true);
+    setError(null);
+    
+    try {
+      const response = await reminderAPI.getDueReminders();
       
-      setIsCheckingReminders(true);
-      try {
-        console.log('Checking for due reminders...');
-        const response = await reminderAPI.getDueReminders();
-        
-        // Handle response
-        if (response.success !== false && response.data) {
-          processReminderNotifications(response.data);
-        }
-      } catch (error) {
-        console.error('Error checking reminders:', error);
-      } finally {
-        setIsCheckingReminders(false);
+      if (response.success !== false && response.data) {
+        processReminderNotifications(response.data);
+        setLastCheck(new Date());
+      } else {
+        throw new Error(response.error || 'Failed to fetch due reminders');
       }
-    };
+    } catch (error) {
+      console.error('Error checking reminders:', error);
+      setError(error.message);
+      
+      // Retry logic: try again in 30 seconds if it's not already a retry
+      if (!isRetry) {
+        setTimeout(() => {
+          checkReminders(true);
+        }, 30000);
+      }
+    } finally {
+      setIsCheckingReminders(false);
+    }
+  }, [isCheckingReminders, processReminderNotifications]);
 
-    // Check immediately on mount
+  // Enhanced effect with better interval management
+  useEffect(() => {
+    // Initial check
     checkReminders();
 
-    // Set up interval to check every 3 minutes instead of 5 for more responsive notifications
-    intervalId = setInterval(() => {
-      checkReminders();
-    }, 3 * 60 * 1000); 
-
-    // Cleanup function
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
+    // Set up interval with exponential backoff on errors
+    const setupInterval = () => {
+      const intervalTime = error ? 2 * 60 * 1000 : 3 * 60 * 1000; // 2min if error, 3min normally
+      
+      intervalRef.current = setInterval(() => {
+        checkReminders();
+      }, intervalTime);
     };
-  }, [isCheckingReminders]); // Add dependency to prevent concurrent checks
 
-  const addNotification = (notification) => {
+    setupInterval();
+
+    // Update interval when error state changes
+    const errorTimeout = setTimeout(() => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        setupInterval();
+      }
+    }, 1000);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      clearTimeout(errorTimeout);
+    };
+  }, [checkReminders, error]);
+
+  // Enhanced notification actions
+  const addNotification = useCallback((notification) => {
     const newNotification = {
-      id: notification.id || `notification-${Date.now()}`,
+      id: notification.id || `notification-${Date.now()}-${Math.random()}`,
       timestamp: new Date(),
+      autoClose: true,
       ...notification
     };
-    setNotifications(prev => [...prev, newNotification]);
-  };
+    
+    setNotifications(prev => {
+      // Limit total notifications to prevent memory issues
+      const updated = [newNotification, ...prev];
+      return updated.slice(0, 50); // Keep only latest 50 notifications
+    });
 
-  const removeNotification = (id) => {
+    // Auto-remove if specified
+    if (newNotification.autoClose && newNotification.autoClose !== false) {
+      setTimeout(() => {
+        removeNotification(newNotification.id);
+      }, 8000);
+    }
+  }, []);
+
+  const removeNotification = useCallback((id) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
-  };
+  }, []);
 
-  const clearNotification = (id) => {
+  const clearNotification = useCallback((id) => {
     removeNotification(id);
-  };
+  }, [removeNotification]);
 
-  const clearAllNotifications = () => {
+  const clearAllNotifications = useCallback(() => {
     setNotifications([]);
-  };
+  }, []);
+
+  // Handle notification actions
+  const handleNotificationAction = useCallback(async (notification, action) => {
+    try {
+      switch (action) {
+        case 'complete':
+          if (notification.reminderId) {
+            const response = await reminderAPI.completeReminder(notification.reminderId);
+            if (response.success !== false) {
+              // Add completion to reminder history with enhanced message and details
+              const completionEntry = {
+                id: `completed-${notification.reminderId}-${Date.now()}`,
+                reminderId: notification.reminderId,
+                type: 'completed',
+                action: `Completed ${notification.reminderType.toLowerCase()} task for ${notification.plantName}`,
+                reminderType: notification.reminderType,
+                plantName: notification.plantName || 'Unknown Plant',
+                plantId: notification.plantId,
+                historyDate: new Date().toISOString(),
+                notes: notification.reminderData?.notes || '',
+                originalReminder: notification.reminderData,
+                icon: 'check',
+                fromNotification: true,
+                source: 'notification',
+                details: `Completed via notification alert at ${new Date().toLocaleTimeString()}`
+              };
+              
+              // Get current history and add this entry
+              const currentHistory = JSON.parse(localStorage.getItem('reminderHistory') || '[]');
+              const updatedHistory = [completionEntry, ...currentHistory].slice(0, 100);
+              localStorage.setItem('reminderHistory', JSON.stringify(updatedHistory));
+              
+              // Show success notification
+              addNotification({
+                title: 'Reminder Completed',
+                message: `${notification.reminderType} task completed for ${notification.plantName}`,
+                type: 'success',
+                autoClose: true
+              });
+              removeNotification(notification.id);
+            }
+          }
+          break;
+          
+        case 'snooze':
+          if (notification.reminderId) {
+            // Use duration from the action if available, fallback to default
+            const duration = notification.actions?.find(a => a.action === 'snooze')?.duration || 30;
+            
+            const response = await reminderAPI.snoozeReminder(notification.reminderId, duration);
+            if (response.success !== false) {
+              // Add snooze to history
+              const snoozeEntry = {
+                id: `snooze-${notification.reminderId}-${Date.now()}`,
+                reminderId: notification.reminderId,
+                type: 'snooze',
+                action: `Snoozed ${notification.reminderType.toLowerCase()} reminder for ${notification.plantName}`,
+                reminderType: notification.reminderType,
+                plantName: notification.plantName || 'Unknown Plant',
+                plantId: notification.plantId,
+                historyDate: new Date().toISOString(),
+                notes: notification.reminderData?.notes || '',
+                originalReminder: notification.reminderData,
+                icon: 'snooze',
+                fromNotification: true,
+                source: 'notification',
+                details: `Snoozed for ${duration} minutes via notification alert`
+              };
+              
+              // Update history
+              const currentHistory = JSON.parse(localStorage.getItem('reminderHistory') || '[]');
+              const updatedHistory = [snoozeEntry, ...currentHistory].slice(0, 100);
+              localStorage.setItem('reminderHistory', JSON.stringify(updatedHistory));
+              
+              addNotification({
+                title: 'Reminder Snoozed',
+                message: `Reminder snoozed for ${duration} minutes`,
+                type: 'info',
+                autoClose: true
+              });
+              removeNotification(notification.id);
+            }
+          }
+          break;
+          
+        default:
+          removeNotification(notification.id);
+      }
+    } catch (error) {
+      console.error('Error handling notification action:', error);
+      addNotification({
+        title: 'Error',
+        message: 'Failed to process action. Please try again.',
+        type: 'error',
+        autoClose: true
+      });
+    }
+  }, [addNotification, removeNotification]);
 
   const value = {
     notifications,
+    isCheckingReminders,
+    lastCheck,
+    error,
     addNotification,
     removeNotification,
     clearNotification,
     clearAllNotifications,
-    processDueReminders: processReminderNotifications
+    processDueReminders: processReminderNotifications,
+    handleNotificationAction,
+    retryCheck: () => checkReminders(true)
   };
 
   return (
