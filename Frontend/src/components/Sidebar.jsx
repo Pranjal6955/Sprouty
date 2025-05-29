@@ -26,16 +26,15 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen, activeNavItem, setActiveNavItem })
       await googleAuthService.signOut();
       
       // Clear local storage
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
+      localStorage.clear(); // Clear all storage instead of just specific items
       
-      navigate('/');
+      // Force navigation to home page
+      window.location.href = '/'; // Using window.location.href to force a full page refresh
     } catch (error) {
       console.error('Error logging out:', error);
-      // Still navigate even if logout fails
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      navigate('/');
+      // Still clear storage and redirect even if logout fails
+      localStorage.clear();
+      window.location.href = '/';
     }
   };
 
