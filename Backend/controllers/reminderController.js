@@ -287,37 +287,117 @@ exports.completeReminder = async (req, res, next) => {
   }
 };
 
-// @desc    Get due reminders for current user
-// @route   GET /api/reminders/due
+// @desc    Get reminder statistics for dashboard
+// @route   GET /api/reminders/stats
 // @access  Private
+exports.getReminderStats = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const nextWeek = new Date(today);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+
+    // Get various reminder counts
+    const [
+      totalActive,
+      dueToday,
+      dueTomorrow,
+      dueThisWeek,
+      overdue,
+      completedThisWeek
+    ] = await Promise.all([
+      Reminder.countDocuments({ user: userId, active: true, completed: false }),
+      Reminder.countDocuments({ 
+        user: userId, 
+        active: true, 
+        completed: false,
+        scheduledDate: { $gte: today, $lt: tomorrow }
+      }),
+      Reminder.countDocuments({ 
+        user: userId, 
+        active: true, 
+        completed: false,
+        scheduledDate: { $gte: tomorrow, $lt: new Date(tomorrow.getTime() + 24 * 60 * 60 * 1000) }
+      }),
+      Reminder.countDocuments({ 
+        user: userId, 
+        active: true, 
+        completed: false,
+        scheduledDate: { $gte: today, $lt: nextWeek }
+      }),
+      Reminder.countDocuments({ 
+        user: userId, 
+        active: true, 
+        completed: false,
+        scheduledDate: { $lt: today }
+      }),
+      Reminder.countDocuments({ 
+        user: userId, 
+        completed: true,
+        completedDate: { $gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) }
+      })
+    ]);
+
+    // Get reminder type distribution
+    const typeStats = await Reminder.aggregate([
+      { $match: { user: req.user._id, active: true, completed: false } },
+      { $group: { _id: '$type', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalActive,
+        dueToday,
+        dueTomorrow,
+        dueThisWeek,
+        overdue,
+        completedThisWeek,
+        typeDistribution: typeStats
+      }
+    });
+  } catch (err) {
+    console.error('Error getting reminder stats:', err.message);
+    res.status(500).json({ success: false, error: 'Server Error' });
+  }
+};
+
+// Enhanced getDueReminders with better filtering
 exports.getDueReminders = async (req, res, next) => {
   try {
     const currentTime = new Date();
+    const fiveMinutesFromNow = new Date(currentTime.getTime() + 5 * 60 * 1000);
     
     const dueReminders = await Reminder.find({
       user: req.user.id,
       active: true,
       completed: false,
       $or: [
-        { nextReminder: { $lte: currentTime } },
-        { scheduledDate: { $lte: currentTime } }
+        { nextReminder: { $lte: fiveMinutesFromNow } },
+        { scheduledDate: { $lte: fiveMinutesFromNow } }
       ]
     }).populate({
       path: 'plant',
       select: 'name nickname species mainImage'
     }).sort({ scheduledDate: 1 });
     
-    // Only return reminders that haven't been notified in the last 10 minutes
-    const tenMinutesAgo = new Date(currentTime.getTime() - 10 * 60 * 1000);
+    // Enhanced filtering logic
+    const recentlyNotified = new Date(currentTime.getTime() - 15 * 60 * 1000); // 15 minutes
     const filteredReminders = dueReminders.filter(reminder => {
-      // If notificationSent is true and reminder was updated recently, skip it
-      if (reminder.notificationSent && reminder.updatedAt > tenMinutesAgo) {
+      // Skip if recently notified
+      if (reminder.notificationSent && reminder.updatedAt > recentlyNotified) {
         return false;
       }
-      return true;
+      
+      // Include if it's actually due or will be due soon
+      const reminderTime = new Date(reminder.nextReminder || reminder.scheduledDate);
+      return reminderTime <= fiveMinutesFromNow;
     });
     
-    // Only log when there are reminders to avoid spam
     if (filteredReminders.length > 0) {
       console.log(`Found ${filteredReminders.length} due reminders for user ${req.user.id}`);
     }

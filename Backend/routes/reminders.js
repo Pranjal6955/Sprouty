@@ -9,7 +9,8 @@ const {
   updateReminder,
   deleteReminder,
   completeReminder,
-  markNotificationSent
+  markNotificationSent,
+  getReminderStats // Import the getReminderStats controller
 } = require('../controllers/reminderController');
 
 // Import auth middleware - FIX: Import the destructured protect function
@@ -44,5 +45,9 @@ router.route('/:id/complete')
 // Route for marking notification as sent
 router.route('/:id/notification-sent')
   .put(markNotificationSent);
+
+// Route for reminder statistics
+router.route('/stats')
+  .get(getReminderStats);
 
 module.exports = router;
