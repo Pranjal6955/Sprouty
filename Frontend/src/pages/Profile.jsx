@@ -5,7 +5,7 @@ import Sidebar from '../components/Sidebar';
 import LogoOJT from '../assets/LogoOJT.png';
 import defaultProfile from '../assets/profile.png';
 import Webcam from 'react-webcam';
-import { plantAPI, userAPI } from '../services/api';
+import { userAPI } from '../services/api';
 
 const Profile = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -27,7 +27,6 @@ const Profile = () => {
   const [editForm, setEditForm] = useState({ ...userProfile });
   const [showImageModal, setShowImageModal] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
-  const [selectedSection, setSelectedSection] = useState('overview');
 
   const webcamRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -40,31 +39,26 @@ const Profile = () => {
         setError(null);
         
         // Check if we have the required API functions
-        if (!userAPI || typeof userAPI.getUserProfile !== 'function') {
-          console.error('userAPI or getUserProfile method not available');
+        if (!userAPI || typeof userAPI.getUserProfile !== 'function' || typeof userAPI.getStats !== 'function') {
+          console.error('userAPI or required methods not available');
           throw new Error('User API service is not properly configured');
         }
         
-        const response = await userAPI.getUserProfile();
+        // Fetch both profile and stats data
+        const [profileResponse, statsResponse] = await Promise.all([
+          userAPI.getUserProfile(),
+          userAPI.getStats()
+        ]);
         
-        if (response && response.success) {
-          setUserProfile(response.data);
-          
-          // Fetch plants if needed and plantAPI is available
-          if (plantAPI && typeof plantAPI.getAllPlants === 'function') {
-            try {
-              const plantsResponse = await plantAPI.getAllPlants();
-              if (plantsResponse && plantsResponse.success) {
-                setUserPlants(plantsResponse.data || []);
-              }
-            } catch (plantError) {
-              console.error('Error fetching user plants:', plantError);
-              // Non-critical error, don't set main error state
-            }
-          }
+        if (profileResponse && profileResponse.success) {
+          setUserProfile({
+            ...profileResponse.data,
+            totalPlants: statsResponse?.data?.totalPlants || 0,
+            activeReminders: statsResponse?.data?.upcomingReminders || 0
+          });
         } else {
-          console.error('API response was not successful:', response);
-          setError(response?.error || 'Failed to fetch user data');
+          console.error('API response was not successful:', profileResponse);
+          setError(profileResponse?.error || 'Failed to fetch user data');
         }
       } catch (err) {
         console.error('Error fetching user data:', err);
