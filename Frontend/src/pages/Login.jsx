@@ -314,6 +314,9 @@ function Login() {
         <p className="text-center text-sm text-gray-600 dark:text-gray-400">
           Don't have an account? <Link to="/signup" className="text-emerald-600 dark:text-emerald-400 font-medium hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors duration-200">Sign Up</Link>
         </p>
+        <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+          Back to <Link to="/Login" className="text-teal-600 dark:text-teal-400 font-medium hover:text-teal-800 dark:hover:text-teal-300">Login</Link>
+        </p>
       </div>
 
       {/* Password Reset Modal */}
