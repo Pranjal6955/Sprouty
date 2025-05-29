@@ -23,7 +23,14 @@ const Weather = () => {
   const searchTimeoutRef = useRef(null);
   const suggestionsRef = useRef(null);
 
-  // Remove the auto-load effect
+  // Load last searched location on component mount
+  useEffect(() => {
+    const lastLocation = localStorage.getItem('lastWeatherLocation');
+    if (lastLocation) {
+      loadWeatherData(lastLocation);
+    }
+  }, []);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (suggestionsRef.current && !suggestionsRef.current.contains(event.target)) {
@@ -70,6 +77,9 @@ const Weather = () => {
         setWeatherData(formattedWeather);
         setLastUpdated(new Date());
         setHasSearched(true);
+        
+        // Save the successfully searched location
+        localStorage.setItem('lastWeatherLocation', searchLocation);
         
         // Load recommendations
         try {

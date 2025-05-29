@@ -4,19 +4,24 @@ import { Search, Droplets, AlertCircle, Scissors, Flower, Edit, Check, X, Loader
 import { plantAPI } from '../services/api';
 import PlantHistoryLog from '../components/PlantHistoryLog';
 
-const PlantLogCard = ({ plant, onNotesUpdate, onStatusUpdate }) => {
+const PlantLogCard = ({ plant, onNotesUpdate }) => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [editedNotes, setEditedNotes] = useState(plant.notes || '');
   const [showHistory, setShowHistory] = useState(false);
-  const [isEditingStatus, setIsEditingStatus] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState(plant.status || plant.health || 'Healthy');
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
-  const statusOptions = [
-    { value: 'Healthy', color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30' },
-    { value: 'Needs Attention', color: 'text-yellow-600 dark:text-yellow-400', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30' },
-    { value: 'Critical', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30' },
-  ];
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case 'Healthy':
+        return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+      case 'Needs Attention':
+        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
+      case 'Critical':
+      case 'Sick':
+        return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+      default:
+        return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+    }
+  };
 
   const handleNotesSubmit = async () => {
     try {
@@ -30,31 +35,6 @@ const PlantLogCard = ({ plant, onNotesUpdate, onStatusUpdate }) => {
   const handleNotesCancel = () => {
     setEditedNotes(plant.notes || '');
     setIsEditingNotes(false);
-  };
-
-  const handleStatusUpdate = async () => {
-    const currentStatus = plant.status || plant.health || 'Healthy';
-    if (selectedStatus === currentStatus) {
-      setIsEditingStatus(false);
-      return;
-    }
-
-    setIsUpdatingStatus(true);
-    try {
-      await onStatusUpdate(plant._id || plant.id, selectedStatus);
-      setIsEditingStatus(false);
-    } catch (error) {
-      console.error('Error updating status:', error);
-      // Reset to current status on error
-      setSelectedStatus(currentStatus);
-    } finally {
-      setIsUpdatingStatus(false);
-    }
-  };
-
-  const cancelStatusEdit = () => {
-    setSelectedStatus(plant.status || plant.health || 'Healthy');
-    setIsEditingStatus(false);
   };
 
   // Calculate health status based on plant data
@@ -131,56 +111,10 @@ const PlantLogCard = ({ plant, onNotesUpdate, onStatusUpdate }) => {
             </div>
           </div>
           
-          {/* Status with edit functionality */}
-          <div onClick={(e) => e.stopPropagation()}>
-            {isEditingStatus ? (
-              <div className="flex items-center space-x-2">
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  disabled={isUpdatingStatus}
-                >
-                  {statusOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.value}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={handleStatusUpdate}
-                  disabled={isUpdatingStatus}
-                  className="p-1 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
-                >
-                  {isUpdatingStatus ? (
-                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    <Check size={12} />
-                  )}
-                </button>
-                <button
-                  onClick={cancelStatusEdit}
-                  disabled={isUpdatingStatus}
-                  className="p-1 bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
-                >
-                  <X size={12} />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <span className={`px-4 py-1.5 rounded-full text-sm font-medium ${getCurrentStatusStyle().bgColor} ${getCurrentStatusStyle().color}`}>
-                  {plant.status || plant.health || 'Healthy'}
-                </span>
-                <button
-                  onClick={() => setIsEditingStatus(true)}
-                  className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                  title="Edit status"
-                >
-                  <Edit2 size={12} />
-                </button>
-              </div>
-            )}
-          </div>
+          {/* Read-only Status Badge */}
+          <span className={`px-4 py-1.5 rounded-full text-sm font-medium ${getStatusStyle(plant.status || plant.health)}`}>
+            {plant.status || plant.health || 'Healthy'}
+          </span>
         </div>
 
         <div className="grid grid-cols-2 gap-6 mb-6">
@@ -492,7 +426,6 @@ const GardenLog = () => {
                   key={plant._id || plant.id} 
                   plant={plant} 
                   onNotesUpdate={handleNotesUpdate}
-                  onStatusUpdate={handleStatusUpdate}
                 />
               ))}
             </div>
