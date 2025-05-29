@@ -18,8 +18,6 @@ console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('MONGODB_URI available:', !!process.env.MONGODB_URI);
 console.log('JWT_SECRET available:', !!process.env.JWT_SECRET);
 console.log('WEATHER_API_KEY available:', !!process.env.WEATHER_API_KEY);
-console.log('GOOGLE_CLIENT_ID available:', !!process.env.GOOGLE_CLIENT_ID);
-console.log('GOOGLE_CLIENT_SECRET available:', !!process.env.GOOGLE_CLIENT_SECRET);
 
 if (!process.env.PLANT_ID_API_KEY) {
   console.warn('⚠️  Warning: PLANT_ID_API_KEY not found in environment variables');
@@ -33,14 +31,6 @@ if (!process.env.PLANT_ID_API_KEY) {
   if (apiKey.length < 20) {
     console.warn('⚠️  Warning: Plant.ID API key seems too short, please verify it');
   }
-}
-
-if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-  console.warn('⚠️  Warning: Google OAuth credentials not found in environment variables');
-  console.warn('   Google authentication will not be available');
-  console.warn('   Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to your .env file');
-} else {
-  console.log('✅ Google OAuth credentials found - Google authentication enabled');
 }
 
 // Initialize Express app

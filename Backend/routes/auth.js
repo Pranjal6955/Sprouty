@@ -5,8 +5,7 @@ const {
   getMe, 
   forgotPassword, 
   resetPassword, 
-  verifyToken,
-  linkAccounts
+  verifyToken
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
@@ -21,6 +20,5 @@ router.put('/resetpassword/:resettoken', resetPassword);
 // Protected routes
 router.get('/me', protect, getMe);
 router.get('/verify-token', protect, verifyToken);
-router.post('/link-accounts', protect, linkAccounts);
 
 module.exports = router;

@@ -2,13 +2,11 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-const { verifyGoogleIdToken } = require('../services/firebaseService');
 
 // Sign JWT and return
 const signToken = (id) => {
-  // Fix: Use string format for expiresIn ('30d' instead of just 30d or similar incorrect format)
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d' // Changed to proper string format representing 30 days
+    expiresIn: '30d'
   });
 };
 
@@ -17,12 +15,11 @@ const signToken = (id) => {
 // @access  Public
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, password, firebaseUid, oAuthProvider, oAuthToken } = req.body;
+    const { name, email, password } = req.body;
 
     // Log complete request body for debugging (excluding password)
     const debugBody = { ...req.body };
     if (debugBody.password) debugBody.password = '****';
-    if (debugBody.oAuthToken) debugBody.oAuthToken = '****';
     console.log('Registration request body:', JSON.stringify(debugBody));
 
     // Validate required fields
@@ -61,32 +58,6 @@ exports.register = async (req, res, next) => {
     // Check if user already exists by email
     let user = await User.findOne({ email });
     
-    // If user exists but no firebaseUid is registered, we can link accounts
-    if (user && firebaseUid && !user.firebaseUid) {
-      console.log(`Linking existing account ${email} with Firebase UID`);
-      user.firebaseUid = firebaseUid;
-      if (oAuthProvider) {
-        user.authProvider = oAuthProvider;
-      }
-      await user.save();
-      
-      // Generate JWT
-      const token = signToken(user._id);
-
-      return res.status(200).json({
-        success: true,
-        token,
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          firebaseUid: user.firebaseUid
-        },
-        message: "Accounts linked successfully"
-      });
-    }
-    
-    // If user already exists and can't be linked, return error
     if (user) {
       console.log(`Registration failed: User ${email} already exists`);
       return res.status(400).json({ 
@@ -96,13 +67,12 @@ exports.register = async (req, res, next) => {
     }
 
     try {
-      // Create user with additional Firebase data if available
+      // Create user
       user = new User({
         name,
         email,
         password,
-        firebaseUid: firebaseUid || undefined,
-        authProvider: oAuthProvider || 'local'
+        authProvider: 'local'
       });
 
       await user.save();
@@ -117,8 +87,7 @@ exports.register = async (req, res, next) => {
         user: {
           id: user._id,
           name: user.name,
-          email: user.email,
-          firebaseUid: user.firebaseUid
+          email: user.email
         }
       });
     } catch (dbError) {
@@ -154,53 +123,8 @@ exports.register = async (req, res, next) => {
 // @access  Public
 exports.login = async (req, res, next) => {
   try {
-    const { email, password, firebaseUid, oAuthProvider, oAuthToken } = req.body;
+    const { email, password } = req.body;
 
-    // OAuth login case
-    if (oAuthProvider && (oAuthToken || firebaseUid)) {
-      // Find user by email or firebaseUid
-      let user;
-      
-      if (firebaseUid) {
-        user = await User.findOne({ firebaseUid });
-      }
-      
-      if (!user && email) {
-        user = await User.findOne({ email });
-      }
-      
-      // If user doesn't exist, return error - they need to register first
-      if (!user) {
-        return res.status(401).json({ 
-          success: false, 
-          error: 'User not found. Please register first.',
-          needsRegistration: true
-        });
-      }
-      
-      // If user found but doesn't have firebaseUid set, update it
-      if (user && firebaseUid && !user.firebaseUid) {
-        user.firebaseUid = firebaseUid;
-        user.authProvider = oAuthProvider;
-        await user.save();
-      }
-      
-      // Generate JWT
-      const token = signToken(user._id);
-
-      return res.status(200).json({
-        success: true,
-        token,
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          firebaseUid: user.firebaseUid
-        }
-      });
-    }
-
-    // Standard email/password login
     // Validate email & password
     if (!email || !password) {
       return res.status(400).json({ success: false, error: 'Please provide email and password' });
@@ -227,8 +151,7 @@ exports.login = async (req, res, next) => {
       user: {
         id: user._id,
         name: user.name,
-        email: user.email,
-        firebaseUid: user.firebaseUid
+        email: user.email
       }
     });
   } catch (err) {
@@ -351,181 +274,5 @@ exports.verifyToken = async (req, res, next) => {
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ success: false, error: 'Server Error' });
-  }
-};
-
-// @desc    Google OAuth login/register
-// @route   POST /api/auth/google
-// @access  Public
-exports.googleAuth = async (req, res, next) => {
-  try {
-    const { idToken } = req.body;
-
-    if (!idToken) {
-      return res.status(400).json({
-        success: false,
-        error: 'Google ID token is required'
-      });
-    }
-
-    // Verify Google token
-    const googleUser = await verifyGoogleIdToken(idToken);
-    
-    // Check if user exists by email or Google ID
-    let user = await User.findOne({
-      $or: [
-        { email: googleUser.email },
-        { googleId: googleUser.googleId }
-      ]
-    });
-
-    if (user) {
-      // User exists, update Google ID if not set
-      if (!user.googleId) {
-        user.googleId = googleUser.googleId;
-        user.authProvider = 'google';
-        user.isEmailVerified = googleUser.emailVerified;
-        if (googleUser.picture && !user.avatar) {
-          user.avatar = googleUser.picture;
-        }
-        await user.save();
-      }
-
-      // Generate JWT
-      const token = signToken(user._id);
-
-      return res.status(200).json({
-        success: true,
-        token,
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          avatar: user.avatar,
-          authProvider: user.authProvider
-        },
-        message: 'Login successful'
-      });
-    } else {
-      // Create new user
-      user = new User({
-        name: googleUser.name,
-        email: googleUser.email,
-        googleId: googleUser.googleId,
-        authProvider: 'google',
-        isEmailVerified: googleUser.emailVerified,
-        avatar: googleUser.picture,
-        password: crypto.randomBytes(32).toString('hex') // Random password for Google users
-      });
-
-      await user.save();
-
-      // Generate JWT
-      const token = signToken(user._id);
-
-      return res.status(201).json({
-        success: true,
-        token,
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          avatar: user.avatar,
-          authProvider: user.authProvider
-        },
-        message: 'Registration successful'
-      });
-    }
-  } catch (error) {
-    console.error('Google OAuth error:', error);
-    
-    if (error.message === 'Invalid Google token') {
-      return res.status(401).json({
-        success: false,
-        error: 'Invalid Google token'
-      });
-    }
-    
-    res.status(500).json({
-      success: false,
-      error: 'Server error during Google authentication',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
-};
-
-// @desc    Link Google account to existing local account
-// @route   POST /api/auth/link-accounts
-// @access  Private
-exports.linkAccounts = async (req, res, next) => {
-  try {
-    const { idToken } = req.body;
-
-    if (!idToken) {
-      return res.status(400).json({
-        success: false,
-        error: 'Google ID token is required'
-      });
-    }
-
-    // Verify Google token
-    const googleUser = await verifyGoogleIdToken(idToken);
-    
-    // Get current user
-    const user = await User.findById(req.user.id);
-    
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: 'User not found'
-      });
-    }
-
-    // Check if Google account is already linked to another user
-    const existingGoogleUser = await User.findOne({ googleId: googleUser.googleId });
-    
-    if (existingGoogleUser && existingGoogleUser._id.toString() !== user._id.toString()) {
-      return res.status(400).json({
-        success: false,
-        error: 'This Google account is already linked to another user'
-      });
-    }
-
-    // Link Google account to current user
-    user.googleId = googleUser.googleId;
-    user.isEmailVerified = googleUser.emailVerified;
-    if (googleUser.picture && !user.avatar) {
-      user.avatar = googleUser.picture;
-    }
-    
-    await user.save();
-
-    res.status(200).json({
-      success: true,
-      message: 'Google account linked successfully',
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        avatar: user.avatar,
-        authProvider: user.authProvider,
-        googleLinked: !!user.googleId
-      }
-    });
-  } catch (error) {
-    console.error('Link accounts error:', error);
-    
-    if (error.message === 'Invalid Google token') {
-      return res.status(401).json({
-        success: false,
-        error: 'Invalid Google token'
-      });
-    }
-    
-    res.status(500).json({
-      success: false,
-      error: 'Server error during account linking',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
   }
 };
