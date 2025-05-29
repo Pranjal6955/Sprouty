@@ -14,6 +14,13 @@ const PlantLogCard = ({ plant, onNotesUpdate }) => {
   const [diagnoseHistory, setDiagnoseHistory] = useState([]);
   const [isLoadingDiagnosis, setIsLoadingDiagnosis] = useState(false);
 
+  // Define statusOptions inside the component
+  const statusOptions = [
+    { value: 'Healthy', color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/30' },
+    { value: 'Needs Attention', color: 'text-yellow-600 dark:text-yellow-400', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30' },
+    { value: 'Critical', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/30' }
+  ];
+
   const getStatusStyle = (status) => {
     switch (status) {
       case 'Healthy':
@@ -71,9 +78,12 @@ const PlantLogCard = ({ plant, onNotesUpdate }) => {
   // Calculate health status based on plant data
   const getHealthStatus = (plant) => {
     const status = plant.status || plant.health || 'Healthy';
-    if (status === 'Sick' || status === 'Critical') return 'Poor';
-    if (status === 'Needs Attention') return 'Fair';
-    return 'Good';
+    if (status === 'Sick' || status === 'Critical') {
+      return 'Critical';
+    } else if (status === 'Needs Attention') {
+      return 'Needs Attention';
+    }
+    return 'Healthy';
   };
 
   const getCurrentStatusStyle = () => {
@@ -323,17 +333,16 @@ const GardenLog = () => {
 
         console.log('Fetching plants from API...');
 
-        // Check if plantAPI and getAllPlants method exist
-        if (!plantAPI || typeof plantAPI.getAllPlants !== 'function') {
-          console.error('plantAPI or getAllPlants method not available');
+        // Use getPlants instead of getAllPlants
+        if (!plantAPI || typeof plantAPI.getPlants !== 'function') {
+          console.error('plantAPI or getPlants method not available');
           throw new Error('Plant API service is not properly configured');
         }
 
-        const response = await plantAPI.getAllPlants();
+        const response = await plantAPI.getPlants();
         console.log('Fetched plants for Garden Log:', response);
 
         if (response && response.success !== false) {
-          // Changed from response.success to response.success !== false for more resilience
           setPlantLogs(response.data || []);
         } else {
           console.error('API response was not successful:', response);
@@ -342,7 +351,6 @@ const GardenLog = () => {
       } catch (err) {
         console.error('Error fetching plants:', err);
 
-        // Provide more specific error messages
         let errorMessage = 'Failed to load plants. Please try again.';
 
         if (err.message?.includes('Plant API service is not properly configured')) {
@@ -374,8 +382,6 @@ const GardenLog = () => {
       const response = await plantAPI.updatePlant(plantId, { notes: newNotes });
 
       if (response && response.success !== false) {
-        // Changed from response.success to response.success !== false
-        // Update local state
         setPlantLogs(prevLogs =>
           prevLogs.map(plant =>
             plant._id === plantId || plant.id === plantId
@@ -393,33 +399,8 @@ const GardenLog = () => {
     }
   };
 
-  const handleStatusUpdate = async (plantId, newStatus) => {
-    try {
-      console.log('Updating status for plant:', plantId, 'New status:', newStatus);
-
-      if (!plantAPI || typeof plantAPI.updatePlant !== 'function') {
-        throw new Error('Plant API service is not properly configured');
-      }
-
-      const response = await plantAPI.updatePlant(plantId, { status: newStatus });
-
-      if (response && response.success) {
-        setPlants(prevPlants =>
-          prevPlants.map(plant =>
-            plant._id === plantId || plant.id === plantId
-              ? { ...plant, status: newStatus }
-              : plant
-          )
-        );
-        console.log('Status updated successfully');
-      } else {
-        throw new Error(response?.error || 'Failed to update status');
-      }
-    } catch (error) {
-      console.error('Error updating plant status:', error);
-      throw error;
-    }
-  };
+  // Remove handleStatusUpdate since it references undefined setPlants
+  // const handleStatusUpdate = async (plantId, newStatus) => { ... }
 
   // Filter plants based on search term
   const filteredPlants = plantLogs.filter(plant =>
