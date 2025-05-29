@@ -3,6 +3,7 @@ import Sidebar from '../components/Sidebar';
 import { Search, Droplets, AlertCircle, Scissors, Flower, Edit, Check, X, Loader, Edit2 } from 'lucide-react';
 import { plantAPI } from '../services/api';
 import PlantHistoryLog from '../components/PlantHistoryLog';
+import LogoOJT from '../assets/LogoOJT.png';
 
 const PlantLogCard = ({ plant, onNotesUpdate }) => {
   const [isEditingNotes, setIsEditingNotes] = useState(false);
@@ -403,7 +404,14 @@ const GardenLog = () => {
       <div className="flex-1 overflow-auto">
         <div className="p-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Garden Log</h1>
+            <div className="flex items-center mb-6">
+              <img 
+                src={LogoOJT} 
+                alt="Sprouty Logo" 
+                className="h-17 w-16"
+              />
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white ml-2">Garden Log</h1>
+            </div>
             <div className="relative">
               <input
                 type="text"
