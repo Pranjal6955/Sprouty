@@ -37,6 +37,18 @@ const Diagnose = () => {
     fetchPlants();
   }, []);
 
+  useEffect(() => {
+    if (plantData) {
+      // Auto-select the plant when navigating from dashboard
+      setSelectedPlant({
+        id: plantData.plantId,
+        name: plantData.plantName,
+        image: plantData.plantImage,
+        species: plantData.plantSpecies
+      });
+    }
+  }, [plantData]);
+
   const fetchPlantData = async () => {
     try {
       const response = await plantAPI.getPlant(plantId);
@@ -223,13 +235,6 @@ const Diagnose = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
-  };
-
-  const formatCareDate = (dateString) => {
-    if (!dateString || dateString === 'Invalid Date') return 'Not yet set';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Not yet set';
-    return date.toLocaleDateString();
   };
 
   return (
@@ -525,9 +530,9 @@ const Diagnose = () => {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600 dark:text-gray-400">Health Status</span>
                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        plant.health === 'Healthy' ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' :
-                        plant.health === 'Needs Attention' ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                        'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                        plant.health === 'Healthy' ? 'bg-green-100 text-green-600' :
+                        plant.health === 'Needs Attention' ? 'bg-yellow-100 text-yellow-600' :
+                        'bg-red-100 text-red-600'
                       }`}>
                         {plant.health}
                       </span>
@@ -536,23 +541,19 @@ const Diagnose = () => {
                     {/* Care Info */}
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <p className="text-gray-500 dark:text-gray-400">Last Watered</p>
-                        <p className="font-medium text-gray-700 dark:text-gray-200">
-                          {plant.lastWatered ? formatCareDate(plant.lastWatered) : 'Not yet watered'}
-                        </p>
+                        <p className="text-gray-500">Last Watered</p>
+                        <p className="font-medium">{new Date(plant.lastWatered).toLocaleDateString()}</p>
                       </div>
                       <div>
-                        <p className="text-gray-500 dark:text-gray-400">Last Fertilized</p>
-                        <p className="font-medium text-gray-700 dark:text-gray-200">
-                          {plant.lastFertilized ? formatCareDate(plant.lastFertilized) : 'Not yet fertilized'}
-                        </p>
+                        <p className="text-gray-500">Last Fertilized</p>
+                        <p className="font-medium">{new Date(plant.lastFertilized).toLocaleDateString()}</p>
                       </div>
                     </div>
 
                     {/* View Diagnose Button */}
                     <button
                       onClick={() => handleViewDiagnose(plant)}
-                      className="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg transition-colors flex items-center justify-center gap-2 dark:bg-green-600 dark:hover:bg-green-700"
+                      className="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
                     >
                       <Stethoscope size={18} />
                       View Diagnose

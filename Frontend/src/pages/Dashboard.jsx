@@ -37,10 +37,19 @@ const Dashboard = () => {
   const [editingPlant, setEditingPlant] = useState(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [dueReminders, setDueReminders] = useState([]);
+  const [healthFilter, setHealthFilter] = useState('All'); // Add this state
   const navigate = useNavigate();
 
   // Get notifications from context
   const { notifications, clearNotification } = useNotifications();
+
+  // Add status options constant
+  const healthStatusOptions = [
+    { value: 'All', label: 'All Plants' },
+    { value: 'Healthy', label: 'Healthy' },
+    { value: 'Needs Attention', label: 'Needs Attention' },
+    { value: 'Critical', label: 'Critical' }
+  ];
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Not yet set';
@@ -348,15 +357,18 @@ const Dashboard = () => {
     }
   };
 
-  const handleDiagnose = async (e, plantId) => {
-    e.stopPropagation();
+  const handleDiagnose = async (e, plant) => {
+    e.stopPropagation(); // Prevent plant details modal from opening
     try {
-      // Navigate to the plant diagnosis page with or without plant ID
-      if (plantId) {
-        navigate(`/diagnose/${plantId}`); // <-- FIX: Use backticks and no slashes, not a regex!
-      } else {
-        navigate('/diagnose');
-      }
+      // Navigate to the diagnose page with the plant data
+      navigate(`/diagnose`, { 
+        state: {
+          plantId: plant.id,
+          plantName: plant.name,
+          plantImage: plant.image,
+          plantSpecies: plant.species
+        }
+      });
     } catch (error) {
       console.error('Error navigating to diagnosis:', error);
     }
@@ -390,7 +402,7 @@ const Dashboard = () => {
             <div className="max-h-96 overflow-y-auto">
               {/* Due Reminders */}
               {dueReminders.map(reminder => (
-                <div key={reminder._id} className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                <div key={`reminder-${reminder._id}`} className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
                   <div className="flex items-start space-x-3">
                     <div className="flex-shrink-0">
                       {reminder.plant?.mainImage ? (
@@ -505,6 +517,11 @@ const Dashboard = () => {
     );
   };
 
+  // Filter plants based on health status
+  const filteredPlants = plants.filter(plant => 
+    healthFilter === 'All' ? true : plant.health === healthFilter
+  );
+
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar 
@@ -540,26 +557,46 @@ const Dashboard = () => {
                   <div>
                     <h2 className="text-xl font-semibold text-gray-800 dark:text-white">My Plants</h2>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      {plants.length} {plants.length === 1 ? 'plant' : 'plants'} in your garden
+                      {filteredPlants.length} {filteredPlants.length === 1 ? 'plant' : 'plants'} in your garden
                     </p>
                   </div>
-                  <button 
-                    onClick={handleAddPlant}
-                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-sm"
-                  >
-                    <Plus size={20} className="mr-1" /> Add Plant
-                  </button>
+                  <div className="flex items-center gap-4">
+                    {/* Add Health Filter Dropdown */}
+                    <select
+                      value={healthFilter}
+                      onChange={(e) => setHealthFilter(e.target.value)}
+                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                    >
+                      {healthStatusOptions.map(option => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    
+                    {/* Existing Add Plant button */}
+                    <button 
+                      onClick={handleAddPlant}
+                      className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-sm"
+                    >
+                      <Plus size={20} className="mr-1" /> Add Plant
+                    </button>
+                  </div>
                 </div>
 
-                {plants.length === 0 ? (
+                {filteredPlants.length === 0 ? (
                   <div className="text-center py-12 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-700 border-dashed">
                     <Camera size={48} className="mx-auto mb-4 text-gray-400 dark:text-gray-500" />
-                    <p className="font-medium dark:text-gray-300">No plants yet. Add your first plant!</p>
-                    <p className="text-sm mt-1 dark:text-gray-400">Take a photo of your plants to start tracking them</p>
+                    <p className="font-medium dark:text-gray-300">
+                      {healthFilter === 'All' 
+                        ? 'No plants yet. Add your first plant!'
+                        : `No ${healthFilter.toLowerCase()} plants found`
+                      }
+                    </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {plants.map(plant => (
+                    {filteredPlants.map(plant => (
                       <div 
                         key={plant.id} 
                         className="group relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all duration-300 cursor-pointer"
@@ -645,7 +682,7 @@ const Dashboard = () => {
                               </div>
                             </div>
                             <button
-                              onClick={(e) => handleDiagnose(e, plant.id)}
+                              onClick={(e) => handleDiagnose(e, plant)}
                               className="w-full mt-2 flex items-center justify-center gap-2 px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition-colors"
                             >
                               <Stethoscope size={16} />
