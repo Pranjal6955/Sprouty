@@ -708,8 +708,8 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Right Side - Enhanced Weather Widget */}
-          <div className="w-96 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex flex-col">
+          {/* Right Side - Weather Widget (simplified version) */}
+          <div className="w-80 border-l border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
             <Weather />
           </div>
         </div>
