@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Bell, TrendingUp, Zap, Thermometer, Clock } from 'lucide-react';
+import { Plus, Bell, TrendingUp, Zap, Thermometer, Clock, X, Menu } from 'lucide-react';
 import plantPhoto from '../assets/plantPhoto.jpg';
 import { Link } from 'react-router-dom';
 import LogoOJT from '../assets/LogoOJT.png';
@@ -14,18 +14,15 @@ const HomePage = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      {/* Navbar - Updated with consistent styling */}
-      <nav className="sticky top-0 z-50 mx-auto w-[75%] bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-green-100 dark:border-gray-700 shadow-lg rounded-[100px] mt-4">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Navbar */}
+      <nav className="sticky top-0 z-50 mx-auto w-[95%] md:w-[90%] lg:w-[75%] bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-green-100 dark:border-gray-700 shadow-lg rounded-[100px] mt-4">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
+            {/* Logo and Desktop Menu */}
             <div className="flex items-center">
               <div className="flex-shrink-0 flex items-center">
-                <img 
-                  src={LogoOJT} 
-                  alt="Sprouty Logo" 
-                  className="h-12 w-13"
-                />
-                <span className="text-teal-600 font-bold text-2xl ml-2">Sprouty</span>
+                <img src={LogoOJT} alt="Sprouty Logo" className="h-10 w-10 md:h-12 md:w-12" />
+                <span className="text-teal-600 font-bold text-xl md:text-2xl ml-2">Sprouty</span>
               </div>
               <div className="hidden md:ml-8 md:flex md:space-x-10">
                 <a href="#home" className="text-gray-700 dark:text-gray-200 hover:text-teal-600 dark:hover:text-teal-400 px-3 py-2 text-sm font-medium transition duration-150">Home</a>
@@ -33,6 +30,8 @@ const HomePage = () => {
                 <a href="#about" className="text-gray-700 dark:text-gray-200 hover:text-teal-600 dark:hover:text-teal-400 px-3 py-2 text-sm font-medium transition duration-150">About Us</a>
               </div>
             </div>
+
+            {/* Desktop buttons */}
             <div className="hidden md:flex items-center space-x-4">
               <DarkModeToggle />
               <Link to="/login" className="text-teal-600 dark:text-teal-400 font-medium hover:text-teal-800 dark:hover:text-teal-300">
@@ -42,44 +41,52 @@ const HomePage = () => {
                 Sign Up
               </Link>
             </div>
+
+            {/* Mobile menu button */}
             <div className="flex items-center md:hidden">
-              <button onClick={toggleMenu} className="text-gray-700">
-                <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
+              <button 
+                onClick={toggleMenu}
+                className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white focus:outline-none"
+              >
+                {isMenuOpen ? (
+                  <X className="block h-6 w-6" />
+                ) : (
+                  <Menu className="block h-6 w-6" />
+                )}
               </button>
             </div>
           </div>
         </div>
-        
-        {/* Mobile menu - Slide down animation */}
-        {isMenuOpen && (
-          <div className="md:hidden animate-slideDown">
-            <div className="pt-2 pb-3 space-y-1 px-2">
-              <a href="#home" className="block px-3 py-2 text-gray-700 dark:text-gray-200 font-medium hover:bg-teal-50 dark:hover:bg-teal-900/20 hover:text-teal-600 dark:hover:text-teal-400 rounded-lg">Home</a>
-              <a href="#features" className="block px-3 py-2 text-gray-700 dark:text-gray-200 font-medium hover:bg-teal-50 dark:hover:bg-teal-900/20 hover:text-teal-600 dark:hover:text-teal-400 rounded-lg">Features</a>
-              <a href="#about" className="block px-3 py-2 text-gray-700 dark:text-gray-200 font-medium hover:bg-teal-50 dark:hover:bg-teal-900/20 hover:text-teal-600 dark:hover:text-teal-400 rounded-lg">About Us</a>
-            </div>
-            <div className="pt-4 pb-3 border-t border-gray-200">
-              <div className="flex items-center justify-center px-4 space-x-4 py-2">
-                <Link to="/login" className="w-full text-teal-600 font-medium py-2 px-4 rounded-lg border border-teal-600 hover:bg-teal-50">
-                  Login
-                </Link>
-                <Link to="/signup" className="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-lg">
-                  Sign Up
-                </Link>
-              </div>
+
+        {/* Mobile menu dropdown */}
+        <div className={`absolute top-full left-0 right-0 bg-white dark:bg-gray-800 shadow-lg rounded-b-2xl transition-all duration-200 ease-in-out ${
+          isMenuOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
+        }`}>
+          <div className="px-4 pt-2 pb-3 space-y-1">
+            {/* Mobile menu items */}
+            <a href="#home" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Home</a>
+            <a href="#features" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">Features</a>
+            <a href="#about" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">About Us</a>
+          </div>
+          <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+            <div className="grid grid-cols-2 gap-4">
+              <Link to="/login" className="text-center px-4 py-2 border border-teal-600 text-teal-600 rounded-lg hover:bg-teal-50 dark:hover:bg-teal-900/20">
+                Login
+              </Link>
+              <Link to="/signup" className="text-center px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">
+                Sign Up
+              </Link>
             </div>
           </div>
-        )}
+        </div>
       </nav>
 
       {/* Hero Section */}
-      <section id="home" className="relative py-20 overflow-hidden">
+      <section id="home" className="relative py-12 md:py-20 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-900/50 dark:via-gray-800/50 dark:to-gray-900/50 z-0"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="flex flex-col md:flex-row items-center">
-            <div className="md:w-1/2 md:pr-10">
+          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-0">
+            <div className="md:w-1/2 md:pr-10 text-center md:text-left">
               <div className="inline-block px-3 py-1 text-sm font-medium text-teal-700 bg-teal-100 rounded-full mb-6">
                 Your plant care companion
               </div>
@@ -96,7 +103,7 @@ const HomePage = () => {
                 </Link>
               </div>
             </div>
-            <div className="md:w-1/2 mt-12 md:mt-0 relative">
+            <div className="md:w-1/2 mt-8 md:mt-0 relative px-4 md:px-0">
               <div className="absolute -top-10 -right-10 w-64 h-64 bg-teal-200 rounded-full opacity-50 filter blur-3xl"></div>
               <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-emerald-200 rounded-full opacity-50 filter blur-3xl"></div>
               <img 
@@ -110,16 +117,16 @@ const HomePage = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
+      <section id="features" className="py-16 md:py-20 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">Smart Features for Plant Lovers</h2>
+          <div className="text-center mb-12 md:mb-16">
+            <h2 className="text-2xl md:text-4xl font-bold text-gray-900 dark:text-white">Smart Features for Plant Lovers</h2>
             <p className="mt-4 text-lg text-gray-700 dark:text-gray-200 max-w-3xl mx-auto">
               Everything you need to become a successful plant parent
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {/* Feature 1 */}
             <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border border-green-100 dark:border-gray-700">
               <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center text-teal-600 mb-6">
