@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Plus, Sun, Wind, Thermometer, MapPin, Camera, Cloud, 
-  Umbrella, ArrowRight, AlertCircle, Droplets, ChevronDown, Calendar, Edit, Trash2, MoreVertical, AlertTriangle,
-  Bell, Flower, Scissors, Stethoscope
-} from 'lucide-react';
-import Sidebar from '../components/Sidebar';
-import { auth } from '../firebase';
-import { signOut } from 'firebase/auth';
-import { useNavigate } from 'react-router-dom';
+  Plus, Cloud, Sun, Thermometer, Droplets, 
+  Calendar, Bell, TrendingUp, Search, Filter, 
+  Upload, Camera, Menu, Home, User, Book, 
+  X, Edit, Delete, Eye, AlertCircle, Info, 
+  Settings, LogOut, Leaf
+} from "lucide-react";
+import Sidebar from "../components/Sidebar";
+import { googleAuthService } from '../services/googleAuth';
+import { useNavigate } from "react-router-dom";
 import { weatherAPI, plantAPI } from '../services/api';
 import AddPlant from '../components/AddPlant';
 import LogoOJT from '../assets/LogoOJT.png';
@@ -148,10 +149,15 @@ const Dashboard = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await googleAuthService.signOut();
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
       navigate('/');
     } catch (error) {
       console.error('Error logging out:', error);
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      navigate('/');
     }
   };
 

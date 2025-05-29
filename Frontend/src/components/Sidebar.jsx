@@ -1,8 +1,7 @@
 import React from 'react';
 import { Menu, LogOut, User, Home, Book, Bell, X, Stethoscope } from 'lucide-react';
-import { auth } from '../firebase';
-import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
+import { googleAuthService } from '../services/googleAuth';
 
 const NavItem = ({ icon, label, isActive, onClick }) => (
   <div 
@@ -23,10 +22,20 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen, activeNavItem, setActiveNavItem })
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      // Sign out from Google if using Google auth
+      await googleAuthService.signOut();
+      
+      // Clear local storage
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      
       navigate('/');
     } catch (error) {
       console.error('Error logging out:', error);
+      // Still navigate even if logout fails
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('user');
+      navigate('/');
     }
   };
 

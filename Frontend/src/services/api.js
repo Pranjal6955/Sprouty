@@ -25,6 +25,17 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Add response interceptor to handle errors globally
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', error.response?.data || error.message);
+    return Promise.reject(error);
+  }
+);
+
+// This authAPI object will be used - it has the simplified implementation
+
 // Upload image to Cloudinary and return the URL
 const uploadToCloudinary = async (imageData) => {
   try {
@@ -81,22 +92,17 @@ const getAuthHeader = () => {
 // Auth Services
 export const authAPI = {
   register: async (userData) => {
-    // Include Firebase UID if available to link accounts
-    if (userData.firebaseUid) {
-      console.log(`Including Firebase UID in registration: ${userData.firebaseUid}`);
-    }
-    
     const response = await axiosInstance.post('/auth/register', userData);
     return response.data;
   },
   
   login: async (credentials) => {
-    // Support both standard and OAuth logins
-    if (credentials.oAuthProvider) {
-      console.log(`Login with ${credentials.oAuthProvider} OAuth`);
-    }
-    
     const response = await axiosInstance.post('/auth/login', credentials);
+    return response.data;
+  },
+  
+  googleAuth: async (idToken) => {
+    const response = await axiosInstance.post('/auth/google', { idToken });
     return response.data;
   },
   
@@ -115,9 +121,8 @@ export const authAPI = {
     return response.data;
   },
 
-  // New method to link Firebase and backend accounts if needed
-  linkAccounts: async (firebaseUid) => {
-    const response = await axiosInstance.post('/auth/link-accounts', { firebaseUid });
+  linkAccounts: async (idToken) => {
+    const response = await axiosInstance.post('/auth/link-accounts', { idToken });
     return response.data;
   }
 };
@@ -624,6 +629,7 @@ export const reminderAPI = {
   // Mark notification as sent
   markNotificationSent: async (reminderId) => {
     try {
+     
       const response = await axiosInstance.put(`/reminders/${reminderId}/notification-sent`);
       return response.data;
     } catch (error) {

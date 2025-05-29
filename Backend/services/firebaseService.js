@@ -1,68 +1,46 @@
-const { admin, auth, firestore, storage, messaging } = require('../config/firebase');
+const fs = require('fs');
+const path = require('path');
+const { verifyGoogleToken } = require('../config/firebase');
 
 /**
- * Send push notification to a user's device
- * @param {string} token - FCM device token
- * @param {object} notification - Notification payload
- * @param {object} data - Optional data payload
+ * Verify Google OAuth token
+ * @param {string} idToken - Google ID token
  */
-exports.sendPushNotification = async (token, notification, data = {}) => {
+exports.verifyGoogleIdToken = async (idToken) => {
   try {
-    const message = {
-      token,
-      notification,
-      data
-    };
-    
-    const response = await messaging.send(message);
-    console.log('Push notification sent successfully:', response);
-    return response;
+    const userInfo = await verifyGoogleToken(idToken);
+    return userInfo;
   } catch (error) {
-    console.error('Error sending push notification:', error);
+    console.error('Error verifying Google ID token:', error);
     throw error;
   }
 };
 
 /**
- * Upload a file to Firebase Storage
+ * Upload a file to local storage
  * @param {Buffer} fileBuffer - File buffer
  * @param {string} filePath - Path where file should be stored
  * @param {object} metadata - File metadata
  */
 exports.uploadFile = async (fileBuffer, filePath, metadata = {}) => {
   try {
-    const bucket = storage.bucket();
-    const file = bucket.file(filePath);
+    const uploadsDir = path.join(__dirname, '../uploads');
+    const fullPath = path.join(uploadsDir, filePath);
     
-    await file.save(fileBuffer, {
-      metadata: {
-        contentType: metadata.contentType,
-        ...metadata
-      }
-    });
+    // Ensure directory exists
+    const dir = path.dirname(fullPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
     
-    // Make file publicly accessible
-    await file.makePublic();
+    // Write file to local storage
+    fs.writeFileSync(fullPath, fileBuffer);
     
-    // Get the public URL
-    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+    // Return local URL path
+    const publicUrl = `/uploads/${filePath}`;
     return publicUrl;
   } catch (error) {
-    console.error('Error uploading file to Firebase Storage:', error);
-    throw error;
-  }
-};
-
-/**
- * Verify a Firebase ID token
- * @param {string} idToken - Firebase ID token
- */
-exports.verifyIdToken = async (idToken) => {
-  try {
-    const decodedToken = await auth.verifyIdToken(idToken);
-    return decodedToken;
-  } catch (error) {
-    console.error('Error verifying Firebase ID token:', error);
+    console.error('Error uploading file to local storage:', error);
     throw error;
   }
 };

@@ -10,7 +10,6 @@ const reminderRoutes = require('./routes/reminders');
 const weatherRoutes = require('./routes/weather');
 const diagnosisRoutes = require('./routes/diagnosisRoutes');
 const initCronJobs = require('./services/cronService');
-const firebase = require('./config/firebase'); // Initialize Firebase Admin SDK
 require('dotenv').config();
 
 // Check for required environment variables
@@ -19,6 +18,8 @@ console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('MONGODB_URI available:', !!process.env.MONGODB_URI);
 console.log('JWT_SECRET available:', !!process.env.JWT_SECRET);
 console.log('WEATHER_API_KEY available:', !!process.env.WEATHER_API_KEY);
+console.log('GOOGLE_CLIENT_ID available:', !!process.env.GOOGLE_CLIENT_ID);
+console.log('GOOGLE_CLIENT_SECRET available:', !!process.env.GOOGLE_CLIENT_SECRET);
 
 if (!process.env.PLANT_ID_API_KEY) {
   console.warn('⚠️  Warning: PLANT_ID_API_KEY not found in environment variables');
@@ -32,6 +33,14 @@ if (!process.env.PLANT_ID_API_KEY) {
   if (apiKey.length < 20) {
     console.warn('⚠️  Warning: Plant.ID API key seems too short, please verify it');
   }
+}
+
+if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+  console.warn('⚠️  Warning: Google OAuth credentials not found in environment variables');
+  console.warn('   Google authentication will not be available');
+  console.warn('   Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to your .env file');
+} else {
+  console.log('✅ Google OAuth credentials found - Google authentication enabled');
 }
 
 // Initialize Express app
@@ -106,9 +115,6 @@ cleanupInvalidReminders().then(() => {
     console.error('Warning: initCronJobs is not a function. Cron jobs not initialized.');
   }
 });
-
-// Initialize Firebase Admin (already done via import)
-console.log('Firebase Admin SDK initialized');
 
 // Middleware
 app.use(cors());

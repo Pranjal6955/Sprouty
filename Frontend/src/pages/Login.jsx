@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { auth } from '../firebase';
-import { signInWithEmailAndPassword, sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import {FcGoogle} from 'react-icons/fc';
 import { authAPI } from '../services/api';
+import { googleAuthService } from '../services/googleAuth';
 import LogoOJT from '../assets/LogoOJT.png';
 import { useTheme } from '../components/ThemeProvider';
 
@@ -28,51 +27,72 @@ function Login() {
       setError('Please fill in all fields');
       return;
     }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
     
     try {
       setLoading(true);
+      console.log('Starting login process...');
       
-      // Firebase Authentication
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const firebaseUser = userCredential.user;
+      const credentials = {
+        email: email.trim().toLowerCase(),
+        password: password
+      };
+
+      console.log('Login credentials:', { email: credentials.email });
       
-      // Backend Authentication
-      try {
-        const backendAuth = await authAPI.login({
-          email,
-          password
-        });
-        
-        // Store the backend token
+      const backendAuth = await authAPI.login(credentials);
+      
+      console.log('Login successful:', backendAuth);
+      
+      // Store the backend token
+      if (backendAuth.token) {
         localStorage.setItem('authToken', backendAuth.token);
-        
-        // Store user information
+      }
+      
+      // Store user information
+      if (backendAuth.user) {
         localStorage.setItem('user', JSON.stringify({
-          id: backendAuth.user.id,
+          id: backendAuth.user.id || backendAuth.user._id,
           name: backendAuth.user.name,
           email: backendAuth.user.email,
-          firebaseUid: firebaseUser.uid
+          authProvider: backendAuth.user.authProvider || 'local'
         }));
-        
-        setLoading(false);
-        navigate('/dashboard');
-      } catch (backendError) {
-        console.error('Backend auth failed:', backendError);
-        // If backend auth fails but firebase succeeds, log the user out of firebase
-        await auth.signOut();
-        
-        setLoading(false);
-        setError('Login failed. Please ensure your account exists on the server.');
       }
+      
+      setLoading(false);
+      navigate('/dashboard');
     } catch (error) {
       setLoading(false);
-      if (error.code === 'auth/user-not-found' || 
-          error.code === 'auth/wrong-password' || 
-          error.code === 'auth/invalid-credential') {
-        setError('Incorrect email or password');
-      } else {
-        setError('Login failed. Please try again.');
+      console.error('Login error details:', error);
+      
+      let errorMessage = 'Login failed';
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
+      
+      // Handle specific error cases
+      if (error.response?.status === 401) {
+        errorMessage = 'Invalid email or password. Please check your credentials.';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'Account not found. Please check your email or sign up.';
+      } else if (error.response?.status === 500) {
+        errorMessage = 'Server error. Please try again later.';
+      } else if (!error.response) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      }
+      
+      setError(errorMessage);
     }
   };
 
@@ -88,16 +108,8 @@ function Login() {
     try {
       setResetLoading(true);
       
-      // Firebase password reset
-      await sendPasswordResetEmail(auth, resetEmail);
-      
       // Backend password reset
-      try {
-        await authAPI.forgotPassword(resetEmail);
-      } catch (backendError) {
-        console.error('Backend password reset failed:', backendError);
-        // Continue even if backend fails, as Firebase reset may still work
-      }
+      await authAPI.forgotPassword(resetEmail);
       
       setResetLoading(false);
       setResetMessage({ 
@@ -113,11 +125,7 @@ function Login() {
       }, 3000);
     } catch (error) {
       setResetLoading(false);
-      if (error.code === 'auth/user-not-found') {
-        setResetMessage({ type: 'error', text: 'No account found with this email address' });
-      } else {
-        setResetMessage({ type: 'error', text: `Failed to send reset email: ${error.message}` });
-      }
+      setResetMessage({ type: 'error', text: `Failed to send reset email: ${error.message}` });
     }
   };
 
@@ -132,63 +140,83 @@ function Login() {
   const handleGoogleSignIn = async () => {
     setError('');
     setLoading(true);
-    const provider = new GoogleAuthProvider();
+    
     try {
-      // Firebase Google Auth
-      const result = await signInWithPopup(auth, provider);
-      const firebaseUser = result.user;
-      
-      // After Firebase auth succeeds, register or login with the backend
+      // Try One Tap first
       try {
-        // Try login first (for existing users)
-        let backendAuth;
-        try {
-          backendAuth = await authAPI.login({
-            email: firebaseUser.email,
-            // Special case for OAuth users - backend should handle this
-            oAuthProvider: 'google',
-            oAuthToken: await firebaseUser.getIdToken()
-          });
-        } catch (loginErr) {
-          // If login fails, try registering the user
-          if (loginErr.response && loginErr.response.status === 401) {
-            backendAuth = await authAPI.register({
-              name: firebaseUser.displayName || 'Google User',
-              email: firebaseUser.email,
-              password: crypto.randomUUID(), // Generate random password for OAuth users
-              oAuthProvider: 'google',
-              oAuthToken: await firebaseUser.getIdToken()
-            });
+        const idToken = await googleAuthService.signInWithPopup();
+        await processGoogleAuth(idToken);
+        return;
+      } catch (oneTapError) {
+        console.log('One Tap failed, showing manual button');
+      }
+
+      // Fallback to button-based auth
+      const buttonId = 'google-signin-button-' + Date.now();
+      const tempDiv = document.createElement('div');
+      tempDiv.id = buttonId;
+      tempDiv.style.position = 'fixed';
+      tempDiv.style.top = '-1000px';
+      document.body.appendChild(tempDiv);
+
+      await googleAuthService.renderSignInButton(buttonId, {
+        callback: async (response) => {
+          document.body.removeChild(tempDiv);
+          if (response.credential) {
+            await processGoogleAuth(response.credential);
           } else {
-            // If it's not a 401 error, rethrow
-            throw loginErr;
+            setLoading(false);
+            setError('No credential received from Google');
           }
         }
-        
-        // Store the backend token
-        localStorage.setItem('authToken', backendAuth.token);
-        
-        // Store user information
-        localStorage.setItem('user', JSON.stringify({
-          id: backendAuth.user.id,
-          name: backendAuth.user.name || firebaseUser.displayName,
-          email: backendAuth.user.email || firebaseUser.email,
-          firebaseUid: firebaseUser.uid
-        }));
-        
-        setLoading(false);
-        navigate('/dashboard');
-      } catch (backendError) {
-        console.error('Backend auth failed after Google sign-in:', backendError);
-        // If backend auth fails, log the user out of firebase
-        await auth.signOut();
-        
-        setLoading(false);
-        setError('Google sign-in failed on server. Please try again.');
-      }
+      });
+
+      // Simulate button click
+      setTimeout(() => {
+        const button = tempDiv.querySelector('div[role="button"]');
+        if (button) {
+          button.click();
+        } else {
+          document.body.removeChild(tempDiv);
+          setLoading(false);
+          setError('Could not initialize Google Sign-In');
+        }
+      }, 500);
+
     } catch (error) {
       setLoading(false);
+      console.error('Google sign-in error:', error);
       setError('Google sign-in failed: ' + error.message);
+    }
+  };
+
+  const processGoogleAuth = async (idToken) => {
+    try {
+      const backendAuth = await authAPI.googleAuth(idToken);
+      
+      localStorage.setItem('authToken', backendAuth.token);
+      localStorage.setItem('user', JSON.stringify({
+        id: backendAuth.user.id || backendAuth.user._id,
+        name: backendAuth.user.name,
+        email: backendAuth.user.email,
+        avatar: backendAuth.user.avatar,
+        authProvider: backendAuth.user.authProvider
+      }));
+      
+      setLoading(false);
+      navigate('/dashboard');
+    } catch (error) {
+      setLoading(false);
+      console.error('Backend auth error:', error);
+      
+      let errorMessage = 'Google sign-in failed';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+      
+      setError(errorMessage);
     }
   };
 
@@ -209,7 +237,7 @@ function Login() {
         </div>
         
         {error && (
-          <div className="p-3 text-sm text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 rounded-lg">
+          <div className="p-3 text-sm text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 rounded-lg border border-red-200 dark:border-red-800">
             {error}
           </div>
         )}
@@ -265,7 +293,12 @@ function Login() {
             disabled={loading}
             className={`w-full px-4 py-3 text-white font-medium rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                Logging in...
+              </div>
+            ) : 'Login'}
           </button>
         </form>
 

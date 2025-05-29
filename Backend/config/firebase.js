@@ -1,20 +1,35 @@
-const admin = require('firebase-admin');
-const path = require('path');
+const { OAuth2Client } = require('google-auth-library');
 
-// Path to service account file
-const serviceAccount = require('./serviceaccount.json'); 
+// Initialize Google OAuth client
+const googleClient = new OAuth2Client(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.GOOGLE_REDIRECT_URI
+);
 
-// Initialize Firebase Admin
-const firebaseAdmin = admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET
-});
+// Verify Google ID token
+const verifyGoogleToken = async (idToken) => {
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    
+    const payload = ticket.getPayload();
+    return {
+      googleId: payload.sub,
+      email: payload.email,
+      name: payload.name,
+      picture: payload.picture,
+      emailVerified: payload.email_verified
+    };
+  } catch (error) {
+    console.error('Error verifying Google token:', error);
+    throw new Error('Invalid Google token');
+  }
+};
 
-// Export Firebase services
 module.exports = {
-  admin: firebaseAdmin,
-  auth: firebaseAdmin.auth(),
-  firestore: firebaseAdmin.firestore(),
-  storage: firebaseAdmin.storage(),
-  messaging: firebaseAdmin.messaging()
+  googleClient,
+  verifyGoogleToken
 };
