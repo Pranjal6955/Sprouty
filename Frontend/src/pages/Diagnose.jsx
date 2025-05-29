@@ -4,6 +4,7 @@ import Sidebar from '../components/Sidebar';
 import LogoOJT from '../assets/LogoOJT.png';
 import { Upload, Loader, AlertCircle, CheckCircle, AlertTriangle, Camera, FileText, Calendar, Stethoscope, X, Image } from 'lucide-react';
 import { diagnosisAPI, plantAPI } from '../services/api';
+import Webcam from 'react-webcam'; // Add this import
 
 const Diagnose = () => {
   const location = useLocation();
@@ -240,79 +241,22 @@ const Diagnose = () => {
     });
   };
 
-  const startCamera = async () => {
-    try {
-      const constraints = {
-        video: {
-          facingMode: 'environment', // Prefer rear camera on mobile devices
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
-        }
-      };
-
-      console.log('Requesting camera access...');
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      
-      console.log('Camera access granted, setting up video stream...');
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-        
-        // Wait for video to be ready
-        videoRef.current.onloadedmetadata = () => {
-          console.log('Video stream loaded');
-          videoRef.current.play();
-        };
-        
-        setUseCamera(true);
-      } else {
-        console.error('Video reference not found');
-        throw new Error('Video element not initialized');
-      }
-    } catch (err) {
-      console.error('Camera access error:', err);
-      setError(err.message === 'Permission denied' 
-        ? 'Camera access denied. Please enable camera permissions and try again.' 
-        : 'Unable to access camera. Please check your device settings.'
-      );
-      setUseCamera(false);
-    }
+  const startCamera = () => {
+    setUseCamera(true);
+    setError(null);
   };
 
   const stopCamera = () => {
-    try {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => {
-          track.stop();
-          console.log('Camera track stopped');
-        });
-        if (videoRef.current) {
-          videoRef.current.srcObject = null;
-        }
-      }
-    } catch (err) {
-      console.error('Error stopping camera:', err);
-    } finally {
-      setUseCamera(false);
-    }
+    setUseCamera(false);
   };
 
   const captureImage = () => {
     try {
-      const video = videoRef.current;
-      if (!video) {
-        throw new Error('Video element not found');
+      const screenshot = videoRef.current?.getScreenshot();
+      if (!screenshot) {
+        throw new Error('Failed to capture image');
       }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      
-      const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-      setImagePreview(imageDataUrl);
+      setImagePreview(screenshot);
       stopCamera();
     } catch (err) {
       console.error('Error capturing image:', err);
@@ -352,6 +296,93 @@ const Diagnose = () => {
           Cancel
         </button>
       </div>
+    </div>
+  );
+
+  const renderImageSection = () => (
+    <div className="relative h-80 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden border dark:border-gray-700">
+      {useCamera ? (
+        // Camera View
+        <div className="relative h-full">
+          <Webcam
+            ref={videoRef}
+            audio={false}
+            screenshotFormat="image/jpeg"
+            videoConstraints={{
+              facingMode: 'environment',
+              width: 1280,
+              height: 720
+            }}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <div className="absolute bottom-4 inset-x-0 flex justify-center space-x-4">
+            <button
+              onClick={captureImage}
+              className="bg-white px-6 py-3 rounded-full shadow-lg hover:bg-gray-50 transition-colors flex items-center"
+            >
+              <Camera size={20} className="text-gray-700 mr-2" />
+              Capture
+            </button>
+            <button
+              onClick={stopCamera}
+              className="bg-gray-500 text-white px-6 py-3 rounded-full shadow-lg hover:bg-gray-600 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : imagePreview ? (
+        <div className="relative h-full">
+          <img 
+            src={imagePreview} 
+            alt="Preview" 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute bottom-4 inset-x-0 flex justify-center">
+            <button
+              onClick={() => {
+                setImagePreview(null);
+                setSelectedImage(null);
+              }}
+              className="bg-red-500 text-white px-6 py-3 rounded-full shadow-lg hover:bg-red-600 transition-colors"
+            >
+              Remove Image
+            </button>
+          </div>
+        </div>
+      ) : (
+        // Initial View with buttons
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800">
+          <div className="flex flex-col items-center mb-6">
+            <Camera size={48} className="text-gray-400 dark:text-gray-500 mb-4" />
+            <p className="text-gray-600 dark:text-gray-300 text-center mb-8 px-4">
+              Take a photo or upload an image of your plant
+            </p>
+          </div>
+
+          <div className="flex space-x-4">
+            <button
+              onClick={startCamera}
+              className="bg-green-600 text-white px-6 py-3 rounded-full shadow-lg hover:bg-green-700 transition-colors flex items-center"
+            >
+              <Camera size={20} className="mr-2" />
+              Take Photo
+            </button>
+
+            <label className="bg-gray-100 dark:bg-gray-700 px-6 py-3 rounded-full shadow-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center cursor-pointer border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200">
+              <Upload size={20} className="mr-2" />
+              Upload Image
+              <input
+                type="file"
+                id="fileInput"
+                className="hidden"
+                accept="image/*"
+                onChange={handleImageUpload}
+              />
+            </label>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -416,52 +447,7 @@ const Diagnose = () => {
                     </div>
 
                     {/* Image Upload/Capture Area */}
-                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8">
-                      {useCamera ? (
-                        renderCameraView()
-                      ) : imagePreview ? (
-                        <div className="space-y-4">
-                          <img 
-                            src={imagePreview} 
-                            alt="Preview" 
-                            className="max-h-64 mx-auto rounded-lg"
-                          />
-                          <div className="flex justify-center gap-4">
-                            <button
-                              onClick={() => {
-                                setImagePreview(null);
-                                setSelectedImage(null);
-                              }}
-                              className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
-                            >
-                              Remove Image
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          <div className="flex justify-center gap-4">
-                            <button
-                              onClick={() => document.getElementById('fileInput').click()}
-                              className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center"
-                            >
-                              <Image className="w-5 h-5 mr-2" />
-                              Choose File
-                            </button>
-                            <button
-                              onClick={startCamera}
-                              className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center"
-                            >
-                              <Camera className="w-5 h-5 mr-2" />
-                              Use Camera
-                            </button>
-                          </div>
-                          <p className="text-center text-gray-600 dark:text-gray-300">
-                            or drag and drop an image here
-                          </p>
-                        </div>
-                      )}
-                    </div>
+                    {renderImageSection()}
 
                     <input
                       type="file"
