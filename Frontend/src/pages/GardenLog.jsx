@@ -285,13 +285,9 @@ const GardenLog = () => {
         } else if (err.message?.includes('Network Error') || err.code === 'NETWORK_ERROR') {
           errorMessage = 'Network connection error. Please check your internet connection.';
         } else if (err.status === 401 || err.error?.includes('unauthorized')) {
-          errorMessage = 'Your session has expired. Please log in again.';
-        } else if (err.status === 403) {
-          errorMessage = 'You do not have permission to view plants.';
-        } else if (err.status === 500) {
-          errorMessage = 'Server error. Please try again later.';
-        } else if (err.message) {
-          errorMessage = err.message;
+          errorMessage = 'Authentication failed. Please log in again.';
+        } else if (err.response?.data?.error) {
+          errorMessage = err.response.data.error;
         }
         
         setError(errorMessage);
@@ -343,11 +339,10 @@ const GardenLog = () => {
       const response = await plantAPI.updatePlant(plantId, { status: newStatus });
       
       if (response && response.success) {
-        // Update local state
-        setPlantLogs(prevLogs =>
-          prevLogs.map(plant =>
+        setPlants(prevPlants =>
+          prevPlants.map(plant =>
             plant._id === plantId || plant.id === plantId
-              ? { ...plant, status: newStatus, health: newStatus }
+              ? { ...plant, status: newStatus }
               : plant
           )
         );
@@ -391,6 +386,35 @@ const GardenLog = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+        <Sidebar
+          isMenuOpen={isMenuOpen}
+          setIsMenuOpen={setIsMenuOpen}
+          activeNavItem={activeNavItem}
+          setActiveNavItem={setActiveNavItem}
+        />
+        <div className="flex-1 overflow-auto">
+          <div className="p-8">
+            <div className="flex items-center justify-center h-64">
+              <div className="text-center">
+                <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
+                <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                >
+                  Reload Page
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar
@@ -401,27 +425,25 @@ const GardenLog = () => {
       />
 
       <div className="flex-1 overflow-auto">
-        <div className="p-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">Garden Log</h1>
-            <div className="relative">
+        <div className="p-6">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Garden Log</h1>
+            
+            {/* Search Bar */}
+            <div className="relative w-96">
+              <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search plants..."
-                className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl dark:bg-gray-800 dark:text-white focus:border-green-500 dark:focus:border-green-500 focus:outline-none transition-colors"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
-              <Search className="absolute left-4 top-3.5 text-gray-400" size={20} />
             </div>
           </div>
 
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <p className="text-red-600 dark:text-red-400">{error}</p>
-            </div>
-          )}
-
+          {/* Plants Grid */}
           {filteredPlants.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-gray-400 dark:text-gray-500 mb-4">

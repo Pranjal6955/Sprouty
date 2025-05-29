@@ -4,7 +4,8 @@ import {
   Calendar, Bell, TrendingUp, Search, Filter, 
   Upload, Camera, Menu, Home, User, Book, 
   X, Edit, Delete, Eye, AlertCircle, Info, 
-  Settings, LogOut, Leaf
+  Settings, LogOut, Leaf, Trash2, Scissors, 
+  Flower, Stethoscope, AlertTriangle
 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import { googleAuthService } from '../services/googleAuth';

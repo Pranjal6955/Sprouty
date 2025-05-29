@@ -81,17 +81,6 @@ function Login() {
         errorMessage = error.message;
       }
       
-      // Handle specific error cases
-      if (error.response?.status === 401) {
-        errorMessage = 'Invalid email or password. Please check your credentials.';
-      } else if (error.response?.status === 404) {
-        errorMessage = 'Account not found. Please check your email or sign up.';
-      } else if (error.response?.status === 500) {
-        errorMessage = 'Server error. Please try again later.';
-      } else if (!error.response) {
-        errorMessage = 'Network error. Please check your connection and try again.';
-      }
-      
       setError(errorMessage);
     }
   };

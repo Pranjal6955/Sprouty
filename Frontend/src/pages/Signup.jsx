@@ -161,16 +161,15 @@ function Signup() {
 
   const processGoogleAuth = async (idToken) => {
     try {
-      const backendAuth = await authAPI.googleAuth(idToken);
+      const response = await authAPI.googleAuth(idToken);
       
-      localStorage.setItem('authToken', backendAuth.token);
-      localStorage.setItem('user', JSON.stringify({
-        id: backendAuth.user.id || backendAuth.user._id,
-        name: backendAuth.user.name,
-        email: backendAuth.user.email,
-        avatar: backendAuth.user.avatar,
-        authProvider: backendAuth.user.authProvider
-      }));
+      if (response.token) {
+        localStorage.setItem('authToken', response.token);
+      }
+      
+      if (response.user) {
+        localStorage.setItem('user', JSON.stringify(response.user));
+      }
       
       setLoading(false);
       navigate('/dashboard');
