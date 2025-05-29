@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import LogoOJT from '../assets/LogoOJT.png';
-import { Upload, Loader, AlertCircle, CheckCircle, AlertTriangle, Camera, FileText, Calendar, Stethoscope, X } from 'lucide-react';
+import { Upload, Loader, AlertCircle, CheckCircle, AlertTriangle, Camera, FileText, Calendar, Stethoscope, X, Image } from 'lucide-react';
 import { diagnosisAPI, plantAPI } from '../services/api';
 
 const Diagnose = () => {
@@ -23,6 +23,9 @@ const Diagnose = () => {
   const [plants, setPlants] = useState([]);
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [showDiagnoseModal, setShowDiagnoseModal] = useState(false);
+  const [useCamera, setUseCamera] = useState(false);
+  const videoRef = React.useRef(null);
+  const streamRef = React.useRef(null);
 
   // Fetch plant data if plantId is provided
   useEffect(() => {
@@ -171,7 +174,7 @@ const Diagnose = () => {
           // Show service info
           if (response.data.serviceInfo) {
             if (response.data.serviceInfo.usingMockData) {
-              console.log('⚠ Using mock data:', response.data.serviceInfo.message);
+              console.log('⚠️ Using mock data:', response.data.serviceInfo.message);
             } else {
               console.log('✅ Real diagnosis completed');
             }
@@ -237,6 +240,43 @@ const Diagnose = () => {
     });
   };
 
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      videoRef.current.srcObject = stream;
+      streamRef.current = stream;
+      setUseCamera(true);
+    } catch (err) {
+      console.error('Error accessing camera:', err);
+      setError('Unable to access camera. Please check permissions.');
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      setUseCamera(false);
+    }
+  };
+
+  const captureImage = () => {
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    const imageDataUrl = canvas.toDataURL('image/jpeg');
+    setImagePreview(imageDataUrl);
+    stopCamera();
+  };
+
+  // Cleanup camera on unmount
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
+
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar 
@@ -264,7 +304,7 @@ const Diagnose = () => {
               {/* Left Section - Upload */}
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
                     <Upload size={24} />
                     Upload Image
                   </h2>
@@ -294,32 +334,73 @@ const Diagnose = () => {
                     </div>
                   </div>
 
-                  {/* Upload Area */}
+                  {/* Image Upload/Capture Area */}
                   <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8">
-                    {imagePreview ? (
+                    {useCamera ? (
+                      <div className="space-y-4">
+                        <video
+                          ref={videoRef}
+                          autoPlay
+                          playsInline
+                          className="w-full rounded-lg"
+                        />
+                        <div className="flex justify-center gap-4">
+                          <button
+                            onClick={captureImage}
+                            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                          >
+                            <Camera className="w-5 h-5 mr-2 inline-block" />
+                            Capture
+                          </button>
+                          <button
+                            onClick={stopCamera}
+                            className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                          >
+                            <X className="w-5 h-5 mr-2 inline-block" />
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : imagePreview ? (
                       <div className="space-y-4">
                         <img 
                           src={imagePreview} 
                           alt="Preview" 
                           className="max-h-64 mx-auto rounded-lg"
                         />
-                        <button
-                          onClick={() => {
-                            setImagePreview(null);
-                            setSelectedImage(null);
-                          }}
-                          className="text-sm text-red-600 hover:text-red-700"
-                        >
-                          Remove Image
-                        </button>
+                        <div className="flex justify-center gap-4">
+                          <button
+                            onClick={() => {
+                              setImagePreview(null);
+                              setSelectedImage(null);
+                            }}
+                            className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                          >
+                            Remove Image
+                          </button>
+                        </div>
                       </div>
                     ) : (
-                      <div
-                        className="cursor-pointer"
-                        onClick={() => document.getElementById('fileInput').click()}
-                      >
-                        <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                        <p className="mt-2 text-gray-600 dark:text-gray-400">Click to upload or drag and drop</p>
+                      <div className="space-y-4">
+                        <div className="flex justify-center gap-4">
+                          <button
+                            onClick={() => document.getElementById('fileInput').click()}
+                            className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center"
+                          >
+                            <Image className="w-5 h-5 mr-2" />
+                            Choose File
+                          </button>
+                          <button
+                            onClick={startCamera}
+                            className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center"
+                          >
+                            <Camera className="w-5 h-5 mr-2" />
+                            Use Camera
+                          </button>
+                        </div>
+                        <p className="text-center text-gray-600 dark:text-gray-300">
+                          or drag and drop an image here
+                        </p>
                       </div>
                     )}
                   </div>
@@ -341,7 +422,7 @@ const Diagnose = () => {
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       placeholder="Describe any symptoms or concerns..."
-                      className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg resize-none"
+                      className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                       rows="4"
                     />
                   </div>
@@ -371,7 +452,7 @@ const Diagnose = () => {
 
               {/* Right Section - Results */}
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm">
-                <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                <h2 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-900 dark:text-white">
                   <Stethoscope size={24} />
                   Diagnosis Results
                 </h2>
@@ -389,19 +470,19 @@ const Diagnose = () => {
                     {/* This preserves all the detailed disease information */}
                     {/* Just removing the outer container classes to fit the new layout */}
                     {/* Health Status */}
-                    <div className="mb-6 p-4 rounded-lg border">
+                    <div className="mb-6 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                       <div className="flex items-center mb-2">
                         {diagnosisResult.summary.isHealthy ? (
-                          <CheckCircle className="text-green-500 mr-2" size={24} />
+                          <CheckCircle className="text-green-500 dark:text-green-400 mr-2" size={24} />
                         ) : (
-                          <AlertTriangle className="text-red-500 mr-2" size={24} />
+                          <AlertTriangle className="text-red-500 dark:text-red-400 mr-2" size={24} />
                         )}
-                        <h3 className="text-lg font-medium">
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                           {diagnosisResult.summary.isHealthy ? 'Plant Appears Healthy' : 'Issues Detected'}
                         </h3>
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Overall Health: <span className="font-medium capitalize">{diagnosisResult.summary.overallHealth}</span>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        Overall Health: <span className="font-medium capitalize text-gray-900 dark:text-white">{diagnosisResult.summary.overallHealth}</span>
                       </p>
                       {diagnosisResult.summary.treatmentPriority !== 'low' && (
                         <p className="text-sm mt-1">
@@ -416,12 +497,12 @@ const Diagnose = () => {
                     {/* Diseases */}
                     {diagnosisResult.diagnosis.diseases && diagnosisResult.diagnosis.diseases.length > 0 && (
                       <div className="mb-6">
-                        <h4 className="font-medium text-gray-800 dark:text-white mb-3">Detected Diseases</h4>
+                        <h4 className="font-medium text-gray-900 dark:text-white mb-3">Detected Diseases</h4>
                         <div className="space-y-4">
                           {diagnosisResult.diagnosis.diseases.map((disease, index) => (
                             <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                               <div className="flex justify-between items-start mb-2">
-                                <h5 className="font-medium text-gray-800 dark:text-white">{disease.name}</h5>
+                                <h5 className="font-medium text-gray-900 dark:text-white">{disease.name}</h5>
                                 <div className="flex items-center space-x-2">
                                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(disease.severity)}`}>
                                     {disease.severity}
@@ -434,25 +515,25 @@ const Diagnose = () => {
                               
                               {disease.common_names && disease.common_names.length > 0 && (
                                 <div className="mb-2">
-                                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                                    Also known as: {disease.common_names.join(', ')}
+                                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                                    Also known as: <span className="text-gray-700 dark:text-gray-200">{disease.common_names.join(', ')}</span>
                                   </p>
                                 </div>
                               )}
                               
                               {disease.description && (
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{disease.description}</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-300">{disease.description}</p>
                               )}
                               
                               {disease.treatment && Object.keys(disease.treatment).length > 0 && (
                                 <div className="mt-3">
-                                  <h6 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Treatment Options:</h6>
+                                  <h6 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Treatment Options:</h6>
                                   <div className="space-y-1">
                                     {Object.entries(disease.treatment).map(([type, treatment]) => (
                                       treatment && (
                                         <div key={type} className="text-sm">
-                                          <span className="font-medium capitalize text-gray-600 dark:text-gray-400">{type}:</span>
-                                          <span className="ml-1 text-gray-600 dark:text-gray-400">{treatment}</span>
+                                          <span className="font-medium capitalize text-gray-700 dark:text-gray-300">{type}:</span>
+                                          <span className="ml-1 text-gray-600 dark:text-gray-300">{treatment}</span>
                                         </div>
                                       )
                                     ))}
@@ -468,12 +549,12 @@ const Diagnose = () => {
                     {/* Recommendations */}
                     {diagnosisResult.diagnosis.recommendations && (
                       <div>
-                        <h4 className="font-medium text-gray-800 dark:text-white mb-3">Recommendations</h4>
+                        <h4 className="font-medium text-gray-900 dark:text-white mb-3">Recommendations</h4>
                         <div className="space-y-3">
                           {diagnosisResult.diagnosis.recommendations.immediate_actions && diagnosisResult.diagnosis.recommendations.immediate_actions.length > 0 && (
                             <div>
                               <h6 className="text-sm font-medium text-red-600 dark:text-red-400 mb-1">Immediate Actions:</h6>
-                              <ul className="text-sm text-gray-600 dark:text-gray-400 list-disc list-inside space-y-1">
+                              <ul className="text-sm text-gray-600 dark:text-gray-300 list-disc list-inside space-y-1">
                                 {diagnosisResult.diagnosis.recommendations.immediate_actions.map((action, index) => (
                                   <li key={index}>{action}</li>
                                 ))}
@@ -484,7 +565,7 @@ const Diagnose = () => {
                           {diagnosisResult.diagnosis.recommendations.preventive_measures && diagnosisResult.diagnosis.recommendations.preventive_measures.length > 0 && (
                             <div>
                               <h6 className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">Preventive Measures:</h6>
-                              <ul className="text-sm text-gray-600 dark:text-gray-400 list-disc list-inside space-y-1">
+                              <ul className="text-sm text-gray-600 dark:text-gray-300 list-disc list-inside space-y-1">
                                 {diagnosisResult.diagnosis.recommendations.preventive_measures.map((measure, index) => (
                                   <li key={index}>{measure}</li>
                                 ))}
@@ -506,7 +587,7 @@ const Diagnose = () => {
               </div>
             </div>
           ) : (
-            // Plant Grid View
+            // Plant Grid View - Fixed syntax
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {plants.map((plant) => (
                 <div key={plant._id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
@@ -530,9 +611,9 @@ const Diagnose = () => {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600 dark:text-gray-400">Health Status</span>
                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        plant.health === 'Healthy' ? 'bg-green-100 text-green-600' :
-                        plant.health === 'Needs Attention' ? 'bg-yellow-100 text-yellow-600' :
-                        'bg-red-100 text-red-600'
+                        plant.health === 'Healthy' ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' :
+                        plant.health === 'Needs Attention' ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                        'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
                       }`}>
                         {plant.health}
                       </span>
@@ -541,12 +622,16 @@ const Diagnose = () => {
                     {/* Care Info */}
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <p className="text-gray-500">Last Watered</p>
-                        <p className="font-medium">{new Date(plant.lastWatered).toLocaleDateString()}</p>
+                        <p className="text-gray-500 dark:text-gray-400">Last Watered</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">
+                          {plant.lastWatered ? formatDate(plant.lastWatered) : 'Not yet watered'}
+                        </p>
                       </div>
                       <div>
-                        <p className="text-gray-500">Last Fertilized</p>
-                        <p className="font-medium">{new Date(plant.lastFertilized).toLocaleDateString()}</p>
+                        <p className="text-gray-500 dark:text-gray-400">Last Fertilized</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">
+                          {plant.lastFertilized ? formatDate(plant.lastFertilized) : 'Not yet fertilized'}
+                        </p>
                       </div>
                     </div>
 
@@ -570,3 +655,4 @@ const Diagnose = () => {
 };
 
 export default Diagnose;
+
