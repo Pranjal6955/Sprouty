@@ -8,11 +8,12 @@ import { reminderAPI } from '../services/api';
 const Reminder = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeNavItem, setActiveNavItem] = useState('Reminders');
+  const [activeSection, setActiveSection] = useState('upcoming');
+  const [completedReminders, setCompletedReminders] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [reminders, setReminders] = useState([]);
   const [plants, setPlants] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
   const [showAddReminder, setShowAddReminder] = useState(false);
   const [newReminder, setNewReminder] = useState({
     plant: "",
@@ -24,9 +25,6 @@ const Reminder = () => {
     notes: "",
     notificationMethods: ["popup"]
   });
-
-  const [activeSection, setActiveSection] = useState('upcoming');
-  const [completedReminders, setCompletedReminders] = useState([]);
 
   // Fetch reminders and plants on component mount
   useEffect(() => {
@@ -143,17 +141,49 @@ const Reminder = () => {
     }
   };
 
-  const handleMarkComplete = async (reminderId) => {
+  // Handle completing a reminder
+  const handleCompleteReminder = async (reminderId) => {
     try {
+      setLoading(true);
       const response = await reminderAPI.completeReminder(reminderId);
+      
       if (response.success !== false) {
+        // Update UI to reflect the completed reminder
+        setReminders(prev => {
+          const updatedReminders = prev.map(reminder => {
+            if (reminder._id === reminderId) {
+              return { ...reminder, completed: true, completedDate: new Date() };
+            }
+            return reminder;
+          });
+          return updatedReminders;
+        });
+        
+        // If the reminder is recurring, a new instance will be in the response
+        // We need to add this new instance to our reminders list
+        if (response.data && response.data.recurring && !response.data.completed) {
+          setReminders(prev => [...prev, response.data]);
+        }
+        
+        // Move to completed list if we're tracking those
         const completedReminder = reminders.find(r => r._id === reminderId);
-        setReminders(reminders.filter(r => r._id !== reminderId));
-        setCompletedReminders([...completedReminders, { ...completedReminder, completed: true }]);
+        if (completedReminder) {
+          setCompletedReminders(prev => [
+            { ...completedReminder, completed: true, completedDate: new Date() },
+            ...prev
+          ]);
+        }
+        
+        setError('');
+        console.log('Reminder completed successfully');
+      } else {
+        setError('Failed to complete reminder: ' + (response.error || 'Unknown error'));
       }
     } catch (err) {
-      console.error('Error marking reminder as complete:', err);
-      setError('Failed to mark reminder as complete');
+      console.error('Error completing reminder:', err);
+      setError('Failed to complete reminder. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -327,7 +357,7 @@ const Reminder = () => {
                         {activeSection === 'upcoming' ? (
                           <>
                             <button 
-                              onClick={() => handleMarkComplete(reminder._id)}
+                              onClick={() => handleCompleteReminder(reminder._id)}
                               className="text-green-500 hover:text-green-600 p-2"
                             >
                               ✓

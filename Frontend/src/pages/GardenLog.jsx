@@ -75,6 +75,31 @@ const PlantLogCard = ({ plant, onNotesUpdate, onStatusUpdate }) => {
   const formatDate = (dateString) => {
     if (!dateString) return 'Never';
     try {
+      // Get today, yesterday, and this week for relative time formatting
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      const oneWeekAgo = new Date(today);
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      
+      const date = new Date(dateString);
+      const dateDay = new Date(date);
+      dateDay.setHours(0, 0, 0, 0);
+      
+      // Show relative dates for recent activities
+      if (dateDay.getTime() === today.getTime()) {
+        return `Today at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      } else if (dateDay.getTime() === yesterday.getTime()) {
+        return `Yesterday at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      } else if (date > oneWeekAgo) {
+        return date.toLocaleDateString([], { weekday: 'long' }) + 
+               ` at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      }
+      
+      // Default to standard date format for older dates
       return new Date(dateString).toLocaleDateString();
     } catch {
       return dateString;
@@ -85,6 +110,7 @@ const PlantLogCard = ({ plant, onNotesUpdate, onStatusUpdate }) => {
   const getLastCareAction = (careHistory, actionType) => {
     if (!careHistory || !Array.isArray(careHistory)) return 'Never';
     
+    // Include reminder-initiated care actions
     const actions = careHistory.filter(action => action.actionType === actionType);
     if (actions.length === 0) return 'Never';
     

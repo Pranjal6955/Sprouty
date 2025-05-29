@@ -242,6 +242,30 @@ exports.completeReminder = async (req, res, next) => {
     reminder.completed = true;
     reminder.completedDate = new Date();
     
+    // Find the associated plant and add to care history
+    const plant = await Plant.findById(reminder.plant);
+    if (plant) {
+      // Add to plant's care history
+      plant.careHistory.unshift({
+        actionType: reminder.type === 'Water' ? 'Watered' : 
+                    reminder.type === 'Fertilize' ? 'Fertilized' : 
+                    reminder.type === 'Prune' ? 'Pruned' : 'Other',
+        notes: reminder.notes || `${reminder.type} reminder completed`,
+        date: reminder.completedDate
+      });
+      
+      // Update last action dates based on type
+      if (reminder.type === 'Water') {
+        plant.lastWatered = reminder.completedDate;
+      } else if (reminder.type === 'Fertilize') {
+        plant.lastFertilized = reminder.completedDate;
+      } else if (reminder.type === 'Prune') {
+        plant.lastPruned = reminder.completedDate;
+      }
+      
+      await plant.save();
+    }
+    
     // If recurring reminder, reschedule it
     if (reminder.recurring) {
       const rescheduled = reminder.reschedule();
