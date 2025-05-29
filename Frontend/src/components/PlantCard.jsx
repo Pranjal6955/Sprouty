@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Stethoscope } from 'lucide-react';
 
 const PlantCard = ({ plant, onDelete, onEdit }) => {
   const navigate = useNavigate();
@@ -8,6 +9,11 @@ const PlantCard = ({ plant, onDelete, onEdit }) => {
     e.preventDefault();
     e.stopPropagation();
     navigate('/diagnose');
+  };
+
+  const handleViewDiagnose = (e) => {
+    e.stopPropagation();
+    navigate(`/diagnose/${plant._id}`);
   };
 
   return (
@@ -25,6 +31,13 @@ const PlantCard = ({ plant, onDelete, onEdit }) => {
           className="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
         >
           <span>Diagnose Plant</span>
+        </button>
+        <button
+          onClick={handleViewDiagnose}
+          className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg transition-colors"
+        >
+          <Stethoscope size={18} />
+          <span>View Diagnose</span>
         </button>
       </div>
     </div>
