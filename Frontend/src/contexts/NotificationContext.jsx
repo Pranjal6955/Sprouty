@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { reminderAPI } from '../services/api';
 
 const NotificationContext = createContext();
@@ -14,6 +14,104 @@ export const useNotifications = () => {
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [isCheckingReminders, setIsCheckingReminders] = useState(false);
+  const [reminderNotifications, setReminderNotifications] = useState({});
+  const notificationRef = useRef(null);
+
+  // Establish global reference for the notification manager
+  // This allows direct access from API service and other non-React components
+  useEffect(() => {
+    // Create notification manager interface
+    const notificationManager = {
+      addNotification: (notification) => {
+        addNotification(notification);
+      },
+      processDueReminders: (reminders) => {
+        processReminderNotifications(reminders);
+      },
+      removeReminderNotification: (reminderId) => {
+        if (reminderId) {
+          removeNotification(`reminder-${reminderId}`);
+        }
+      },
+      clearAllNotifications: clearAllNotifications
+    };
+
+    // Store reference in window for global access
+    window.notificationManager = notificationManager;
+    notificationRef.current = notificationManager;
+
+    // Cleanup function
+    return () => {
+      delete window.notificationManager;
+    };
+  }, []);
+
+  // Enhanced function to process reminder notifications
+  const processReminderNotifications = (reminders) => {
+    if (!Array.isArray(reminders) || reminders.length === 0) return;
+    
+    console.log('Processing due reminders for notifications:', reminders.length);
+    
+    // Create notifications for due reminders
+    const newNotifications = reminders.map(reminder => {
+      // Extract plant information
+      let plantName = 'Unknown Plant';
+      let plantImage = null;
+      
+      if (reminder.plant) {
+        if (typeof reminder.plant === 'object') {
+          plantName = reminder.plant.nickname || reminder.plant.name || 'Unknown Plant';
+          plantImage = reminder.plant.mainImage;
+        } else {
+          plantName = 'Your Plant';
+        }
+      }
+      
+      // Create the notification object
+      return {
+        id: `reminder-${reminder._id}`,
+        type: 'reminder',
+        title: `${reminder.type} Reminder`,
+        message: `Time to ${reminder.type.toLowerCase()} your ${plantName}!`,
+        plantName: plantName,
+        plantImage: plantImage,
+        reminderType: reminder.type,
+        timestamp: new Date(),
+        reminderId: reminder._id,
+        reminderData: reminder, // Store full reminder data
+        priority: 'high', // Mark reminders as high priority
+        autoClose: false // Don't auto close reminder notifications
+      };
+    });
+
+    // Update the state with new notifications, avoiding duplicates
+    setNotifications(prev => {
+      const existingIds = prev.map(n => n.id);
+      const uniqueNew = newNotifications.filter(n => !existingIds.includes(n.id));
+      
+      if (uniqueNew.length > 0) {
+        console.log('Adding new notifications:', uniqueNew.length);
+        
+        // Mark notifications as sent to avoid duplicates
+        setTimeout(async () => {
+          uniqueNew.forEach(async (notification) => {
+            if (notification.reminderId) {
+              try {
+                await reminderAPI.markNotificationSent(notification.reminderId);
+                console.log('Marked notification as sent for reminder:', notification.reminderId);
+              } catch (error) {
+                console.error('Error marking notification as sent:', error);
+              }
+            }
+          });
+        }, 1000);
+        
+        return [...prev, ...uniqueNew];
+      }
+      
+      return prev;
+    });
+  };
 
   // Check for due reminders with better interval management
   useEffect(() => {
@@ -27,70 +125,9 @@ export const NotificationProvider = ({ children }) => {
         console.log('Checking for due reminders...');
         const response = await reminderAPI.getDueReminders();
         
-        // Handle both success flag response and direct data response
-        let dueReminders = [];
-        if (response.success !== false) {
-          dueReminders = response.data || response;
-          if (!Array.isArray(dueReminders)) {
-            dueReminders = [];
-          }
-        }
-        
-        // Only log if there are reminders or it's been a while since last log
-        if (dueReminders.length > 0) {
-          console.log('Due reminders found:', dueReminders.length);
-          
-          // Create notifications for due reminders
-          const newNotifications = dueReminders.map(reminder => {
-            console.log('Processing due reminder:', reminder);
-            
-            // Handle plant data - backend populates plant object
-            let plantName = 'Unknown Plant';
-            let plantImage = null;
-            
-            if (reminder.plant) {
-              if (typeof reminder.plant === 'object') {
-                plantName = reminder.plant.nickname || reminder.plant.name || 'Unknown Plant';
-                plantImage = reminder.plant.mainImage;
-              } else {
-                // If plant is just an ID, we can't get the name without another API call
-                plantName = 'Your Plant';
-              }
-            }
-            
-            return {
-              id: `reminder-${reminder._id}`,
-              type: 'reminder',
-              title: `${reminder.type} Reminder`,
-              message: `Time to ${reminder.type.toLowerCase()} your ${plantName}!`,
-              plantName: plantName,
-              plantImage: plantImage,
-              reminderType: reminder.type,
-              timestamp: new Date(),
-              reminderId: reminder._id,
-              reminderData: reminder // Store full reminder data
-            };
-          });
-
-          setNotifications(prev => {
-            // Avoid duplicate notifications
-            const existingIds = prev.map(n => n.reminderId);
-            const uniqueNew = newNotifications.filter(n => !existingIds.includes(n.reminderId));
-            console.log('Adding new notifications:', uniqueNew.length);
-            return [...prev, ...uniqueNew];
-          });
-
-          // Mark notifications as sent after a delay to allow frontend to process
-          setTimeout(async () => {
-            for (const reminder of dueReminders) {
-              try {
-                await reminderAPI.markNotificationSent(reminder._id);
-                console.log('Marked notification as sent for reminder:', reminder._id);
-              } catch (markError) {
-                console.error('Error marking notification as sent:', markError);
-              }
-            }
-          }, 5000); // 5 second delay
+        // Handle response
+        if (response.success !== false && response.data) {
+          processReminderNotifications(response.data);
         }
       } catch (error) {
         console.error('Error checking reminders:', error);
@@ -102,10 +139,10 @@ export const NotificationProvider = ({ children }) => {
     // Check immediately on mount
     checkReminders();
 
-    // Set up interval to check every 5 minutes instead of every minute
+    // Set up interval to check every 3 minutes instead of 5 for more responsive notifications
     intervalId = setInterval(() => {
       checkReminders();
-    }, 5 * 60 * 1000); // 5 minutes
+    }, 3 * 60 * 1000); 
 
     // Cleanup function
     return () => {
@@ -113,11 +150,11 @@ export const NotificationProvider = ({ children }) => {
         clearInterval(intervalId);
       }
     };
-  }, []); // Empty dependency array to prevent recreating the interval
+  }, [isCheckingReminders]); // Add dependency to prevent concurrent checks
 
   const addNotification = (notification) => {
     const newNotification = {
-      id: Date.now(),
+      id: notification.id || `notification-${Date.now()}`,
       timestamp: new Date(),
       ...notification
     };
@@ -141,7 +178,8 @@ export const NotificationProvider = ({ children }) => {
     addNotification,
     removeNotification,
     clearNotification,
-    clearAllNotifications
+    clearAllNotifications,
+    processDueReminders: processReminderNotifications
   };
 
   return (

@@ -597,6 +597,12 @@ export const reminderAPI = {
     try {
       const response = await axiosInstance.get('/reminders/due');
       console.log('Fetched due reminders:', response.data);
+      
+      // Immediately handle notifications if due reminders exist
+      if (response.data?.data?.length > 0 && window.notificationManager) {
+        window.notificationManager.processDueReminders(response.data.data);
+      }
+      
       return response.data;
     } catch (error) {
       console.error('Error fetching due reminders:', error);
@@ -626,10 +632,16 @@ export const reminderAPI = {
     }
   },
 
-  // Complete reminder
+  // Complete reminder with notification update
   completeReminder: async (reminderId) => {
     try {
       const response = await axiosInstance.put(`/reminders/${reminderId}/complete`);
+      
+      // Trigger notification update after completing a reminder
+      if (window.notificationManager) {
+        window.notificationManager.removeReminderNotification(reminderId);
+      }
+      
       return response.data;
     } catch (error) {
       console.error('Error completing reminder:', error);
