@@ -124,16 +124,16 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 px-4 py-8 flex items-center justify-center">
-      <div className="w-full max-w-md p-6 md:p-8 space-y-6 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg border border-green-100 dark:border-gray-700">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="w-full max-w-md p-8 space-y-6 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg border border-green-100 dark:border-gray-700">
         {/* Logo Header */}
         <div className="text-center">
           <img 
             src={LogoOJT} 
             alt="Sprouty Logo" 
-            className="h-14 w-14 md:h-16 md:w-16 mx-auto mb-4"
+            className="h-16 w-16 mx-auto mb-4"
           />
-          <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">
             Welcome Back
           </h1>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Sign in to your Sprouty account</p>

@@ -541,8 +541,7 @@ const Dashboard = () => {
   );
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Sidebar */}
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar 
         isMenuOpen={isMenuOpen}
         setIsMenuOpen={setIsMenuOpen}
@@ -550,43 +549,41 @@ const Dashboard = () => {
         setActiveNavItem={setActiveNavItem}
       />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col h-full min-h-screen overflow-hidden">
-        <div className="flex flex-col h-full">
-          {/* Main scroll area */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-4 lg:p-6">
-              {/* Header */}
-              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+      <div className="flex-1 overflow-hidden">
+        <div className="flex h-full">
+          <div className="flex-1 overflow-y-auto scrollbar-hide">
+            <div className="p-6">
+              {/* Updated Header Section - Removed Add Plant button */}
+              <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center">
-                  <img src={LogoOJT} alt="Sprouty Logo" className="h-12 w-12 lg:h-16 lg:w-16" />
-                  <h1 className="text-xl lg:text-2xl font-bold text-gray-800 dark:text-white ml-2">
-                    Plant Dashboard
-                  </h1>
+                  <img 
+                    src={LogoOJT} 
+                    alt="Sprouty Logo" 
+                    className="h-17 w-16"
+                  />
+                  <h1 className="text-2xl font-bold text-gray-800 dark:text-white ml-2">Plant Dashboard</h1>
                 </div>
-                <div className="flex items-center gap-2 lg:gap-4">
+                <div className="flex items-center gap-4">
                   <NotificationButton />
                   <DarkModeToggle />
                 </div>
               </div>
 
-              {/* Plants Section */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 lg:p-6">
-                {/* Plants Header */}
-                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
+              {/* Plants Section - Updated UI */}
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-all hover:shadow-md">
+                <div className="flex justify-between items-center mb-6">
                   <div>
-                    <h2 className="text-lg lg:text-xl font-semibold text-gray-800 dark:text-white">
-                      My Plants
-                    </h2>
+                    <h2 className="text-xl font-semibold text-gray-800 dark:text-white">My Plants</h2>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                       {filteredPlants.length} {filteredPlants.length === 1 ? 'plant' : 'plants'} in your garden
                     </p>
                   </div>
-                  <div className="flex flex-col sm:flex-row w-full lg:w-auto gap-2">
+                  <div className="flex items-center gap-4">
+                    {/* Add Health Filter Dropdown */}
                     <select
                       value={healthFilter}
                       onChange={(e) => setHealthFilter(e.target.value)}
-                      className="w-full sm:w-auto px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
+                      className="px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200"
                     >
                       {healthStatusOptions.map(option => (
                         <option key={option.value} value={option.value}>
@@ -594,127 +591,224 @@ const Dashboard = () => {
                         </option>
                       ))}
                     </select>
+                    
+                    {/* Existing Add Plant button */}
                     <button 
                       onClick={handleAddPlant}
-                      className="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center justify-center"
+                      className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors shadow-sm"
                     >
                       <Plus size={20} className="mr-1" /> Add Plant
                     </button>
                   </div>
                 </div>
 
-                {/* Plants Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-                  {filteredPlants.map(plant => (
-                    <div 
-                      key={plant.id} 
-                      className="group relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all duration-300 cursor-pointer"
-                      onClick={() => handlePlantClick(plant)}
-                    >
-                      {/* Plant Image */}
-                      <div className="aspect-square overflow-hidden bg-gray-100 dark:bg-gray-700">
-                        <img 
-                          src={plant.image} 
-                          alt={plant.name} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          onError={(e) => handleImageError(e, plant.name)}
-                        />
-                      </div>
-                      
-                      {/* Quick Actions Overlay - Update this section */}
-                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="flex gap-2 bg-black/20 backdrop-blur-sm p-1 rounded-lg">
-                          <button 
-                            className="p-1.5 rounded-lg hover:bg-green-500/80 transition-colors"
-                            onClick={(e) => handleWaterClick(e, plant.id)}
-                            title="Water Plant"
-                          >
-                            <Droplets size={16} className="text-white" />
-                          </button>
-                          <button 
-                            className="p-1.5 rounded-lg hover:bg-purple-500/80 transition-colors"
-                            onClick={(e) => handleFertilizeClick(e, plant.id)}
-                            title="Fertilize Plant"
-                          >
-                            <Flower size={16} className="text-white" />
-                          </button>
-                          <button 
-                            className="p-1.5 rounded-lg hover:bg-blue-500/80 transition-colors"
-                            onClick={(e) => handlePruningClick(e, plant.id)}
-                            title="Prune Plant"
-                          >
-                            <Scissors size={16} className="text-white" />
-                          </button>
-                          <div className="w-px h-4 my-auto bg-white/20"></div>
-                          <button 
-                            className="p-1.5 rounded-lg hover:bg-white/20 transition-colors"
-                            onClick={(e) => handleEditClick(e, plant)}
-                            title="Edit Plant"
-                          >
-                            <Edit size={16} className="text-white" />
-                          </button>
-                          <button 
-                            className="p-1.5 rounded-lg hover:bg-red-500/80 transition-colors"
-                            onClick={(e) => handleDeleteClick(e, plant.id)}
-                            title="Delete Plant"
-                          >
-                            <Trash2 size={16} className="text-white" />
-                          </button>
+                {filteredPlants.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-700 border-dashed">
+                    <Camera size={48} className="mx-auto mb-4 text-gray-400 dark:text-gray-500" />
+                    <p className="font-medium dark:text-gray-300">
+                      {healthFilter === 'All' 
+                        ? 'No plants yet. Add your first plant!'
+                        : `No ${healthFilter.toLowerCase()} plants found`
+                      }
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredPlants.map(plant => (
+                      <div 
+                        key={plant.id} 
+                        className="group relative bg-white dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 hover:shadow-lg transition-all duration-300 cursor-pointer"
+                        onClick={() => handlePlantClick(plant)}
+                      >
+                        {/* Plant Image */}
+                        <div className="aspect-square overflow-hidden bg-gray-100 dark:bg-gray-700">
+                          <img 
+                            src={plant.image} 
+                            alt={plant.name} 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            onError={(e) => handleImageError(e, plant.name)}
+                          />
                         </div>
-                      </div>
-
-                      {/* Plant Info */}
-                      <div className="p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h3 className="font-semibold text-gray-800 dark:text-white">{plant.nickname}</h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">{plant.species}</p>
-                          </div>
-                          <div className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                            plant.health === 'Healthy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                            plant.health === 'Needs Attention' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                            'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                          }`}>
-                            {plant.health || plant.status || 'Healthy'}
+                        
+                        {/* Quick Actions Overlay - Update this section */}
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex gap-2 bg-black/20 backdrop-blur-sm p-1 rounded-lg">
+                            <button 
+                              className="p-1.5 rounded-lg hover:bg-green-500/80 transition-colors"
+                              onClick={(e) => handleWaterClick(e, plant.id)}
+                              title="Water Plant"
+                            >
+                              <Droplets size={16} className="text-white" />
+                            </button>
+                            <button 
+                              className="p-1.5 rounded-lg hover:bg-purple-500/80 transition-colors"
+                              onClick={(e) => handleFertilizeClick(e, plant.id)}
+                              title="Fertilize Plant"
+                            >
+                              <Flower size={16} className="text-white" />
+                            </button>
+                            <button 
+                              className="p-1.5 rounded-lg hover:bg-blue-500/80 transition-colors"
+                              onClick={(e) => handlePruningClick(e, plant.id)}
+                              title="Prune Plant"
+                            >
+                              <Scissors size={16} className="text-white" />
+                            </button>
+                            <div className="w-px h-4 my-auto bg-white/20"></div>
+                            <button 
+                              className="p-1.5 rounded-lg hover:bg-white/20 transition-colors"
+                              onClick={(e) => handleEditClick(e, plant)}
+                              title="Edit Plant"
+                            >
+                              <Edit size={16} className="text-white" />
+                            </button>
+                            <button 
+                              className="p-1.5 rounded-lg hover:bg-red-500/80 transition-colors"
+                              onClick={(e) => handleDeleteClick(e, plant.id)}
+                              title="Delete Plant"
+                            >
+                              <Trash2 size={16} className="text-white" />
+                            </button>
                           </div>
                         </div>
 
-                        {/* Plant Stats with Diagnose Button */}
-                        <div className="mt-4">
-                          <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
-                            <div className="flex items-center text-gray-600 dark:text-gray-300">
-                              <Droplets size={16} className="mr-2 text-blue-500" />
-                              <span>{plant.lastWatered}</span>
+                        {/* Plant Info */}
+                        <div className="p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h3 className="font-semibold text-gray-800 dark:text-white">{plant.nickname}</h3>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">{plant.species}</p>
                             </div>
-                            <div className="flex items-center text-gray-600 dark:text-gray-300">
-                              <Calendar size={16} className="mr-2 text-gray-400" />
-                              <span>Added {plant.dateAdded}</span>
+                            <div className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                              plant.health === 'Healthy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                              plant.health === 'Needs Attention' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                              'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                            }`}>
+                              {plant.health || plant.status || 'Healthy'}
                             </div>
                           </div>
-                          <button
-                            onClick={(e) => handleDiagnose(e, plant)}
-                            className="w-full mt-2 flex items-center justify-center gap-2 px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition-colors"
-                          >
-                            <Stethoscope size={16} />
-                            <span>Diagnose Plant</span>
-                          </button>
+
+                          {/* Plant Stats with Diagnose Button */}
+                          <div className="mt-4">
+                            <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
+                              <div className="flex items-center text-gray-600 dark:text-gray-300">
+                                <Droplets size={16} className="mr-2 text-blue-500" />
+                                <span>{plant.lastWatered}</span>
+                              </div>
+                              <div className="flex items-center text-gray-600 dark:text-gray-300">
+                                <Calendar size={16} className="mr-2 text-gray-400" />
+                                <span>Added {plant.dateAdded}</span>
+                              </div>
+                            </div>
+                            <button
+                              onClick={(e) => handleDiagnose(e, plant)}
+                              className="w-full mt-2 flex items-center justify-center gap-2 px-3 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition-colors"
+                            >
+                              <Stethoscope size={16} />
+                              <span>Diagnose Plant</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Weather Widget - Make it full width on mobile, side panel on desktop */}
-          <div className="w-full lg:w-80 lg:fixed lg:right-0 lg:top-0 lg:bottom-0 border-t lg:border-l border-gray-200 dark:border-gray-700">
+          {/* Right Side - Weather Widget (simplified version) */}
+          <div className="w-80 border-l border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden">
             <Weather />
           </div>
         </div>
       </div>
 
-      {/* ...existing modals... */}
+      {/* Close notification dropdown when clicking outside */}
+      {showNotifications && (
+        <div 
+          className="fixed inset-0 z-40"
+          onClick={() => setShowNotifications(false)}
+        />
+      )}
+
+      {/* Replace Camera Modal with AddPlant Component */}
+      {showAddPlant && (
+        <AddPlant 
+          onAddPlant={handleSavePlant} 
+          onCancel={() => setShowAddPlant(false)} 
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingPlant && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md">
+            <div className="flex items-center mb-4">
+              <AlertTriangle size={24} className="text-red-500 mr-2" />
+              <h3 className="text-xl font-semibold text-gray-800 dark:text-white">Delete Plant</h3>
+            </div>
+            
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              Are you sure you want to delete <span className="font-semibold">{deletingPlant.nickname}</span>? This action cannot be undone.
+            </p>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setDeletingPlant(null)}
+                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} className="mr-2" />
+                    Delete Plant
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Plant Details Modal */}
+      {selectedPlant && (
+        <PlantDetails 
+          plant={selectedPlant} 
+          onClose={() => setSelectedPlant(null)}
+          onUpdate={(updatedPlant) => {
+            // Update the plant in the plants list
+            setPlants(prevPlants => 
+              prevPlants.map(p => 
+                p.id === updatedPlant.id ? updatedPlant : p
+              )
+            );
+            // Update the selected plant for the modal
+            setSelectedPlant(updatedPlant);
+          }}
+        />
+      )}
+
+      {/* Add EditPlant Modal */}
+      {editingPlant && (
+        <EditPlant
+          plant={editingPlant}
+          onSave={handlePlantUpdate}
+          onCancel={() => setEditingPlant(null)}
+        />
+      )}
     </div>
   );
 };

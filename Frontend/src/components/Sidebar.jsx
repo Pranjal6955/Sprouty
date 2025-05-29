@@ -73,35 +73,23 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen, activeNavItem, setActiveNavItem })
   ];
 
   return (
-    <div className={`fixed md:relative z-50 bg-white dark:bg-gray-800 h-full shadow-lg transition-all duration-300 ${
-      isMenuOpen ? 'w-64' : 'w-0 md:w-16'
+    <div className={`bg-white dark:bg-gray-800 h-full shadow-lg transition-all duration-300 ease-in-out ${
+      isMenuOpen ? 'w-64' : 'w-16'
     } flex flex-col border-r border-gray-100 dark:border-gray-700`}>
-      {/* Overlay for mobile */}
-      {isMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 md:hidden" 
-          onClick={() => setIsMenuOpen(false)}
-        />
-      )}
-      
-      <div className={`${isMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} 
-        transition-transform duration-300 h-full flex flex-col bg-white dark:bg-gray-800 relative z-10`}>
-        {/* Hamburger Menu */}
-        <div className="p-4 flex justify-between items-center">
-          <button 
-            onClick={() => setIsMenuOpen(!isMenuOpen)} 
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
-            {isMenuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
-          {isMenuOpen && (
-            <span className="text-lg font-semibold text-gray-900 dark:text-white">Menu</span>
-          )}
-        </div>
+      {/* Hamburger Menu only */}
+      <div className="p-4 flex justify-start">
+        <button 
+          onClick={() => setIsMenuOpen(!isMenuOpen)} 
+          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        >
+          <Menu size={22} className="text-gray-600 dark:text-gray-400" />
+        </button>
+      </div>
 
-        {/* Navigation Items */}
-        <div className="flex-1 px-2 overflow-y-auto">
-          <div className="space-y-2">
+      {/* Navigation Items - Only show when menu is open */}
+      <div className="flex-1 px-2">
+        {isMenuOpen && (
+          <div className="space-y-4 mt-4">
             {navItems.map((item) => (
               <NavItem 
                 key={item.id}
@@ -112,20 +100,20 @@ const Sidebar = ({ isMenuOpen, setIsMenuOpen, activeNavItem, setActiveNavItem })
               />
             ))}
           </div>
-        </div>
+        )}
+      </div>
 
-        {/* Logout Button */}
-        <div className="p-2 border-t border-gray-100 dark:border-gray-700">
-          <button 
-            onClick={handleLogout} 
-            className={`flex items-center justify-center w-full p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors ${
-              isMenuOpen ? 'justify-start px-4' : 'justify-center'
-            }`}
-          >
-            <LogOut size={20} />
-            {isMenuOpen && <span className="ml-3 font-medium">Log Out</span>}
-          </button>
-        </div>
+      {/* Logout Button - Always visible */}
+      <div className="p-2 border-t border-gray-100 dark:border-gray-700">
+        <button 
+          onClick={handleLogout} 
+          className={`flex items-center justify-center w-full p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors ${
+            isMenuOpen ? 'justify-start px-4' : 'justify-center'
+          }`}
+        >
+          <LogOut size={20} />
+          {isMenuOpen && <span className="ml-3 font-medium">Log Out</span>}
+        </button>
       </div>
     </div>
   );
