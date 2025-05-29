@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {FcGoogle} from 'react-icons/fc';
 import { authAPI } from '../services/api';
-import { googleAuthService } from '../services/googleAuth';
 import LogoOJT from '../assets/LogoOJT.png';
 import { useTheme } from '../components/ThemeProvider';
 
@@ -125,90 +123,6 @@ function Login() {
     setResetMessage({ type: '', text: '' });
   };
 
-  // Google Auth handler
-  const handleGoogleSignIn = async () => {
-    setError('');
-    setLoading(true);
-    
-    try {
-      // Try One Tap first
-      try {
-        const idToken = await googleAuthService.signInWithPopup();
-        await processGoogleAuth(idToken);
-        return;
-      } catch (oneTapError) {
-        console.log('One Tap failed, showing manual button');
-      }
-
-      // Fallback to button-based auth
-      const buttonId = 'google-signin-button-' + Date.now();
-      const tempDiv = document.createElement('div');
-      tempDiv.id = buttonId;
-      tempDiv.style.position = 'fixed';
-      tempDiv.style.top = '-1000px';
-      document.body.appendChild(tempDiv);
-
-      await googleAuthService.renderSignInButton(buttonId, {
-        callback: async (response) => {
-          document.body.removeChild(tempDiv);
-          if (response.credential) {
-            await processGoogleAuth(response.credential);
-          } else {
-            setLoading(false);
-            setError('No credential received from Google');
-          }
-        }
-      });
-
-      // Simulate button click
-      setTimeout(() => {
-        const button = tempDiv.querySelector('div[role="button"]');
-        if (button) {
-          button.click();
-        } else {
-          document.body.removeChild(tempDiv);
-          setLoading(false);
-          setError('Could not initialize Google Sign-In');
-        }
-      }, 500);
-
-    } catch (error) {
-      setLoading(false);
-      console.error('Google sign-in error:', error);
-      setError('Google sign-in failed: ' + error.message);
-    }
-  };
-
-  const processGoogleAuth = async (idToken) => {
-    try {
-      const backendAuth = await authAPI.googleAuth(idToken);
-      
-      localStorage.setItem('authToken', backendAuth.token);
-      localStorage.setItem('user', JSON.stringify({
-        id: backendAuth.user.id || backendAuth.user._id,
-        name: backendAuth.user.name,
-        email: backendAuth.user.email,
-        avatar: backendAuth.user.avatar,
-        authProvider: backendAuth.user.authProvider
-      }));
-      
-      setLoading(false);
-      navigate('/dashboard');
-    } catch (error) {
-      setLoading(false);
-      console.error('Backend auth error:', error);
-      
-      let errorMessage = 'Google sign-in failed';
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      }
-      
-      setError(errorMessage);
-    }
-  };
-
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <div className="w-full max-w-md p-8 space-y-6 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg border border-green-100 dark:border-gray-700">
@@ -291,20 +205,8 @@ function Login() {
           </button>
         </form>
 
-        {/* Google Auth Button */}
-        <button
-          type="button"
-          onClick={handleGoogleSignIn}
-          disabled={loading}
-          className={`w-full flex items-center justify-center gap-2 px-4 py-3 mb-2 text-gray-700 dark:text-gray-200 font-medium rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all duration-200 shadow-sm transform hover:-translate-y-0.5 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
-        >
-          <FcGoogle className='text-xl mr-2'/>Continue with Google
-        </button>
         <p className="text-center text-sm text-gray-600 dark:text-gray-400">
           Don't have an account? <Link to="/signup" className="text-emerald-600 dark:text-emerald-400 font-medium hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors duration-200">Sign Up</Link>
-        </p>
-        <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-          Back to <Link to="/Login" className="text-teal-600 dark:text-teal-400 font-medium hover:text-teal-800 dark:hover:text-teal-300">Login</Link>
         </p>
       </div>
 

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { googleAuthService } from '../services/googleAuth';
 import LogoOJT from '../assets/LogoOJT.png';
 
 const Navbar = () => {
@@ -18,9 +17,6 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      // Sign out from Google if using Google auth
-      await googleAuthService.signOut();
-      
       // Clear localStorage
       localStorage.removeItem('user');
       localStorage.removeItem('authToken');
