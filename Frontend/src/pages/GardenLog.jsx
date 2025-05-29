@@ -481,7 +481,7 @@ const GardenLog = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col md:flex-row min-h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar
         isMenuOpen={isMenuOpen}
         setIsMenuOpen={setIsMenuOpen}
@@ -489,21 +489,21 @@ const GardenLog = () => {
         setActiveNavItem={setActiveNavItem}
       />
 
-      <div className="flex-1 overflow-auto">
-        <div className="p-6">
+      <div className="flex-1 overflow-hidden">
+        <div className="p-4 md:p-6">
           {/* Header */}
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Garden Log</h1>
 
             {/* Search Bar */}
-            <div className="relative w-96">
+            <div className="w-full sm:w-96 relative">
               <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search plants..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg"
               />
             </div>
           </div>
@@ -533,7 +533,7 @@ const GardenLog = () => {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
               {filteredPlants.map(plant => (
                 <PlantLogCard 
                   key={plant._id || plant.id} 
