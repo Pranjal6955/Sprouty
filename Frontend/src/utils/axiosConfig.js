@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create an axios instance with default config
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://backend-sprouty.onrender.com/api',
+  baseURL: import.meta.env.VITE_API_URL || 'https://localhost:5000/api',
   timeout: 30000, // 30 seconds
   headers: {
     'Content-Type': 'application/json',
