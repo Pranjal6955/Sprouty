@@ -188,11 +188,11 @@ WEATHER_API_KEY=your_openweathermap_api_key
 
 ### Frontend Deployment
 The frontend is deployed on Vercel.
-Live Link: https://frontend-sprouty.vercel.app/
+Live Link: [https://frontend-sprouty.vercel.app/](https://frontend-sprouty.vercel.app/)
 
 ### Backend Deployment
 The backend is deployed on Render.
-API Base URL: https://sprouty-backend.onrender.com/api
+API Base URL: [https://sprouty-backend.onrender.com](https://backend-sprouty.onrender.com)/api
 
 ## 🧪 Testing
 
