@@ -37,44 +37,44 @@ Sprouty is a full-stack MERN web application that helps users manage their real-
 ## 📸 Screenshots
 
 ### 🏠 Home Dashboard
-![Home Dashboard] ![Project Screenshot 1](https://github.com/user-attachments/assets/def512de-1d88-4ff8-a827-cd7f7102e46b)
+![Project Screenshot 1](https://github.com/user-attachments/assets/def512de-1d88-4ff8-a827-cd7f7102e46b)
 
 *Main dashboard showing plant overview, weather information, and upcoming care reminders*
 
 ### 🌱 Plant Gallery
-![Plant Gallery] ![Screenshot Project 5](https://github.com/user-attachments/assets/5ef0c2cc-3f6d-4a55-be20-fac6c0a8c8c2)
+![Screenshot Project 5](https://github.com/user-attachments/assets/5ef0c2cc-3f6d-4a55-be20-fac6c0a8c8c2)
 
 *Your personal plant collection with care status indicators and quick actions*
 
 ### 📱 Plant Identification
-![Plant Identification] ![Screenshot Project 7](https://github.com/user-attachments/assets/a88085e0-8877-49e7-9abc-392a3a77f91a)
+![Screenshot Project 7](https://github.com/user-attachments/assets/a88085e0-8877-49e7-9abc-392a3a77f91a)
 
 *Smart plant identification using camera or uploaded images*
 
 ### 🔔 Care Reminders
-![Care Reminders] ![Screenshot Project 4](https://github.com/user-attachments/assets/b00e221a-956f-448a-9d00-9fd470c7d264)
+![Screenshot Project 4](https://github.com/user-attachments/assets/b00e221a-956f-448a-9d00-9fd470c7d264)
 
 *Upcoming care tasks and reminder management interface*
 
 ### 🩺 Plant Health Diagnosis
-![Plant Health]![Screenshot Project 8](https://github.com/user-attachments/assets/89f497ee-4f64-431c-abda-3cbcdee8edcd)
+![Screenshot Project 8](https://github.com/user-attachments/assets/89f497ee-4f64-431c-abda-3cbcdee8edcd)
 ![Screenshot Project 9](https://github.com/user-attachments/assets/c1aeddbe-e743-497f-8040-718bb664409d)
 
 
 *Disease diagnosis and health monitoring for your plants*
 
 ### 🌦️ Weather Integration
-![Weather Dashboard] ![Screenshot Project 6](https://github.com/user-attachments/assets/ea515969-b66f-4cc0-a83a-7f4566d8d9e5)
+![Screenshot Project 6](https://github.com/user-attachments/assets/ea515969-b66f-4cc0-a83a-7f4566d8d9e5)
 
 *Real-time weather data with plant care recommendations*
 
 ### 📊 Plant Details
-![Plant Details] ![Screenshot Project 10](https://github.com/user-attachments/assets/2ebf1e13-7561-49d8-865c-4c564686e7e9)
+![Screenshot Project 10](https://github.com/user-attachments/assets/2ebf1e13-7561-49d8-865c-4c564686e7e9)
 
 *Detailed plant information, care history, and health tracking*
 
 ### 🌙 Dark Mode
-![Dark Mode] ![ScreenshotProject 11](https://github.com/user-attachments/assets/86e74e47-e16c-42a7-9efc-8e878acc5476)
+![ScreenshotProject 11](https://github.com/user-attachments/assets/86e74e47-e16c-42a7-9efc-8e878acc5476)
 
 *Clean dark theme for comfortable nighttime viewing*
 
