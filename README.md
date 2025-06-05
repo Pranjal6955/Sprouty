@@ -34,6 +34,40 @@ Sprouty is a full-stack MERN web application that helps users manage their real-
 - **Dark Mode Support**: Toggle between light and dark themes for comfortable viewing
 - **Responsive Design**: Optimized for mobile, tablet, and desktop devices
 
+## 📸 Screenshots
+
+### 🏠 Home Dashboard
+![Home Dashboard](screenshots/home-dashboard.png)
+*Main dashboard showing plant overview, weather information, and upcoming care reminders*
+
+### 🌱 Plant Gallery
+![Plant Gallery](screenshots/plant-gallery.png)
+*Your personal plant collection with care status indicators and quick actions*
+
+### 📱 Plant Identification
+![Plant Identification](screenshots/plant-identification.png)
+*Smart plant identification using camera or uploaded images*
+
+### 🔔 Care Reminders
+![Care Reminders](screenshots/care-reminders.png)
+*Upcoming care tasks and reminder management interface*
+
+### 🩺 Plant Health Diagnosis
+![Plant Health](screenshots/plant-health.png)
+*Disease diagnosis and health monitoring for your plants*
+
+### 🌦️ Weather Integration
+![Weather Dashboard](screenshots/weather-dashboard.png)
+*Real-time weather data with plant care recommendations*
+
+### 📊 Plant Details
+![Plant Details](screenshots/plant-details.png)
+*Detailed plant information, care history, and health tracking*
+
+### 🌙 Dark Mode
+![Dark Mode](screenshots/dark-mode.png)
+*Clean dark theme for comfortable nighttime viewing*
+
 ## 💻 Tech Stack
 
 ### Frontend
